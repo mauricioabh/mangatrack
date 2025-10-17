@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  clerkId            String           @unique
+  email              String           @unique
+  name               String?
+  avatar             String?
+  tier               UserTier         @default(BASIC)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  emailNotifications Boolean          @default(true)
+  notifications      Notification[]
+  readingHistory     ReadingHistory[]
+  bookmarks          UserManga[]
+
+  @@map("users")
+}
+
+model Manga {
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  description     String?
+  coverImage      String?
+  backgroundImage String?
+  status          MangaStatus      @default(ONGOING)
+  genres          String[]
+  author          String?
+  artist          String?
+  sourceUrl       String?
+  sourceId        String?          @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  chapters        Chapter[]
+  readingHistory  ReadingHistory[]
+  bookmarks       UserManga[]
+
+  @@map("mangas")
+}
+
+model Chapter {
+  id             String           @id @default(cuid())
+  mangaId        String
+  title          String
+  chapterNumber  Float
+  pages          String[]
+  sourceUrl      String?
+  sourceId       String?          @unique
+  publishedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  manga          Manga            @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  readingHistory ReadingHistory[]
+
+  @@map("chapters")
+}
+
+model UserManga {
+  id        String   @id @default(cuid())
+  userId    String
+  mangaId   String
+  createdAt DateTime @default(now())
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mangaId])
+  @@map("user_mangas")
+}
+
+model ReadingHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  mangaId   String
+  chapterId String
+  readAt    DateTime @default(now())
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@map("reading_history")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  mangaId   String?
+  chapterId String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum UserTier {
+  BASIC
+  PREMIUM
+}
+
+enum MangaStatus {
+  ONGOING
+  COMPLETED
+  HIATUS
+  CANCELLED
+}
+
+enum NotificationType {
+  NEW_CHAPTER
+  MANGA_UPDATE
+  SYSTEM
+}
