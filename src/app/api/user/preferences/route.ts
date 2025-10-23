@@ -2,19 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { userPreferencesSchema } from "@/lib/validations";
-import { aj } from "@/lib/arcjet";
-
-export async function GET(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
+export async function GET() {
   try {
     const user = await getCurrentUser();
 
@@ -41,16 +29,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
   try {
     const user = await getCurrentUser();
 

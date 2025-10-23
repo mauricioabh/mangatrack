@@ -1,0 +1,80 @@
+<testsuites id="" name="" tests="10" failures="1" skipped="9" errors="0" time="8.899773000000044">
+<testsuite name="auth.setup.ts" timestamp="2025-10-22T19:12:51.882Z" hostname="setup" tests="1" failures="1" skipped="0" time="3.232" errors="0">
+<testcase name="authenticate" classname="auth.setup.ts" time="3.232">
+<failure message="auth.setup.ts:5:6 authenticate" type="FAILURE">
+<![CDATA[  [setup] › auth.setup.ts:5:6 › authenticate ───────────────────────────────────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/sign-in
+    Call log:
+      - navigating to "http://localhost:3000/sign-in", waiting until "load"
+
+
+       8 |
+       9 |   // Go to sign-in page
+    > 10 |   await page.goto("/sign-in", { timeout: 30000 });
+         |              ^
+      11 |   console.log("📄 Navigated to sign-in page");
+      12 |   console.log("📄 Current URL:", page.url());
+      13 |
+        at C:\Projects\mangatrack\tests\auth.setup.ts:10:14
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\test-results\auth.setup.ts-authenticate-setup\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\test-results\auth.setup.ts-authenticate-setup\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[🚀 Starting authentication setup...
+
+[[ATTACHMENT|auth.setup.ts-authenticate-setup\trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="basic-functionality.spec.ts" timestamp="2025-10-22T19:12:51.882Z" hostname="chromium" tests="4" failures="0" skipped="4" time="0" errors="0">
+<testcase name="Basic Functionality Tests › server is running and accessible" classname="basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Functionality Tests › homepage loads and shows sign in" classname="basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Functionality Tests › dashboard redirects to sign in when not authenticated" classname="basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Functionality Tests › protected routes redirect to sign-in when not authenticated" classname="basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="dashboard-loading.spec.ts" timestamp="2025-10-22T19:12:51.882Z" hostname="chromium" tests="3" failures="0" skipped="3" time="0" errors="0">
+<testcase name="Dashboard Loading Tests › dashboard loads with user data" classname="dashboard-loading.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Dashboard Loading Tests › dashboard shows empty state when no bookmarks" classname="dashboard-loading.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Dashboard Loading Tests › dashboard navigation works" classname="dashboard-loading.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="example.spec.ts" timestamp="2025-10-22T19:12:51.882Z" hostname="chromium" tests="2" failures="0" skipped="2" time="0" errors="0">
+<testcase name="Example Tests › homepage loads correctly" classname="example.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Example Tests › search page is accessible" classname="example.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

@@ -1,24 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, X, Check, BookOpen, ExternalLink } from "lucide-react";
+import { Bell, Check, BookOpen, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 // import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { notificationService } from "@/lib/notificationService";
 import { useNotifications } from "@/hooks/useNotifications";
 import Link from "next/link";
-
-interface Notification {
-  id: string;
-  type: "NEW_CHAPTER" | "MANGA_UPDATE" | "SYSTEM";
-  title: string;
-  message: string;
-  mangaId?: string;
-  read: boolean;
-  createdAt: string;
-}
 
 export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -138,7 +126,7 @@ export function NotificationDropdown() {
                   No notifications yet
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  You'll see updates about your manga here
+                  You&apos;ll see updates about your manga here
                 </p>
               </div>
             ) : (

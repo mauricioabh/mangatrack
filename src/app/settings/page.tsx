@@ -31,10 +31,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 import { NotificationSettings } from "@/components/NotificationSettings";
+// Cache removed - using regular fetch for fresh data
+
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  tier?: string;
+  notifications?: boolean;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  user?: T;
+  preferences?: T;
+  priceIds?: T;
+  error?: string;
+}
 
 export default function SettingsPage() {
   const { user: clerkUser, isLoaded } = useUser();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [name, setName] = useState("");
@@ -44,61 +63,72 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchAllData = async () => {
       try {
-        const response = await fetch("/api/user/profile");
-        const data = await response.json();
+        // Make all API calls in parallel for fresh data every time
+        const [userResponse, preferencesResponse, priceIdsResponse] =
+          await Promise.all([
+            fetch("/api/user/profile"),
+            fetch("/api/user/preferences"),
+            fetch("/api/stripe/price-ids"),
+          ]);
 
-        if (data.success) {
-          setUser(data.user);
+        const [userData, preferencesData, priceIdsData] = await Promise.all([
+          userResponse.json(),
+          preferencesResponse.json(),
+          priceIdsResponse.json(),
+        ]);
+
+        // Update user data
+        const userApiResponse = userData as unknown as ApiResponse<UserData>;
+        if (userApiResponse.success && userApiResponse.user) {
+          setUser(userApiResponse.user);
           // Use Clerk user data if available, otherwise fallback to local data
           if (clerkUser) {
             setName(
-              clerkUser.fullName || clerkUser.firstName || data.user.name || ""
+              clerkUser.fullName ||
+                clerkUser.firstName ||
+                userApiResponse.user.name ||
+                ""
             );
-            setAvatar(clerkUser.imageUrl || data.user.avatar || "");
+            setAvatar(clerkUser.imageUrl || userApiResponse.user.avatar || "");
           } else {
-            setName(data.user.name || "");
-            setAvatar(data.user.avatar || "");
+            setName(userApiResponse.user.name || "");
+            setAvatar(userApiResponse.user.avatar || "");
           }
         }
+
+        // Update preferences
+        const preferencesApiResponse =
+          preferencesData as unknown as ApiResponse<{
+            emailNotifications: boolean;
+          }>;
+        if (
+          preferencesApiResponse.success &&
+          preferencesApiResponse.preferences
+        ) {
+          setNotifications(
+            preferencesApiResponse.preferences.emailNotifications
+          );
+        }
+
+        // Update price IDs
+        const priceIdsApiResponse = priceIdsData as unknown as ApiResponse<{
+          monthly: string;
+          yearly: string;
+        }>;
+        if (priceIdsApiResponse.success && priceIdsApiResponse.priceIds) {
+          setPriceIds(priceIdsApiResponse.priceIds);
+        }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error("Error fetching settings data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchPreferences = async () => {
-      try {
-        const response = await fetch("/api/user/preferences");
-        const data = await response.json();
-
-        if (data.success) {
-          setNotifications(data.preferences.emailNotifications);
-        }
-      } catch (error) {
-        console.error("Error fetching preferences:", error);
-      }
-    };
-
-    const fetchPriceIds = async () => {
-      try {
-        const response = await fetch("/api/stripe/price-ids");
-        const data = await response.json();
-
-        if (data.success) {
-          setPriceIds(data.priceIds);
-        }
-      } catch (error) {
-        console.error("Error fetching price IDs:", error);
-      }
-    };
-
     if (isLoaded) {
-      fetchUser();
-      fetchPreferences();
-      fetchPriceIds();
+      fetchAllData();
     }
   }, [isLoaded, clerkUser]);
 
@@ -340,9 +370,9 @@ export default function SettingsPage() {
                       </h3>
                       <p className="text-gray-600 dark:text-gray-300">
                         {clerkUser.primaryEmailAddress?.emailAddress ||
-                          (user as any)?.email}
+                          user?.email}
                       </p>
-                      {(user as any)?.tier === "PREMIUM" ? (
+                      {user?.tier === "PREMIUM" ? (
                         <div className="relative group mt-1">
                           <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                           <div className="relative bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full px-2 py-0.5 text-sm font-semibold transition-all duration-300 transform hover:scale-110 hover:shadow-lg flex items-center space-x-1">
@@ -352,7 +382,7 @@ export default function SettingsPage() {
                         </div>
                       ) : (
                         <Badge variant="secondary" className="mt-1">
-                          {(user as any)?.tier} Plan
+                          {user?.tier} Plan
                         </Badge>
                       )}
                     </div>
@@ -477,12 +507,12 @@ export default function SettingsPage() {
                         Current Plan
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {(user as any)?.tier === "PREMIUM"
+                        {user?.tier === "PREMIUM"
                           ? "Premium - Unlimited bookmarks and features"
                           : "Basic - Up to 10 bookmarks"}
                       </p>
                     </div>
-                    {(user as any)?.tier === "PREMIUM" ? (
+                    {user?.tier === "PREMIUM" ? (
                       <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                         <div className="relative bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full px-2 py-0.5 text-sm font-semibold transition-all duration-300 transform hover:scale-110 hover:shadow-lg flex items-center space-x-1">
@@ -491,11 +521,11 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     ) : (
-                      <Badge variant="secondary">{(user as any)?.tier}</Badge>
+                      <Badge variant="secondary">{user?.tier}</Badge>
                     )}
                   </div>
 
-                  {(user as any)?.tier === "BASIC" ? (
+                  {user?.tier === "BASIC" ? (
                     <div className="space-y-6">
                       {/* Debug info - remove in production */}
                       {process.env.NODE_ENV === "development" && (

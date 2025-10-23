@@ -3,8 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { MSWProvider } from "@/components/MSWProvider";
-import GlobalHeader from "@/components/GlobalHeader";
+import ConditionalLayout from "@/components/ConditionalLayout";
 import "./globals.css";
 import "./animations.css";
 
@@ -51,11 +50,8 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ThemeProvider defaultTheme="system" storageKey="mangatrack-theme">
-            <MSWProvider>
-              <GlobalHeader />
-              <div className="pt-16">{children}</div>
-              <Toaster />
-            </MSWProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

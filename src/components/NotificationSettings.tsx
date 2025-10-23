@@ -25,7 +25,11 @@ export function NotificationSettings() {
     const checkStatus = async () => {
       await notificationService.initialize();
       const status = notificationService.getBrowserNotificationStatus();
-      setNotificationStatus(status);
+      setNotificationStatus({
+        isSupported: Boolean(status.isSupported),
+        isGranted: Boolean(status.isGranted),
+        permission: (status.permission as NotificationPermission) || "default",
+      });
     };
 
     checkStatus();
@@ -111,11 +115,11 @@ export function NotificationSettings() {
           <h4 className="font-medium">Current Status</h4>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {!notificationStatus.isSupported ? (
-              <p>Your browser doesn't support notifications.</p>
+              <p>Your browser doesn&apos;t support notifications.</p>
             ) : notificationStatus.isGranted ? (
               <p>
-                ✅ You'll receive browser notifications for new chapters and
-                updates.
+                ✅ You&apos;ll receive browser notifications for new chapters
+                and updates.
               </p>
             ) : notificationStatus.permission === "denied" ? (
               <p>
@@ -154,8 +158,8 @@ export function NotificationSettings() {
         {notificationStatus.isGranted && (
           <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
             <p className="text-sm text-green-800 dark:text-green-200">
-              <strong>Notifications are enabled!</strong> You'll receive browser
-              notifications for:
+              <strong>Notifications are enabled!</strong> You&apos;ll receive
+              browser notifications for:
             </p>
             <ul className="mt-2 text-sm text-green-700 dark:text-green-300 list-disc list-inside">
               <li>New chapters for your bookmarked manga</li>
@@ -171,8 +175,8 @@ export function NotificationSettings() {
               <strong>Notifications are blocked.</strong> To enable them:
             </p>
             <ol className="mt-2 text-sm text-red-700 dark:text-red-300 list-decimal list-inside">
-              <li>Click the lock icon in your browser's address bar</li>
-              <li>Set notifications to "Allow"</li>
+              <li>Click the lock icon in your browser&apos;s address bar</li>
+              <li>Set notifications to &quot;Allow&quot;</li>
               <li>Refresh this page</li>
             </ol>
           </div>
@@ -181,4 +185,3 @@ export function NotificationSettings() {
     </Card>
   );
 }
-

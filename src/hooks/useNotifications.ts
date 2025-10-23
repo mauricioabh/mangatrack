@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+// Cache removed - using regular fetch for fresh data
 
 interface Notification {
   id: string;
@@ -24,6 +25,7 @@ export function useNotifications() {
     try {
       const response = await fetch("/api/notifications");
       const data = await response.json();
+
       if (data.success) {
         setNotifications(data.data);
       } else {
@@ -77,11 +79,11 @@ export function useNotifications() {
   // Get unread count
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Auto-refresh notifications every 30 seconds
+  // Auto-refresh notifications every 2 minutes
   useEffect(() => {
     fetchNotifications();
 
-    const interval = setInterval(fetchNotifications, 30000); // 30 seconds
+    const interval = setInterval(fetchNotifications, 120000); // 2 minutes
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -96,4 +98,3 @@ export function useNotifications() {
     markAllAsRead,
   };
 }
-

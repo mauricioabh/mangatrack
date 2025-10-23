@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "./db";
-import { MOCK_CONFIG } from "./mock-config";
 
 /**
  * Get the current authenticated user from the database
@@ -28,23 +27,7 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // Check if mock data is enabled
-  if (MOCK_CONFIG.USE_MOCK_DATA) {
-    console.log("🎭 Using mock user data instead of database");
-    // Return mock user data
-    return {
-      id: "user-1",
-      clerkId: userId,
-      email: "john.doe@example.com",
-      name: "John Doe",
-      avatar:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-      tier: "BASIC",
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-12-01"),
-    };
-  }
-
+  // Get user from database
   const user = await db.user.findUnique({
     where: {
       clerkId: userId,
@@ -84,23 +67,6 @@ export async function getOrCreateUser(
   avatar?: string
 ) {
   console.log("getOrCreateUser called with:", { clerkId, email, name, avatar });
-
-  // Check if mock data is enabled
-  if (MOCK_CONFIG.USE_MOCK_DATA) {
-    console.log("🎭 Using mock user data instead of database");
-    return {
-      id: "user-1",
-      clerkId,
-      email,
-      name: name || "John Doe",
-      avatar:
-        avatar ||
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-      tier: "BASIC",
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-12-01"),
-    };
-  }
 
   const existingUser = await db.user.findUnique({
     where: {

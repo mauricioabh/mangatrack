@@ -1,6 +1,6 @@
 # MangaTrack
 
-A comprehensive manga tracking and reading application built with Next.js, featuring authentication, email notifications, error monitoring, and advanced security.
+A comprehensive manga tracking and reading application built with Next.js, featuring authentication, email notifications, and premium features.
 
 ## ✨ Features
 
@@ -32,12 +32,11 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 - **In-app Notifications**: Real-time notification dropdown in header
 - **Notification Types**: New chapters, manga updates, and system notifications
 
-### 🛡️ **Security & Monitoring**
+### 🛡️ **Security & Validation**
 
-- **Arcjet Protection**: Advanced security with rate limiting, bot detection, and DDoS protection
-- **Sentry Integration**: Comprehensive error monitoring and performance tracking
 - **Input Validation**: Zod-powered validation for all user inputs
 - **Secure API**: Protected endpoints with proper authentication
+- **Clerk Security**: Built-in security features from Clerk authentication
 
 ### 💳 **Premium Features**
 
@@ -54,9 +53,7 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 
 ### 🛠️ **Development Tools**
 
-- **Dev Tools Dropdown**: Comprehensive development utilities in header
-- **Mock Data System**: Switch between mock and real data for development
-- **Error Testing**: Built-in Sentry error testing tools
+- **Dev Tools Dropdown**: Development utilities in header
 - **Email Simulation**: Test email notifications with various scenarios
 - **Browser Notification Testing**: Test native browser notifications
 
@@ -80,8 +77,7 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 ### **Authentication & Security**
 
 - **Clerk**: Authentication and user management
-- **Arcjet**: Advanced security protection
-- **Sentry**: Error monitoring and performance tracking
+- **Zod**: Runtime type validation and input sanitization
 
 ### **External Services**
 
@@ -104,9 +100,7 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 - PostgreSQL database (Neon recommended)
 - Clerk account
 - Stripe account (for payments)
-- Arcjet account (for security)
 - Resend account (for email notifications)
-- Sentry account (for error monitoring)
 
 ### Installation
 
@@ -153,12 +147,6 @@ A comprehensive manga tracking and reading application built with Next.js, featu
    # Email Service (Resend)
    RESEND_API_KEY="re_..."
 
-   # Security (Arcjet)
-   ARCJET_KEY="ajkey_..."
-
-   # Error Monitoring (Sentry)
-   SENTRY_DSN="https://..."
-
    # App Configuration
    NEXT_PUBLIC_APP_URL="http://localhost:3000"
    NODE_ENV="development"
@@ -187,11 +175,10 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 src/
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
-│   │   ├── manga/         # Manga-related endpoints
-│   │   ├── user/          # User management endpoints
-│   │   ├── webhooks/      # Webhook handlers
-│   │   ├── test-email/    # Email testing endpoints
-│   │   ├── test-sentry-error/ # Sentry testing endpoints
+│   │   ├── manga/          # Manga-related endpoints
+│   │   ├── user/           # User management endpoints
+│   │   ├── webhooks/       # Webhook handlers
+│   │   ├── test-email/     # Email testing endpoints
 │   │   └── simulate-email-notification/ # Email simulation
 │   ├── dashboard/         # Dashboard page
 │   ├── search/            # Search page
@@ -199,8 +186,7 @@ src/
 │   ├── reader/            # Manga reader
 │   ├── settings/          # User settings
 │   ├── sign-in/           # Authentication pages
-│   ├── sign-up/
-│   └── sentry-example-page/ # Sentry testing page
+│   └── sign-up/
 ├── components/            # Reusable components
 │   ├── ui/               # ShadCN UI components
 │   ├── DevToolsDropdown.tsx # Development tools
@@ -213,7 +199,6 @@ src/
 │   ├── stripe.ts         # Stripe configuration
 │   ├── email.ts          # Email service (Resend)
 │   ├── notifications.ts  # Notification management
-│   ├── arcjet.ts         # Security configuration
 │   └── validations.ts    # Zod schemas
 ├── mocks/                # Mock data for development
 │   ├── handlers.ts       # MSW request handlers
@@ -235,21 +220,14 @@ The app uses Prisma with PostgreSQL. Key models include:
 
 ## 🛡️ Security Features
 
-### Arcjet Protection
+### Input Validation & Security
 
-The app is protected by **Arcjet** which provides:
+The app uses **Zod** for comprehensive input validation:
 
-- **Shield Protection**: Blocks SQL injection, XSS, and other common attacks
-- **Bot Detection**: Identifies and blocks automated traffic while allowing search engines
-- **Rate Limiting**: Prevents abuse with configurable limits per IP
-- **DDoS Protection**: Advanced protection against distributed attacks
-
-### Arcjet Configuration
-
-Arcjet is configured in `src/lib/arcjet.ts` with different protection levels:
-
-- **Standard Protection**: 100 requests/minute for general API endpoints
-- **Strict Protection**: 10 requests/minute for sensitive endpoints (payments, auth)
+- **Type Safety**: Runtime type checking for all API inputs
+- **Data Sanitization**: Automatic sanitization of user inputs
+- **Schema Validation**: Structured validation for all data models
+- **Error Handling**: Clear validation error messages
 
 ## 📧 Email System
 
@@ -267,39 +245,23 @@ Arcjet is configured in `src/lib/arcjet.ts` with different protection levels:
 - **Action Buttons**: Direct links to the app from emails
 - **Unsubscribe**: Easy preference management
 
-## 🐛 Error Monitoring
+## 🐛 Error Handling
 
-### Sentry Integration
+### Built-in Error Management
 
-- **Error Tracking**: Automatic error capture and reporting
-- **Performance Monitoring**: Track app performance and user experience
-- **Release Tracking**: Monitor errors across different app versions
-- **User Context**: Rich error context with user information
-
-### Sentry Features
-
-- **Client-side Errors**: JavaScript errors in the browser
-- **Server-side Errors**: API and server errors
-- **Performance Metrics**: Page load times and API response times
-- **Testing Tools**: Built-in error testing utilities
+- **Client-side Errors**: JavaScript error handling with user-friendly messages
+- **Server-side Errors**: API error responses with proper HTTP status codes
+- **Validation Errors**: Clear error messages for input validation failures
+- **User Feedback**: Toast notifications for user actions
 
 ## 🔧 Development Tools
 
 ### Dev Tools Dropdown
 
-Access comprehensive development utilities from the header:
+Access development utilities from the header:
 
-- **Data Source Toggle**: Switch between mock and real data
-- **Sentry Testing**: Test client, server, and API errors
 - **Email Simulation**: Test different types of email notifications
 - **Browser Notifications**: Test native browser notifications
-
-### Mock Data System
-
-- **MSW Integration**: Mock Service Worker for API interception
-- **Realistic Data**: Comprehensive mock data for development
-- **Easy Switching**: Toggle between mock and real data
-- **Production Safety**: Automatically disabled in production
 
 ## 📡 API Endpoints
 
@@ -326,7 +288,6 @@ Access comprehensive development utilities from the header:
 
 - `POST /api/test-email` - Send test email
 - `POST /api/simulate-email-notification` - Simulate email notifications
-- `POST /api/test-sentry-error` - Test Sentry error reporting
 
 ### Webhook Endpoints
 
@@ -370,20 +331,14 @@ npm run lint:fix     # Fix ESLint issues
 - **E2E Tests**: Full user flow tests (with Playwright)
 - **Mock Data**: Comprehensive test data for all scenarios
 
-## 📊 Monitoring & Analytics
+## 📊 Performance & Monitoring
 
-### Sentry Dashboard
+### Built-in Monitoring
 
-- **Error Tracking**: Real-time error monitoring
-- **Performance**: Page load and API response times
-- **Releases**: Track errors across deployments
-- **Alerts**: Email notifications for critical errors
-
-### Arcjet Dashboard
-
-- **Security Events**: Rate limiting and blocked requests
-- **Traffic Analytics**: Request patterns and geographic data
-- **Real-time Monitoring**: Live traffic and security events
+- **Error Handling**: Comprehensive error handling with user feedback
+- **Performance**: Optimized API responses and database queries
+- **User Experience**: Smooth interactions with loading states
+- **Validation**: Real-time input validation and error messages
 
 ## 🤝 Contributing
 
@@ -402,10 +357,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you have any questions or need help:
 
 1. Check the [SETUP.md](SETUP.md) for detailed setup instructions
-2. Review the [MOCK_DATA_GUIDE.md](MOCK_DATA_GUIDE.md) for development workflow
-3. Open an issue on GitHub
-4. Check the Sentry dashboard for error details
+2. Open an issue on GitHub
+3. Review the test files for usage examples
 
 ---
 
-Built with ❤️ using Next.js, Clerk, Prisma, Resend, Sentry, and Arcjet.
+Built with ❤️ using Next.js, Clerk, Prisma, Resend, and Stripe.

@@ -4,28 +4,21 @@ import { useState, useEffect } from "react";
 import {
   BookOpen,
   ArrowLeft,
-  Star,
   Calendar,
   User,
   Search,
-  Bookmark,
   Play,
   Plus,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
+// Cache removed - using regular fetch for fresh data
 
 interface Manga {
   id: string;
@@ -47,55 +40,83 @@ interface Manga {
   updatedAt: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  isBookmarked?: boolean;
+  error?: string;
+}
+
 interface MangaDetailContentProps {
   slug: string;
 }
 
 export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
   const [manga, setManga] = useState<Manga | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [lastReadChapter, setLastReadChapter] = useState<number | null>(null);
+  const [mangaLoading, setMangaLoading] = useState(true);
+  const [metadataLoading, setMetadataLoading] = useState(true);
 
   useEffect(() => {
     const fetchMangaData = async () => {
       try {
-        // Fetch manga details
+        // Fetch manga details first to get the manga ID
         const mangaResponse = await fetch(`/api/manga/${slug}`);
         const mangaData = await mangaResponse.json();
 
-        if (mangaData.success) {
-          setManga(mangaData.data);
+        const mangaApiResponse = mangaData as unknown as ApiResponse<Manga>;
+        if (mangaApiResponse.success && mangaApiResponse.data) {
+          setManga(mangaApiResponse.data);
+          setMangaLoading(false); // Manga data is loaded
 
-          // Fetch bookmark status
-          const bookmarkResponse = await fetch(
-            `/api/manga/bookmark?mangaId=${mangaData.data.id}`
-          );
-          const bookmarkData = await bookmarkResponse.json();
-          setIsBookmarked(bookmarkData.success && bookmarkData.isBookmarked);
+          // Now make parallel calls for bookmark status and reading history
+          const [bookmarkResponse, historyResponse] = await Promise.all([
+            fetch(`/api/manga/bookmark?mangaId=${mangaApiResponse.data.id}`),
+            fetch(`/api/reading-history?mangaId=${mangaApiResponse.data.id}`),
+          ]);
 
-          // Fetch reading history for last read chapter
-          const historyResponse = await fetch(
-            `/api/reading-history?mangaId=${mangaData.data.id}`
+          const [bookmarkData, historyData] = await Promise.all([
+            bookmarkResponse.json(),
+            historyResponse.json(),
+          ]);
+
+          // Update bookmark status
+          const bookmarkApiResponse = bookmarkData as unknown as ApiResponse<{
+            isBookmarked: boolean;
+          }>;
+          setIsBookmarked(
+            bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked
           );
-          const historyData = await historyResponse.json();
-          if (historyData.success && historyData.data.length > 0) {
+
+          // Update reading history
+          const historyApiResponse = historyData as unknown as ApiResponse<
+            Array<{ chapterNumber: number }>
+          >;
+          if (
+            historyApiResponse.success &&
+            historyApiResponse.data &&
+            historyApiResponse.data.length > 0
+          ) {
             const lastChapter = Math.max(
-              ...historyData.data.map((h: any) => h.chapterNumber)
+              ...historyApiResponse.data.map((h) => h.chapterNumber)
             );
             setLastReadChapter(lastChapter);
           }
+
+          setMetadataLoading(false); // Metadata is loaded
         } else {
-          console.error("Manga API response:", mangaData);
-          setError(mangaData.error || "Manga not found");
+          console.error("Manga API response:", mangaApiResponse);
+          setError(mangaApiResponse.error || "Manga not found");
         }
       } catch (err) {
         setError("Failed to load manga details");
         console.error("Error fetching manga:", err);
       } finally {
-        setLoading(false);
+        setMangaLoading(false);
+        setMetadataLoading(false);
       }
     };
 
@@ -122,6 +143,7 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
 
       if (data.success) {
         setIsBookmarked(!isBookmarked);
+
         toast.success(
           isBookmarked ? "Removed from library" : "Added to library"
         );
@@ -166,15 +188,72 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
     window.open(`/reader/${chapterId}`, "_blank");
   };
 
-  if (loading) {
+  // Show skeleton loading while manga data is loading
+  if (mangaLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Loading manga details...
-          </p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
+        <main className="container mx-auto px-4 py-8">
+          {/* Back Button Skeleton */}
+          <div className="mb-6">
+            <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Cover Image Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="w-full h-96 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Title Skeleton */}
+              <div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
+              </div>
+
+              {/* Genres Skeleton */}
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"
+                  ></div>
+                ))}
+              </div>
+
+              {/* Description Skeleton */}
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  ></div>
+                ))}
+              </div>
+
+              {/* Action Buttons Skeleton */}
+              <div className="flex gap-4">
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chapters Section Skeleton */}
+          <div className="mt-12">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-6 animate-pulse"></div>
+            <div className="grid gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                ></div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -272,33 +351,52 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
               <div className="flex flex-wrap gap-4">
                 <Button
                   onClick={handleStartReading}
+                  disabled={metadataLoading}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95"
+                  className={`bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95 ${metadataLoading ? "opacity-50" : ""}`}
                 >
-                  <Play className="h-4 w-4 mr-2" />
-                  {lastReadChapter
-                    ? `Resume Chapter ${lastReadChapter + 1}`
-                    : "Start Reading"}
+                  {metadataLoading ? (
+                    <>
+                      <div className="animate-pulse h-4 w-4 bg-white/50 rounded mr-2"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      {lastReadChapter
+                        ? `Resume Chapter ${lastReadChapter + 1}`
+                        : "Start Reading"}
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={handleBookmarkToggle}
-                  disabled={bookmarkLoading}
+                  disabled={bookmarkLoading || metadataLoading}
                   variant="outline"
                   size="lg"
                   className={`border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
                     isBookmarked
                       ? "border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
                       : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                  }`}
+                  } ${metadataLoading ? "opacity-50" : ""}`}
                 >
                   {bookmarkLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                  ) : metadataLoading ? (
+                    <>
+                      <div className="animate-pulse h-4 w-4 bg-current/50 rounded mr-2"></div>
+                      Loading...
+                    </>
                   ) : isBookmarked ? (
                     <Check className="h-4 w-4 mr-2" />
                   ) : (
                     <Plus className="h-4 w-4 mr-2" />
                   )}
-                  {isBookmarked ? "In Library" : "Add to Library"}
+                  {metadataLoading
+                    ? "Loading..."
+                    : isBookmarked
+                      ? "In Library"
+                      : "Add to Library"}
                 </Button>
               </div>
             </div>

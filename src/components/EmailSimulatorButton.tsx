@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mail, Send, Loader2 } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function EmailSimulatorButton() {
@@ -34,7 +34,7 @@ export function EmailSimulatorButton() {
       const mockMangaId = "clx1234567890abcdef"; // One Piece from mock data
       const mockChapterId = "chapter-1"; // First chapter
 
-      const payload: any = { type };
+      const payload: Record<string, unknown> = { type };
 
       if (type === "NEW_CHAPTER") {
         payload.mangaId = mockMangaId;

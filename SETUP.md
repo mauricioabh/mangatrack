@@ -1,6 +1,6 @@
 # MangaTrack Setup Guide
 
-Complete setup guide for the MangaTrack application with all features and integrations.
+Complete setup guide for the MangaTrack application with authentication, email notifications, and premium features.
 
 ## 🚀 Quick Start
 
@@ -13,9 +13,7 @@ Complete setup guide for the MangaTrack application with all features and integr
 2. **Fill in your environment variables in `.env.local`**
    - Get Clerk keys from [clerk.com](https://clerk.com)
    - Get Stripe keys from [stripe.com](https://stripe.com)
-   - Get Arcjet key from [arcjet.com](https://arcjet.com) for security
    - Get Resend key from [resend.com](https://resend.com) for email
-   - Get Sentry DSN from [sentry.io](https://sentry.io) for monitoring
    - Set up a Neon PostgreSQL database at [neon.tech](https://neon.tech)
 
 3. **Set up the database**
@@ -58,14 +56,6 @@ Complete setup guide for the MangaTrack application with all features and integr
 ### Email Service (Resend)
 
 - `RESEND_API_KEY` - From Resend dashboard
-
-### Security (Arcjet)
-
-- `ARCJET_KEY` - From Arcjet dashboard
-
-### Error Monitoring (Sentry)
-
-- `SENTRY_DSN` - From Sentry project settings
 
 ### App Configuration
 
@@ -131,22 +121,18 @@ Complete setup guide for the MangaTrack application with all features and integr
 - ✅ User email preference management
 - ✅ Email testing and simulation tools
 
-### 🛡️ **Security & Monitoring**
+### 🛡️ **Security & Validation**
 
-- ✅ Arcjet protection with rate limiting
-- ✅ Bot detection and DDoS protection
-- ✅ Sentry error monitoring and performance tracking
 - ✅ Input validation with Zod schemas
 - ✅ Secure API endpoints with authentication
+- ✅ Clerk security features
+- ✅ Data sanitization and type safety
 
 ### 🛠️ **Development Tools**
 
 - ✅ Dev Tools dropdown in header
-- ✅ Mock data toggle for development
-- ✅ Sentry error testing tools
 - ✅ Email notification simulation
 - ✅ Browser notification testing
-- ✅ Data source switching (mock vs real)
 
 ### 💳 **Premium Features**
 
@@ -179,9 +165,9 @@ Complete setup guide for the MangaTrack application with all features and integr
 ### For Production:
 
 1. **Security Configuration**
-   - Review Arcjet protection settings
-   - Configure rate limiting thresholds
-   - Set up security monitoring
+   - Review input validation schemas
+   - Configure authentication settings
+   - Set up secure API endpoints
 
 2. **Performance Optimization**
    - Enable caching for better performance
@@ -189,9 +175,9 @@ Complete setup guide for the MangaTrack application with all features and integr
    - Set up CDN for static assets
 
 3. **Monitoring & Analytics**
-   - Configure Sentry alerts
-   - Set up performance monitoring
-   - Monitor Arcjet security events
+   - Set up error handling and logging
+   - Monitor application performance
+   - Track user interactions
 
 ## 🗄️ Database Schema
 
@@ -230,7 +216,6 @@ The app includes these main models:
 
 - `POST /api/test-email` - Send test email
 - `POST /api/simulate-email-notification` - Simulate email notifications
-- `POST /api/test-sentry-error` - Test Sentry error reporting
 
 ### Webhook Endpoints
 
@@ -262,44 +247,35 @@ npm run lint:fix     # Fix ESLint issues
 npm run type-check   # Run TypeScript type checking
 ```
 
-## 🎭 Mock Data System
+## 🎭 Development Features
 
-The app includes a comprehensive mock data system for development:
+The app includes development utilities:
 
-- **MSW Integration**: Mock Service Worker intercepts API calls
-- **Realistic Data**: 6 popular manga with complete metadata
-- **User Data**: Sample user with bookmarks and reading history
-- **Easy Switching**: Toggle between mock and real data
-- **Development Tools**: Built-in toggle in header
-
-See [MOCK_DATA_GUIDE.md](MOCK_DATA_GUIDE.md) for detailed usage.
+- **Email Testing**: Test email notifications with various scenarios
+- **Browser Notifications**: Test native browser notifications
+- **Development Tools**: Built-in utilities in header dropdown
 
 ## 🔧 Development Tools
 
 ### Dev Tools Dropdown
 
-Access comprehensive development utilities from the header:
+Access development utilities from the header:
 
-- **Data Source Toggle**: Switch between mock and real data
-- **Sentry Testing**: Test client, server, and API errors
 - **Email Simulation**: Test different types of email notifications
 - **Browser Notifications**: Test native browser notifications
 
 ### Testing Features
 
-- **Error Testing**: Built-in Sentry error testing tools
 - **Email Testing**: Simulate email notifications
 - **Notification Testing**: Test browser notifications
-- **Data Switching**: Easy toggle between mock and real data
 
 ## 🚨 Important Notes
 
 1. **Environment Variables**: All sensitive keys must be set in `.env.local`
 2. **Database**: Use Neon for PostgreSQL hosting
-3. **Security**: Arcjet provides comprehensive protection
-4. **Monitoring**: Sentry tracks errors and performance
-5. **Email**: Resend handles all email delivery
-6. **Production**: Mock data is automatically disabled in production
+3. **Security**: Input validation and authentication provide protection
+4. **Email**: Resend handles all email delivery
+5. **Production**: Development tools are automatically disabled in production
 
 ## 🐛 Troubleshooting
 
@@ -320,15 +296,10 @@ Access comprehensive development utilities from the header:
    - Check Resend dashboard for delivery status
    - Use email testing tools in Dev Tools
 
-4. **Sentry Not Working**
-   - Verify `SENTRY_DSN` is correct
-   - Check Sentry project configuration
-   - Use Sentry testing tools in Dev Tools
-
-5. **Mock Data Issues**
-   - Check console for MSW status
-   - Use Dev Tools toggle to switch data sources
-   - Verify `NEXT_PUBLIC_USE_MOCK` environment variable
+4. **Development Tools Not Working**
+   - Check if you're in development mode
+   - Verify environment variables are set
+   - Check browser console for errors
 
 ## 🎉 Success!
 
@@ -337,10 +308,8 @@ Once everything is set up, you should have:
 - ✅ A fully functional manga tracking app
 - ✅ User authentication with Clerk
 - ✅ Email notifications with Resend
-- ✅ Error monitoring with Sentry
-- ✅ Security protection with Arcjet
 - ✅ Payment processing with Stripe
-- ✅ Comprehensive development tools
-- ✅ Mock data system for development
+- ✅ Development tools for testing
+- ✅ Input validation and security
 
 The MangaTrack project is now ready for development and production! 🚀

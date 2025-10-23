@@ -1,25 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { BookOpen, Search, Settings, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import SearchOverlay from "./SearchOverlay";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { DevToolsDropdown } from "./DevToolsDropdown";
+// Cache removed - using regular fetch for fresh data
 
 export default function GlobalHeader() {
-  const [user, setUser] = useState<any>(null);
+  const { isSignedIn, user } = useUser();
+  const [userProfile, setUserProfile] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (!isSignedIn) return;
+
       try {
         const response = await fetch("/api/user/profile");
         const data = await response.json();
+
         if (data.success) {
-          setUser(data.user);
+          setUserProfile(data.user || null);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -27,7 +35,12 @@ export default function GlobalHeader() {
     };
 
     fetchUser();
-  }, []);
+  }, [isSignedIn, user?.id]); // Re-fetch when user ID changes
+
+  // Don't render the header at all when not signed in
+  if (!isSignedIn) {
+    return null;
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-700 dark:via-purple-700 dark:to-indigo-700 shadow-2xl border-b-4 border-white/20 dark:border-gray-800/20">
@@ -74,7 +87,7 @@ export default function GlobalHeader() {
             </Link>
 
             {/* Premium Badge */}
-            {user?.tier === "PREMIUM" && (
+            {userProfile?.tier === "PREMIUM" && (
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                 <div className="relative bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full p-2 transition-all duration-300 transform hover:scale-110 hover:shadow-lg">

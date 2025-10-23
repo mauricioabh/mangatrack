@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { aj } from "@/lib/arcjet";
 
 /**
  * @swagger
@@ -45,17 +44,9 @@ import { aj } from "@/lib/arcjet";
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
+  const { id } = await params;
 
   try {
     const user = await getCurrentUser();
@@ -66,8 +57,6 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
-    const { id } = params;
 
     // Find the notification and verify it belongs to the user
     const notification = await db.notification.findFirst({
@@ -106,5 +95,3 @@ export async function PATCH(
     );
   }
 }
-
-

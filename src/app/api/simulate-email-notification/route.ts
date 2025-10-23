@@ -5,8 +5,6 @@ import {
   createMangaUpdateNotification,
   createSystemNotification,
 } from "@/lib/notifications";
-import { aj } from "@/lib/arcjet";
-
 /**
  * @swagger
  * /api/simulate-email-notification:
@@ -55,17 +53,7 @@ import { aj } from "@/lib/arcjet";
  *         description: Internal server error
  */
 export async function POST(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -157,3 +145,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+
+
+
+

@@ -6,7 +6,8 @@ import Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const signature = headers().get("stripe-signature");
+  const headersList = await headers();
+  const signature = headersList.get("stripe-signature");
 
   if (!signature) {
     return NextResponse.json(
@@ -121,15 +122,15 @@ export async function POST(request: NextRequest) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
-        const subscriptionId = invoice.subscription as string;
+        const subscriptionId = (invoice as unknown as Record<string, unknown>)
+          .subscription as string | null;
 
         console.log("Payment succeeded:", { customerId, subscriptionId });
 
         // Handle successful recurring payments
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(
-            subscriptionId
-          );
+          const subscription =
+            await stripe.subscriptions.retrieve(subscriptionId);
           const userId = subscription.metadata?.userId;
 
           if (userId) {
@@ -149,15 +150,15 @@ export async function POST(request: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
-        const subscriptionId = invoice.subscription as string;
+        const subscriptionId = (invoice as unknown as Record<string, unknown>)
+          .subscription as string | null;
 
         console.log("Payment failed:", { customerId, subscriptionId });
 
         // Handle failed payments - you might want to notify the user
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(
-            subscriptionId
-          );
+          const subscription =
+            await stripe.subscriptions.retrieve(subscriptionId);
           const userId = subscription.metadata?.userId;
 
           if (userId) {

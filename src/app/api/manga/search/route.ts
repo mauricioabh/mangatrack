@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { mangaSearchSchema } from "@/lib/validations";
-import { aj } from "@/lib/arcjet";
-
 /**
  * @swagger
  * /api/manga/search:
@@ -96,17 +94,7 @@ import { aj } from "@/lib/arcjet";
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function GET(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query") || "";
     const status = searchParams.get("status") || "";
@@ -124,7 +112,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Build search conditions
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (validatedData.query && validatedData.query.trim()) {
       where.OR = [

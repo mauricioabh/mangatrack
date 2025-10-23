@@ -11,7 +11,7 @@ import { BookOpen, Search, Bell } from "lucide-react";
 
 export default function FeatureCards() {
   return (
-    <div className="grid md:grid-cols-3 gap-8 mt-16">
+    <div className="grid md:grid-cols-3 gap-4 mt-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -26,7 +26,7 @@ export default function FeatureCards() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <Search className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <Search className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
             </motion.div>
             <CardTitle className="text-blue-900 dark:text-blue-100">
               Discover
@@ -53,7 +53,7 @@ export default function FeatureCards() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <BookOpen className="h-12 w-12 text-purple-600 dark:text-purple-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <BookOpen className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
             </motion.div>
             <CardTitle className="text-purple-900 dark:text-purple-100">
               Read
@@ -79,7 +79,7 @@ export default function FeatureCards() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <Bell className="h-12 w-12 text-emerald-600 dark:text-emerald-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <Bell className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
             </motion.div>
             <CardTitle className="text-emerald-900 dark:text-emerald-100">
               Track

@@ -17,9 +17,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
           color: theme === "dark" ? "#f9fafb" : "#111827",
           border: theme === "dark" ? "1px solid #374151" : "1px solid #e5e7eb",
         },
-        descriptionStyle: {
-          color: theme === "dark" ? "#d1d5db" : "#6b7280",
-        },
       }}
       style={
         {

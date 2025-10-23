@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
+// Cache removed - using regular fetch for fresh data
 
 interface Manga {
   id: string;
@@ -34,12 +35,19 @@ interface Manga {
   author?: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mangas, setMangas] = useState<Manga[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const handleSearch = async () => {
     setLoading(true);
@@ -76,8 +84,9 @@ export default function SearchPage() {
       const response = await fetch("/api/manga/search");
       const data = await response.json();
 
-      if (data.success) {
-        setMangas(data.data);
+      const apiResponse = data as unknown as ApiResponse<Manga[]>;
+      if (apiResponse.success) {
+        setMangas(apiResponse.data);
       }
     } catch (error) {
       console.error("Error loading manga:", error);
@@ -86,6 +95,49 @@ export default function SearchPage() {
     }
   };
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Perform search when debounced query or filters change
+  useEffect(() => {
+    const performSearch = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+
+        if (debouncedQuery.trim()) {
+          params.append("query", debouncedQuery);
+        }
+        if (statusFilter !== "all") {
+          params.append("status", statusFilter);
+        }
+        if (genreFilter !== "all") {
+          params.append("genre", genreFilter);
+        }
+
+        const response = await fetch(`/api/manga/search?${params}`);
+        const data = await response.json();
+
+        const apiResponse = data as unknown as ApiResponse<Manga[]>;
+        if (apiResponse.success) {
+          setMangas(apiResponse.data);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [debouncedQuery, statusFilter, genreFilter]);
+
   // Load all manga on component mount or handle URL query
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -93,37 +145,11 @@ export default function SearchPage() {
 
     if (queryParam) {
       setSearchQuery(queryParam);
-      // Perform search with the query parameter
-      const performSearch = async () => {
-        setLoading(true);
-        try {
-          const params = new URLSearchParams();
-          params.append("query", queryParam);
-          if (statusFilter !== "all") {
-            params.append("status", statusFilter);
-          }
-          if (genreFilter !== "all") {
-            params.append("genre", genreFilter);
-          }
-
-          const response = await fetch(`/api/manga/search?${params}`);
-          const data = await response.json();
-
-          if (data.success) {
-            setMangas(data.data);
-          }
-        } catch (error) {
-          console.error("Search error:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      performSearch();
     } else {
+      // Load all manga initially
       loadAllManga();
     }
-  }, [statusFilter, genreFilter]);
+  }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

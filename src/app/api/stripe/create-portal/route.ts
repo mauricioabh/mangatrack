@@ -1,19 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createPortalSession } from "@/lib/stripe";
-import { ajStrict } from "@/lib/arcjet";
 
-export async function POST(request: NextRequest) {
-  // Apply strict Arcjet protection for payment endpoints
-  const decision = await ajStrict.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
+export async function POST() {
   try {
     const user = await getCurrentUser();
 

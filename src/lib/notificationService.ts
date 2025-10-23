@@ -14,7 +14,7 @@ interface NotificationData {
 
 class NotificationService {
   private static instance: NotificationService;
-  private browserNotifications: any = null;
+  private browserNotifications: Record<string, unknown> | null = null;
   private isInitialized = false;
 
   private constructor() {}
@@ -32,9 +32,7 @@ class NotificationService {
 
     try {
       // Dynamically import the hook to avoid SSR issues
-      const { useBrowserNotifications } = await import(
-        "@/hooks/useBrowserNotifications"
-      );
+      await import("@/hooks/useBrowserNotifications");
 
       // Check if we're in the browser
       if (typeof window !== "undefined") {
@@ -80,7 +78,7 @@ class NotificationService {
       icon?: string;
       tag?: string;
       requireInteraction?: boolean;
-      data?: any;
+      data?: Record<string, unknown>;
     } = {}
   ): Notification | null {
     if (!this.browserNotifications?.isGranted) {
@@ -221,4 +219,3 @@ class NotificationService {
 
 // Export singleton instance
 export const notificationService = NotificationService.getInstance();
-

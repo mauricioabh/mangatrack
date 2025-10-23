@@ -18,7 +18,7 @@ interface BrowserNotificationOptions {
   tag?: string;
   requireInteraction?: boolean;
   silent?: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export function useBrowserNotifications() {
@@ -34,7 +34,8 @@ export function useBrowserNotifications() {
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setPermission({
-        permission: Notification.permission,
+        permission:
+          Notification.permission as unknown as NotificationPermission,
         isSupported: true,
         isGranted: Notification.permission === "granted",
         isDenied: Notification.permission === "denied",
@@ -57,7 +58,7 @@ export function useBrowserNotifications() {
     try {
       const result = await Notification.requestPermission();
       setPermission({
-        permission: result,
+        permission: result as unknown as NotificationPermission,
         isSupported: true,
         isGranted: result === "granted",
         isDenied: result === "denied",
@@ -153,4 +154,3 @@ export function useBrowserNotifications() {
     showSystemNotification,
   };
 }
-

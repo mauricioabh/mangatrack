@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sendTestEmail } from "@/lib/email";
-import { aj } from "@/lib/arcjet";
-
 /**
  * @swagger
  * /api/test-email:
@@ -29,17 +27,7 @@ import { aj } from "@/lib/arcjet";
  *       500:
  *         description: Internal server error
  */
-export async function POST(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
+export async function POST() {
   try {
     const user = await getCurrentUser();
 

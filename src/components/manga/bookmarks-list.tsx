@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +59,7 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
     if (initialBookmarks.length === 0) {
       fetchBookmarks();
     }
-  }, []);
+  }, [initialBookmarks.length]);
 
   if (loading) {
     return (
@@ -101,9 +102,11 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
               >
                 <div className="w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0">
                   {bookmark.manga.coverImage && (
-                    <img
+                    <Image
                       src={bookmark.manga.coverImage}
                       alt={bookmark.manga.title}
+                      width={64}
+                      height={80}
                       className="w-full h-full object-cover rounded"
                     />
                   )}

@@ -1,19 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ajStrict } from "@/lib/arcjet";
 
-export async function DELETE(request: NextRequest) {
-  // Apply strict Arcjet protection for account deletion
-  const decision = await ajStrict.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
+export async function DELETE() {
   try {
     const user = await getCurrentUser();
 

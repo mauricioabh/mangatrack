@@ -1,15 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getCurrentUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Settings,
-  RotateCcw,
-} from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, ArrowRight, BookOpen, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,20 +13,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { notFound } from "next/navigation";
 
 interface ReaderPageProps {
-  params: {
+  params: Promise<{
     chapterId: string;
-  };
+  }>;
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  chapterNumber: number;
+  pages: string[];
+}
+
+interface Manga {
+  id: string;
+  title: string;
+  slug: string;
 }
 
 export default function ReaderPage({ params }: ReaderPageProps) {
-  const [user, setUser] = useState(null);
-  const [chapter, setChapter] = useState(null);
-  const [manga, setManga] = useState(null);
-  const [chapters, setChapters] = useState([]);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [manga, setManga] = useState<Manga | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [readingMode, setReadingMode] = useState("vertical"); // vertical, horizontal
@@ -71,6 +74,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   }, [params]);
 
   const handlePageChange = (direction: "prev" | "next") => {
+    if (!chapter) return;
+
     if (direction === "prev" && currentPage > 0) {
       setCurrentPage(currentPage - 1);
     } else if (direction === "next" && currentPage < chapter.pages.length - 1) {
@@ -79,6 +84,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   };
 
   const handleChapterChange = (direction: "prev" | "next") => {
+    if (!chapter) return;
+
     const currentIndex = chapters.findIndex((c) => c.id === chapter.id);
 
     if (direction === "prev" && currentIndex > 0) {
@@ -90,31 +97,31 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     }
   };
 
-  const markAsRead = async () => {
-    if (!user || !chapter) return;
-
-    try {
-      await fetch("/api/reading-history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chapterId: chapter.id,
-          mangaId: manga.id,
-        }),
-      });
-    } catch (error) {
-      console.error("Error marking as read:", error);
-    }
-  };
-
   // Auto-mark as read when reaching the end
   useEffect(() => {
+    const markAsRead = async () => {
+      if (!chapter) return;
+
+      try {
+        await fetch("/api/reading-history", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chapterId: chapter.id,
+            mangaId: manga?.id,
+          }),
+        });
+      } catch (error) {
+        console.error("Error marking as read:", error);
+      }
+    };
+
     if (chapter && currentPage === chapter.pages.length - 1) {
       markAsRead();
     }
-  }, [currentPage, chapter]);
+  }, [currentPage, chapter, manga?.id]);
 
   if (loading) {
     return (
@@ -134,12 +141,35 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <h1 className="text-2xl font-bold mb-4">Chapter Not Found</h1>
           <p className="text-gray-400 mb-6">
-            The chapter you're looking for doesn't exist or has been removed.
+            The chapter you&apos;re looking for doesn&apos;t exist or has been
+            removed.
           </p>
           <Link href="/search">
             <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               <BookOpen className="h-4 w-4 mr-2" />
               Browse Manga
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!chapter || !manga) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <BookOpen className="h-12 w-12 mx-auto mb-4" />
+          <p className="text-gray-400 mb-6">
+            The chapter you&apos;re looking for doesn&apos;t exist or has been
+            removed.
+          </p>
+          <Link href="/dashboard">
+            <Button
+              variant="outline"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+            >
+              Back to Dashboard
             </Button>
           </Link>
         </div>
@@ -234,17 +264,19 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         {readingMode === "vertical" ? (
           // Vertical Reading Mode
           <div className="max-w-4xl mx-auto px-4 py-8">
-            {chapter.pages.map((page, index) => (
+            {chapter.pages.map((page: string, index: number) => (
               <div key={index} className="mb-4">
-                <img
+                <Image
                   src={page}
                   alt={`Page ${index + 1}`}
+                  width={800}
+                  height={1200}
                   className={`w-full ${
                     imageFit === "width"
                       ? "h-auto"
                       : imageFit === "height"
-                      ? "h-screen object-contain"
-                      : "h-auto"
+                        ? "h-screen object-contain"
+                        : "h-auto"
                   }`}
                   loading="lazy"
                 />
@@ -256,15 +288,17 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           <div className="h-screen flex items-center justify-center">
             <div className="relative w-full h-full flex items-center justify-center">
               {chapter.pages.length > 0 && (
-                <img
+                <Image
                   src={chapter.pages[currentPage]}
                   alt={`Page ${currentPage + 1}`}
+                  width={800}
+                  height={1200}
                   className={`max-w-full max-h-full ${
                     imageFit === "width"
                       ? "w-full h-auto"
                       : imageFit === "height"
-                      ? "h-full w-auto"
-                      : "max-w-full max-h-full"
+                        ? "h-full w-auto"
+                        : "max-w-full max-h-full"
                   }`}
                 />
               )}
@@ -358,8 +392,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             <CardContent className="p-6 text-center">
               <h3 className="text-xl font-semibold mb-4">Chapter Complete!</h3>
               <p className="text-gray-300 mb-6">
-                You've finished reading this chapter. What would you like to do
-                next?
+                You&apos;ve finished reading this chapter. What would you like
+                to do next?
               </p>
               <div className="flex flex-col space-y-3">
                 {hasNextChapter && (

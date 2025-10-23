@@ -6,16 +6,8 @@ config({ path: ".env.local" });
 
 const prisma = new PrismaClient();
 
-// Your existing user data
-const existingUser = {
-  id: "cmgpytum30001u51s9per371e",
-  clerkId: "user_342PSFRYWYtTQgOsetc8Jdi4FBU",
-  email: "mauricioabh@gmail.com",
-  name: "Mauricio Barragán Huerta",
-  avatar:
-    "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zNDJQU0lUOXdCTVB2WkxDdTBUbmt1dkhGcksifQ",
-  tier: "BASIC" as const,
-};
+// Test user email from environment
+const testUserEmail = process.env.TEST_USER_EMAIL!;
 
 // Mock manga data (same as in MSW handlers)
 const mockMangas = [
@@ -203,14 +195,14 @@ async function main() {
   console.log("🌱 Starting database seed...");
 
   try {
-    // Verify the user exists
+    // Find the user by email from environment variable
     const user = await prisma.user.findUnique({
-      where: { id: existingUser.id },
+      where: { email: testUserEmail },
     });
 
     if (!user) {
       console.error(
-        "❌ User not found in database. Please make sure the user exists."
+        `❌ User with email ${testUserEmail} not found in database. Please make sure the user exists.`
       );
       return;
     }
@@ -220,13 +212,13 @@ async function main() {
     // Clear existing data for this user
     console.log("🧹 Cleaning existing data...");
     await prisma.readingHistory.deleteMany({
-      where: { userId: existingUser.id },
+      where: { userId: user.id },
     });
     await prisma.userManga.deleteMany({
-      where: { userId: existingUser.id },
+      where: { userId: user.id },
     });
     await prisma.notification.deleteMany({
-      where: { userId: existingUser.id },
+      where: { userId: user.id },
     });
 
     // Create mangas and chapters
@@ -269,7 +261,7 @@ async function main() {
       if (manga) {
         await prisma.userManga.create({
           data: {
-            userId: existingUser.id,
+            userId: user.id,
             mangaId: manga.id,
           },
         });
@@ -289,7 +281,7 @@ async function main() {
       for (const chapter of firstTwoChapters) {
         await prisma.readingHistory.create({
           data: {
-            userId: existingUser.id,
+            userId: user.id,
             mangaId: onePiece.id,
             chapterId: chapter.id,
             readAt: new Date(
@@ -336,7 +328,7 @@ async function main() {
       if (notification.mangaId) {
         await prisma.notification.create({
           data: {
-            userId: existingUser.id,
+            userId: user.id,
             type: notification.type,
             title: notification.title,
             message: notification.message,

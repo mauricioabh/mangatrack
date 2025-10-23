@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { aj } from "@/lib/arcjet";
 
 interface MangaRouteProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: MangaRouteProps) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
+  const { slug } = await params;
 
   try {
     const user = await getCurrentUser();
@@ -30,8 +21,6 @@ export async function GET(request: NextRequest, { params }: MangaRouteProps) {
       );
     }
 
-    // Await params before using
-    const { slug } = await params;
     console.log("Fetching manga with slug:", slug);
 
     // Get manga by slug with chapters
@@ -68,10 +57,16 @@ export async function GET(request: NextRequest, { params }: MangaRouteProps) {
       })),
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: transformedManga,
     });
+
+    // Add caching headers for manga data
+    response.headers.set("Cache-Control", "public, max-age=1800"); // 30 minutes
+    response.headers.set("ETag", `"manga-${manga.id}-${manga.updatedAt}"`);
+
+    return response;
   } catch (error) {
     console.error("Error fetching manga:", error);
     return NextResponse.json(

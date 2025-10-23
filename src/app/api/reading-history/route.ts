@@ -2,20 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { chapterReadSchema } from "@/lib/validations";
-import { aj } from "@/lib/arcjet";
-
 export async function POST(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -73,17 +61,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -96,7 +74,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mangaId = searchParams.get("mangaId");
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       userId: user.id,
     };
 

@@ -2,21 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { mangaBookmarkSchema } from "@/lib/validations";
-import { aj } from "@/lib/arcjet";
-
 // GET - Check if manga is bookmarked
 export async function GET(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -124,17 +112,7 @@ export async function GET(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function POST(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -274,17 +252,7 @@ export async function POST(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function DELETE(request: NextRequest) {
-  // Apply Arcjet protection
-  const decision = await aj.protect(request);
-
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { success: false, error: "Request blocked by security policy" },
-      { status: 403 }
-    );
-  }
-
-  try {
+try {
     const user = await getCurrentUser();
 
     if (!user) {
