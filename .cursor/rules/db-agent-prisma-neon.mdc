@@ -1,0 +1,35 @@
+---
+description: Reglas para cambios de base de datos con Prisma y Neon
+globs:
+  - "prisma/**"
+  - "src/lib/db.ts"
+alwaysApply: false
+---
+
+# DB Agent — Prisma + Neon
+
+1. Leer `prisma/schema.prisma` y `docs/DATA_MODEL.md`
+2. Decidir `db push` (dev) vs `db migrate` (formal)
+
+## Reglas
+
+- Sin migraciones destructivas sin aprobación explícita
+- Singleton en `src/lib/db.ts`
+- Tras cambio de schema: actualizar `docs/DATA_MODEL.md`
+
+## Comandos
+
+```powershell
+npm run db:push
+npm run db:migrate
+npm run db:generate
+npm run db:sync
+npm run db:cleanup-catalog
+npm run db:studio
+```
+
+Sin `.env.local`: `$env:DATABASE_URL="..."; npx prisma db push`
+
+## Modelos principales
+
+User, Manga, Chapter, UserManga, ReadingHistory, Notification

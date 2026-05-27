@@ -1,0 +1,21 @@
+---
+description: Reglas para comandos de terminal en Windows PowerShell
+globs:
+alwaysApply: true
+---
+
+# PowerShell — Windows
+
+- Usar `;` como separador, **nunca `&&`**
+- `Set-Location` / `cd` para directorios
+- `$env:VAR="valor"` para variables de sesión
+- No asumir bash (`grep`, `export`, etc.)
+- Preferir `npm run <script>` del `package.json`
+
+## Evitar terminales colgadas
+
+- **`curl` en PowerShell es alias de `Invoke-WebRequest`**, no curl de Linux. Para HTTP rápido usar `curl.exe` (con `-m 30`) o `Invoke-RestMethod -TimeoutSec 30`.
+- No hacer `curl … | Select-Object -First 1` sobre JSON grande: PowerShell puede seguir descargando todo el body aunque solo muestres una línea.
+- **`npx tsx -e` con `await` en el top-level** falla o cuelga; envolver en IIFE: `npx tsx -e "(async () => { ... })()"`
+- Probar MangaDex / lib del repo: script en `scripts/` o `npx tsx scripts/...`, no one-liners largos en `-e`.
+- Comandos de red: siempre timeout explícito; si el agente supera el tiempo de espera, cerrar la terminal o matar el proceso en lugar de dejarla abierta.

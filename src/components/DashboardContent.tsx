@@ -12,7 +12,6 @@ import Image from "next/image";
 interface Manga {
   id: string;
   title: string;
-  slug: string;
   author: string;
   description: string;
   coverImage: string;
@@ -30,7 +29,8 @@ interface Bookmark {
   id: string;
   userId: string;
   mangaId: string;
-  manga: Manga;
+  mangaDexId: string;
+  manga: Manga | null;
   createdAt: string;
 }
 
@@ -242,7 +242,10 @@ export default function DashboardContent() {
 
           {bookmarks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {bookmarks.slice(0, 6).map((bookmark) => (
+              {bookmarks.slice(0, 6).map((bookmark) => {
+                if (!bookmark.manga) return null;
+                const manga = bookmark.manga;
+                return (
                 <Card
                   key={bookmark.id}
                   className="hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20"
@@ -250,10 +253,10 @@ export default function DashboardContent() {
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0">
-                        {bookmark.manga.coverImage && (
+                        {manga.coverImage && (
                           <Image
-                            src={bookmark.manga.coverImage}
-                            alt={bookmark.manga.title}
+                            src={manga.coverImage}
+                            alt={manga.title}
                             width={64}
                             height={80}
                             className="w-full h-full object-cover rounded"
@@ -262,21 +265,18 @@ export default function DashboardContent() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                          {bookmark.manga.title}
+                          {manga.title}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          by {bookmark.manga.author}
+                          by {manga.author}
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
                           <Badge variant="secondary" className="text-xs">
-                            {bookmark.manga.status}
+                            {manga.status}
                           </Badge>
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
-                            {bookmark.manga.chapters.length} chapters
-                          </span>
                         </div>
                       </div>
-                      <Link href={`/manga/${bookmark.manga.slug}`}>
+                      <Link href={`/manga/${manga.id}`}>
                         <Button size="sm" variant="outline">
                           Read
                         </Button>
@@ -284,7 +284,8 @@ export default function DashboardContent() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <Card className="border-dashed border-2 border-gray-300 dark:border-gray-600">

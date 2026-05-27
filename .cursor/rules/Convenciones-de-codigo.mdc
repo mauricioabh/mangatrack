@@ -1,0 +1,52 @@
+---
+description: Convenciones de código para MangaTrack
+globs:
+alwaysApply: true
+---
+
+# Convenciones de código
+
+## TypeScript
+
+- **Strict mode** — no usar `any` sin justificación
+- Tipos de dominio desde Prisma; evitar duplicar modelos a mano
+- Exhaustive switch para unions/enums (`typescript-exhaustive-switch`)
+- Imports al top del archivo (`no-inline-imports`)
+
+## Componentes
+
+- **Server Components** por defecto; `"use client"` solo con estado/efectos/eventos
+- Archivos: `kebab-case.tsx`; componentes: `PascalCase`
+- UI en `src/components/ui/`; lógica en `src/lib/`
+
+## APIs
+
+- Autenticación: `getCurrentUser()` / helpers en `src/lib/auth.ts` en rutas protegidas
+- Validar body/query con **Zod** (`src/lib/validations.ts`)
+- Webhooks: verificar firma Clerk/Stripe antes de procesar
+- Respuestas JSON consistentes: `{ success, data?, error? }` donde ya aplique el patrón
+
+## Estilos
+
+- **Tailwind v4** + `cn()` de `src/lib/utils.ts`
+- Tokens de tema; evitar colores hardcodeados
+
+## Guardrails
+
+- No secretos en código
+- No editar `.env.local` — documentar en `.env.example` + `docs/ENV.md`
+- Pedir aprobación antes de: migraciones destructivas, cambios grandes en `prisma/schema.prisma`, `src/middleware.ts`, `src/lib/stripe.ts`
+
+## Documentación — obligatorio tras implementar
+
+| Cambio | Actualizar |
+|--------|------------|
+| `prisma/schema.prisma` | `docs/DATA_MODEL.md` |
+| Nueva env | `.env.example` + `docs/ENV.md` |
+| API nueva o contrato | `README.md` / `SETUP.md` |
+| Ingest / fuente manga | `docs/MANGA_SOURCE.md` |
+| Fase completada | `docs/PHASES.md` |
+| Dep significativa | `docs/TECH_STACK.md` |
+| Nuevo command Cursor | `docs/CONTRIBUTING.md` |
+
+Correr `/post-implementation` antes de commit.

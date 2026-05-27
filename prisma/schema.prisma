@@ -19,87 +19,68 @@ model User {
   emailNotifications Boolean          @default(true)
   notifications      Notification[]
   readingHistory     ReadingHistory[]
-  bookmarks          UserManga[]
+  favorites          UserFavorite[]
+  pushTokens         UserPushToken[]
 
   @@map("users")
 }
 
-model Manga {
-  id              String           @id @default(cuid())
-  title           String
-  slug            String           @unique
-  description     String?
-  coverImage      String?
-  backgroundImage String?
-  status          MangaStatus      @default(ONGOING)
-  genres          String[]
-  author          String?
-  artist          String?
-  sourceUrl       String?
-  sourceId        String?          @unique
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  chapters        Chapter[]
-  readingHistory  ReadingHistory[]
-  bookmarks       UserManga[]
+model UserFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  mangaDexId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("mangas")
+  @@unique([userId, mangaDexId])
+  @@index([mangaDexId])
+  @@index([userId, createdAt])
+  @@map("user_favorites")
 }
 
-model Chapter {
-  id             String           @id @default(cuid())
-  mangaId        String
-  title          String
-  chapterNumber  Float
-  pages          String[]
-  sourceUrl      String?
-  sourceId       String?          @unique
-  publishedAt    DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  manga          Manga            @relation(fields: [mangaId], references: [id], onDelete: Cascade)
-  readingHistory ReadingHistory[]
-
-  @@map("chapters")
-}
-
-model UserManga {
-  id        String   @id @default(cuid())
+model UserPushToken {
+  id        String           @id @default(cuid())
   userId    String
-  mangaId   String
-  createdAt DateTime @default(now())
-  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  platform  PushTokenPlatform @default(WEB)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, mangaId])
-  @@map("user_mangas")
+  @@unique([userId, token])
+  @@index([userId])
+  @@map("user_push_tokens")
+}
+
+enum PushTokenPlatform {
+  WEB
+  ANDROID
 }
 
 model ReadingHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  mangaId   String
-  chapterId String
-  readAt    DateTime @default(now())
-  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String
+  mangaDexId    String
+  chapterDexId  String
+  readAt        DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, chapterId])
+  @@unique([userId, chapterDexId])
+  @@index([userId, mangaDexId])
   @@map("reading_history")
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  mangaId   String?
-  chapterId String?
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  message      String
+  mangaDexId   String?
+  chapterDexId String?
+  read         Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
@@ -107,13 +88,6 @@ model Notification {
 enum UserTier {
   BASIC
   PREMIUM
-}
-
-enum MangaStatus {
-  ONGOING
-  COMPLETED
-  HIATUS
-  CANCELLED
 }
 
 enum NotificationType {

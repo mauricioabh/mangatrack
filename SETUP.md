@@ -1,5 +1,7 @@
 # MangaTrack Setup Guide
 
+> Documentación extendida: [AGENTS.md](./AGENTS.md), carpeta [docs/](./docs/), reglas en `.cursor/rules/`.
+
 Complete setup guide for the MangaTrack application with authentication, email notifications, and premium features.
 
 ## 🚀 Quick Start
@@ -7,7 +9,7 @@ Complete setup guide for the MangaTrack application with authentication, email n
 1. **Copy environment variables**
 
    ```bash
-   cp env.template .env.local
+   cp .env.example .env.local
    ```
 
 2. **Fill in your environment variables in `.env.local`**
@@ -20,8 +22,8 @@ Complete setup guide for the MangaTrack application with authentication, email n
 
    ```bash
    npm run db:generate
-   npm run db:push
-   npm run db:seed
+   npm run db:sync
+   npm run db:cleanup-catalog
    ```
 
 4. **Start the development server**
@@ -76,11 +78,10 @@ Complete setup guide for the MangaTrack application with authentication, email n
 ### 🗄️ **Database & Data Management**
 
 - ✅ Prisma ORM with PostgreSQL
-- ✅ Complete schema for users, manga, chapters, bookmarks, reading history
+- ✅ Neon schema for users, bookmarks, reading history, notifications
+- ✅ Catalog (manga/chapters) from MangaDex API — not stored in PostgreSQL
 - ✅ User tier system with limits
 - ✅ Notification system with email preferences
-- ✅ Database seeding with sample data
-- ✅ Mock data system for development
 
 ### 🎨 **UI Components & Design**
 
@@ -231,15 +232,10 @@ npm run build        # Build for production
 npm run start        # Start production server
 
 # Database
-npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema to database
-npm run db:seed      # Seed database with sample data
-npm run db:studio    # Open Prisma Studio
-
-# Testing
-npm run test         # Run tests
-npm run test:watch   # Run tests in watch mode
-npm run test:coverage # Run tests with coverage
+npm run db:generate       # Generate Prisma client
+npm run db:sync           # Push schema to Neon (.env.local)
+npm run db:cleanup-catalog # Drop legacy mangas/chapters tables if any
+npm run db:studio         # Open Prisma Studio
 
 # Code Quality
 npm run lint         # Run ESLint

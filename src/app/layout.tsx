@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Clerk + env-dependent UI: avoid static prerender with placeholder keys at build time. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "MangaTrack - Discover, Read & Track Manga",
   description:

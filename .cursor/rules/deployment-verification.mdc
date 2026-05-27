@@ -1,0 +1,22 @@
+---
+description: Verificar build y deploy Vercel tras cambios
+globs:
+alwaysApply: false
+---
+
+# Verificación de deployment
+
+## Antes del push
+
+```powershell
+npm run typecheck
+npm run lint
+npm run build
+```
+
+## Después del push (si despliegas a Vercel)
+
+1. `vercel ls` — último deployment **● Ready**
+2. Probar `NEXT_PUBLIC_APP_URL` o URL de producción
+
+No dar por cerrada una tarea de deploy sin build local exitoso.

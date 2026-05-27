@@ -30,7 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
-import { NotificationSettings } from "@/components/NotificationSettings";
+import { DeviceNotificationSettings } from "@/components/DeviceNotificationSettings";
 // Cache removed - using regular fetch for fresh data
 
 interface UserData {
@@ -182,7 +182,7 @@ export default function SettingsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          notifications: newNotifications,
+          emailNotifications: newNotifications,
         }),
       });
 
@@ -484,8 +484,11 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Browser Notifications Settings */}
-              <NotificationSettings />
+              <DeviceNotificationSettings />
+              <p className="text-sm text-muted-foreground px-1">
+                Email notifications are separate. In-app alerts also appear under
+                the bell icon when you open the app.
+              </p>
             </TabsContent>
 
             {/* Billing Tab */}

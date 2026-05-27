@@ -1,0 +1,38 @@
+---
+description: Convenciones de Git y ramas para MangaTrack
+globs:
+alwaysApply: true
+---
+
+# Convenciones de Git
+
+## Ramas
+
+- `main` — producción estable
+- `dev` — desarrollo (si se usa)
+- `feat/<nombre>` — funcionalidades
+- `fix/<nombre>` — bugs
+- `db/<nombre>` — schema Prisma
+- `docs/<nombre>` — solo documentación
+- `ci/<nombre>` — workflows
+
+## Commits (Conventional Commits)
+
+`tipo(scope): descripción`
+
+Tipos: `feat`, `fix`, `refactor`, `style`, `db`, `chore`, `docs`, `test`, `ci`
+
+Ejemplos:
+
+```
+feat(reader): add horizontal scroll mode
+fix(bookmark): enforce basic tier limit
+db: add index on manga slug
+docs: add ENV.md for Stripe variables
+```
+
+## Pull Requests
+
+- Descripción + cómo probar
+- CI verde antes de merge
+- Actualizar docs según tabla en Convenciones-de-codigo

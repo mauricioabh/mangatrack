@@ -1,0 +1,63 @@
+---
+description: Contexto del proyecto MangaTrack — tracker y lector de manga
+globs:
+alwaysApply: true
+---
+
+# MangaTrack
+
+App para **seguir manga**, **marcar favoritos**, **leer capítulos** y **recibir notificaciones**, con tiers Basic/Premium vía Stripe.
+
+## Stack
+
+- **Next.js 15** (App Router) — `src/app/`
+- **Clerk** — autenticación (`src/middleware.ts`)
+- **Prisma 6** + **Neon (PostgreSQL)** — `prisma/schema.prisma`, `src/lib/db.ts`
+- **Stripe** — premium (`src/lib/stripe.ts`, webhooks)
+- **Resend** — email (`src/lib/email.ts`)
+- **Playwright** — E2E (`tests/`)
+- **Tailwind v4** + **shadcn** — `src/components/ui/`
+
+## Estructura
+
+```
+src/
+  app/
+    api/
+      manga/           — search, [mangaId], bookmark(s)
+      chapters/        — [chapterId]
+      reading-history/
+      notifications/
+      stripe/          — checkout, portal, price-ids
+      webhooks/        — clerk, stripe
+      user/            — profile, preferences, delete
+    dashboard/         — biblioteca usuario
+    search/            — búsqueda
+    manga/[mangaId]/   — detalle
+    reader/[chapterId]/ — lector
+    settings/
+    sign-in/ sign-up/
+  components/          — UI + manga + DevTools
+  lib/                 — auth, db, stripe, email, validations
+  middleware.ts        — Clerk: rutas públicas vs protegidas
+prisma/
+  schema.prisma
+  cleanup-legacy-catalog.sql — drop tablas mangas/chapters si quedaron
+```
+
+## Tiers
+
+- `BASIC` — bookmarks limitados (50)
+- `PREMIUM` — bookmarks ilimitados (lógica en API bookmark)
+
+## Variables de entorno
+
+Ver `docs/ENV.md` y `.env.example`.
+
+## Documentación
+
+Ver `docs/` y `AGENTS.md`.
+
+## Pendiente
+
+Ingest desde `MANGA_FEELING_BASE_URL` — ver `docs/MANGA_SOURCE.md`.

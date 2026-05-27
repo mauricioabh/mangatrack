@@ -1,0 +1,18 @@
+schema: spec-driven
+
+context: |
+  MangaTrack: Next.js 15 App Router manga tracker and reader.
+  Stack: Clerk auth, Prisma 6 + Neon PostgreSQL, Stripe premium tiers,
+  Resend email, Playwright E2E, Tailwind v4 + shadcn.
+  Content source planned: MangaFeeling (MANGA_FEELING_BASE_URL) — not implemented;
+  current data from prisma/seed mock.
+  Conventions: PowerShell on Windows, Conventional Commits, update docs/ when
+  changing schema (DATA_MODEL.md), env (ENV.md + .env.example), or APIs.
+  Sensitive files: middleware.ts, lib/stripe.ts, lib/email.ts, prisma/schema.
+
+rules:
+  proposal:
+    - Include non-goals and risks (scraping/legal for external manga source)
+  tasks:
+    - Break into chunks testable with npm run typecheck and lint
+    - Note doc updates required per Convenciones-de-codigo.mdc

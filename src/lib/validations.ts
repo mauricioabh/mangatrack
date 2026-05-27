@@ -1,27 +1,7 @@
 import { z } from "zod";
 
-/**
- * Validation schemas for MangaTrack API
- *
- * This module contains Zod validation schemas for all API endpoints,
- * ensuring type safety and data validation throughout the application.
- *
- * @see https://zod.dev/
- */
+const uuidSchema = z.string().uuid("Invalid UUID");
 
-// User validation schemas
-
-/**
- * Schema for updating user profile information
- *
- * @example
- * ```typescript
- * const userData = userUpdateSchema.parse({
- *   name: "John Doe",
- *   avatar: "https://example.com/avatar.jpg"
- * });
- * ```
- */
 export const userUpdateSchema = z.object({
   name: z
     .string()
@@ -36,7 +16,6 @@ export const userPreferencesSchema = z.object({
   emailNotifications: z.boolean(),
 });
 
-// Manga validation schemas
 export const mangaSearchSchema = z.object({
   query: z.string().optional(),
   page: z.number().int().positive().default(1),
@@ -46,22 +25,32 @@ export const mangaSearchSchema = z.object({
 });
 
 export const mangaBookmarkSchema = z.object({
-  mangaId: z.string().cuid("Invalid manga ID"),
+  mangaId: uuidSchema,
 });
 
-// Chapter validation schemas
+export const pushTokenPlatformSchema = z.enum(["WEB", "ANDROID"]);
+
+export const pushTokenSchema = z.object({
+  token: z.string().min(1, "FCM token is required").max(4096),
+  platform: pushTokenPlatformSchema.optional().default("WEB"),
+});
+
+export const stripeCheckoutSchema = z.object({
+  priceId: z.string().min(1, "Price ID is required"),
+  successUrl: z.string().min(1).optional(),
+  cancelUrl: z.string().min(1).optional(),
+});
+
 export const chapterReadSchema = z.object({
-  chapterId: z.string().cuid("Invalid chapter ID"),
-  mangaId: z.string().cuid("Invalid manga ID"),
+  chapterId: uuidSchema,
+  mangaId: uuidSchema,
 });
 
-// Notification validation schemas
 export const notificationUpdateSchema = z.object({
   notificationId: z.string().cuid("Invalid notification ID"),
   read: z.boolean(),
 });
 
-// API response schemas
 export const apiResponseSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
@@ -69,7 +58,6 @@ export const apiResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-// Pagination schema
 export const paginationSchema = z.object({
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
@@ -80,6 +68,4 @@ export type UserPreferencesInput = z.infer<typeof userPreferencesSchema>;
 export type MangaSearchInput = z.infer<typeof mangaSearchSchema>;
 export type MangaBookmarkInput = z.infer<typeof mangaBookmarkSchema>;
 export type ChapterReadInput = z.infer<typeof chapterReadSchema>;
-export type NotificationUpdateInput = z.infer<typeof notificationUpdateSchema>;
-export type ApiResponse = z.infer<typeof apiResponseSchema>;
-export type PaginationInput = z.infer<typeof paginationSchema>;
+export type PushTokenInput = z.infer<typeof pushTokenSchema>;

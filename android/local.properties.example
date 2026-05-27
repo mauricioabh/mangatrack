@@ -1,0 +1,4 @@
+## Copy to android/local.properties (not committed)
+sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+mangatrack.apiBaseUrl=http://10.0.2.2:3000
+clerk.publishableKey=pk_test_YOUR_CLERK_PUBLISHABLE_KEY

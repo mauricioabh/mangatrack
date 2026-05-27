@@ -1,0 +1,15 @@
+---
+description: Cuándo usar Filesystem MCP
+globs: "**/*"
+alwaysApply: false
+---
+
+# Filesystem MCP
+
+Usar cuando:
+
+- Leer/escribir varios archivos (`read_multiple_files`, `write_file`)
+- Árbol de directorios (`directory_tree`) con `excludePatterns`: `node_modules`, `.git`, `.next`
+- Buscar por nombre en un **subdirectorio concreto** (no todo `C:\Projects` recursivo sin exclusiones)
+
+Para un solo archivo o código: Read, Grep, Glob nativos de Cursor.

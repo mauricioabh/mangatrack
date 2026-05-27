@@ -77,9 +77,21 @@ export async function GET() {
       },
     });
 
+    const data = notifications.map((n) => ({
+      id: n.id,
+      userId: n.userId,
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      mangaId: n.mangaDexId ?? undefined,
+      chapterId: n.chapterDexId ?? undefined,
+      read: n.read,
+      createdAt: n.createdAt,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: notifications,
+      data,
     });
   } catch (error) {
     console.error("Error fetching notifications:", error);

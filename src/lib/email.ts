@@ -1,6 +1,17 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | undefined;
+
+function getResend(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not set");
+  }
+  if (!resendClient) {
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
 
 export interface EmailNotificationData {
   to: string;
@@ -31,7 +42,7 @@ export async function sendNotificationEmail(
       return { success: false, error: "Email service not configured" };
     }
 
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: "MangaTrack <onboarding@resend.dev>", // Using Resend's default domain for testing
       to: [email],
       subject: data.notificationTitle,

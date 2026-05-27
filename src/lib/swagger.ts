@@ -88,191 +88,55 @@ const options: swaggerJsdoc.Options = {
           },
           required: ["id", "clerkId", "email", "tier", "createdAt", "updatedAt"],
         },
-        Manga: {
+        MangaListItem: {
           type: "object",
+          description: "Manga from MangaDex API (not stored in Neon)",
           properties: {
-            id: {
-              type: "string",
-              format: "cuid",
-              description: "Unique manga identifier",
-            },
-            title: {
-              type: "string",
-              description: "Manga title",
-            },
-            slug: {
-              type: "string",
-              description: "URL-friendly manga identifier",
-            },
-            description: {
-              type: "string",
-              nullable: true,
-              description: "Manga description/synopsis",
-            },
-            coverImage: {
-              type: "string",
-              format: "uri",
-              nullable: true,
-              description: "Manga cover image URL",
-            },
-            bannerImage: {
-              type: "string",
-              format: "uri",
-              nullable: true,
-              description: "Manga banner image URL",
-            },
+            id: { type: "string", format: "uuid", description: "MangaDex manga UUID" },
+            title: { type: "string" },
+            description: { type: "string", nullable: true },
+            coverImage: { type: "string", format: "uri", nullable: true },
             status: {
               type: "string",
               enum: ["ONGOING", "COMPLETED", "HIATUS", "CANCELLED"],
-              description: "Manga publication status",
             },
-            genres: {
-              type: "array",
-              items: {
-                type: "string",
-              },
-              description: "Manga genres",
-            },
-            author: {
-              type: "string",
-              nullable: true,
-              description: "Manga author",
-            },
-            artist: {
-              type: "string",
-              nullable: true,
-              description: "Manga artist",
-            },
-            releaseDate: {
-              type: "string",
-              format: "date",
-              nullable: true,
-              description: "Manga release date",
-            },
-            createdAt: {
-              type: "string",
-              format: "date-time",
-              description: "Manga creation timestamp",
-            },
-            updatedAt: {
-              type: "string",
-              format: "date-time",
-              description: "Manga last update timestamp",
-            },
+            genres: { type: "array", items: { type: "string" } },
+            author: { type: "string", nullable: true },
           },
-          required: ["id", "title", "slug", "status", "genres", "createdAt", "updatedAt"],
+          required: ["id", "title", "status", "genres"],
         },
-        Chapter: {
+        ChapterListItem: {
           type: "object",
+          description: "Chapter from MangaDex feed (not stored in Neon)",
           properties: {
-            id: {
-              type: "string",
-              format: "cuid",
-              description: "Unique chapter identifier",
-            },
-            mangaId: {
-              type: "string",
-              format: "cuid",
-              description: "Parent manga identifier",
-            },
-            chapterNumber: {
-              type: "number",
-              format: "float",
-              description: "Chapter number",
-            },
-            title: {
-              type: "string",
-              nullable: true,
-              description: "Chapter title",
-            },
-            pages: {
-              type: "array",
-              items: {
-                type: "string",
-                format: "uri",
-              },
-              description: "Chapter page URLs",
-            },
-            releaseDate: {
-              type: "string",
-              format: "date-time",
-              nullable: true,
-              description: "Chapter release date",
-            },
-            createdAt: {
-              type: "string",
-              format: "date-time",
-              description: "Chapter creation timestamp",
-            },
-            updatedAt: {
-              type: "string",
-              format: "date-time",
-              description: "Chapter last update timestamp",
-            },
+            id: { type: "string", format: "uuid", description: "MangaDex chapter UUID" },
+            mangaId: { type: "string", format: "uuid" },
+            chapterNumber: { type: "number" },
+            title: { type: "string" },
+            pages: { type: "integer", description: "Page count metadata" },
           },
-          required: ["id", "mangaId", "chapterNumber", "pages", "createdAt", "updatedAt"],
+          required: ["id", "mangaId", "chapterNumber", "title"],
         },
         UserManga: {
           type: "object",
           properties: {
-            id: {
-              type: "string",
-              format: "cuid",
-              description: "Unique bookmark identifier",
-            },
-            userId: {
-              type: "string",
-              format: "cuid",
-              description: "User identifier",
-            },
-            mangaId: {
-              type: "string",
-              format: "cuid",
-              description: "Manga identifier",
-            },
-            createdAt: {
-              type: "string",
-              format: "date-time",
-              description: "Bookmark creation timestamp",
-            },
-            updatedAt: {
-              type: "string",
-              format: "date-time",
-              description: "Bookmark last update timestamp",
-            },
+            id: { type: "string", format: "cuid" },
+            userId: { type: "string", format: "cuid" },
+            mangaDexId: { type: "string", format: "uuid" },
+            createdAt: { type: "string", format: "date-time" },
           },
-          required: ["id", "userId", "mangaId", "createdAt", "updatedAt"],
+          required: ["id", "userId", "mangaDexId", "createdAt"],
         },
         ReadingHistory: {
           type: "object",
           properties: {
-            id: {
-              type: "string",
-              format: "cuid",
-              description: "Unique reading history identifier",
-            },
-            userId: {
-              type: "string",
-              format: "cuid",
-              description: "User identifier",
-            },
-            mangaId: {
-              type: "string",
-              format: "cuid",
-              description: "Manga identifier",
-            },
-            chapterId: {
-              type: "string",
-              format: "cuid",
-              description: "Chapter identifier",
-            },
-            readAt: {
-              type: "string",
-              format: "date-time",
-              description: "Reading timestamp",
-            },
+            id: { type: "string", format: "cuid" },
+            userId: { type: "string", format: "cuid" },
+            mangaDexId: { type: "string", format: "uuid" },
+            chapterDexId: { type: "string", format: "uuid" },
+            readAt: { type: "string", format: "date-time" },
           },
-          required: ["id", "userId", "mangaId", "chapterId", "readAt"],
+          required: ["id", "userId", "mangaDexId", "chapterDexId", "readAt"],
         },
         Notification: {
           type: "object",
@@ -289,8 +153,20 @@ const options: swaggerJsdoc.Options = {
             },
             type: {
               type: "string",
-              enum: ["NEW_CHAPTER", "SYSTEM", "PROMOTION"],
+              enum: ["NEW_CHAPTER", "MANGA_UPDATE", "SYSTEM"],
               description: "Notification type",
+            },
+            mangaId: {
+              type: "string",
+              format: "uuid",
+              nullable: true,
+              description: "MangaDex manga UUID (API alias of mangaDexId)",
+            },
+            chapterId: {
+              type: "string",
+              format: "uuid",
+              nullable: true,
+              description: "MangaDex chapter UUID (API alias of chapterDexId)",
             },
             title: {
               type: "string",

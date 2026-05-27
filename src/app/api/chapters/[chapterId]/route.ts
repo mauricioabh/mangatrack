@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import {
+  buildChapterPageProxyPaths,
+  getChapterReaderPayload,
+  MangaDexError,
+} from "@/lib/mangadex";
 
 interface ChapterRouteProps {
   params: Promise<{
@@ -21,40 +25,38 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
       );
     }
 
-    // Get chapter with manga and all chapters
-    const chapter = await db.chapter.findUnique({
-      where: {
-        id: chapterId,
-      },
-      include: {
-        manga: true,
-      },
-    });
+    const payload = await getChapterReaderPayload(chapterId);
 
-    if (!chapter) {
+    if (!payload) {
       return NextResponse.json(
         { success: false, error: "Chapter not found" },
         { status: 404 }
       );
     }
 
-    // Get all chapters for this manga
-    const chapters = await db.chapter.findMany({
-      where: {
-        mangaId: chapter.mangaId,
-      },
-      orderBy: {
-        chapterNumber: "asc",
-      },
-    });
+    const proxyPages = buildChapterPageProxyPaths(
+      chapterId,
+      payload.chapter.pages.length
+    );
 
     return NextResponse.json({
       success: true,
-      chapter,
-      manga: chapter.manga,
-      chapters,
+      chapter: { ...payload.chapter, pages: proxyPages },
+      manga: { id: payload.manga.id, title: payload.manga.title },
+      chapters: payload.chapters.map((ch) => ({
+        id: ch.id,
+        title: ch.title,
+        chapterNumber: ch.chapterNumber,
+        pages: [] as string[],
+      })),
     });
   } catch (error) {
+    if (error instanceof MangaDexError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status === 404 ? 404 : 502 }
+      );
+    }
     console.error("Error fetching chapter:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch chapter" },

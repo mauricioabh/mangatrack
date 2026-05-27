@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { STRIPE_PRICE_IDS } from "@/lib/constants";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const user = await getCurrentUser();
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     return NextResponse.json({
@@ -20,7 +23,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching price IDs:", error);
     return NextResponse.json(
-      { error: "Failed to fetch price IDs" },
+      { success: false, error: "Failed to fetch price IDs" },
       { status: 500 }
     );
   }

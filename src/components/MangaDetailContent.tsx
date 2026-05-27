@@ -18,12 +18,14 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-// Cache removed - using regular fetch for fresh data
+import {
+  getChapterToRead,
+  getContinueReadingLabel,
+} from "@/lib/reading-progress";
 
 interface Manga {
   id: string;
   title: string;
-  slug: string;
   author: string;
   description: string;
   coverImage: string;
@@ -48,15 +50,19 @@ interface ApiResponse<T> {
 }
 
 interface MangaDetailContentProps {
-  slug: string;
+  mangaId: string;
 }
 
-export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
+export default function MangaDetailContent({
+  mangaId,
+}: MangaDetailContentProps) {
   const [manga, setManga] = useState<Manga | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
-  const [lastReadChapter, setLastReadChapter] = useState<number | null>(null);
+  const [readChapterIds, setReadChapterIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const [mangaLoading, setMangaLoading] = useState(true);
   const [metadataLoading, setMetadataLoading] = useState(true);
 
@@ -64,18 +70,22 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
     const fetchMangaData = async () => {
       try {
         // Fetch manga details first to get the manga ID
-        const mangaResponse = await fetch(`/api/manga/${slug}`);
-        const mangaData = await mangaResponse.json();
+        const mangaResponse = await fetch(`/api/manga/${mangaId}`);
+        const mangaData = (await mangaResponse.json()) as ApiResponse<Manga>;
 
-        const mangaApiResponse = mangaData as unknown as ApiResponse<Manga>;
-        if (mangaApiResponse.success && mangaApiResponse.data) {
-          setManga(mangaApiResponse.data);
+        if (!mangaResponse.ok) {
+          setError(mangaData.error ?? "Failed to load manga details");
+          return;
+        }
+
+        if (mangaData.success && mangaData.data) {
+          setManga(mangaData.data);
           setMangaLoading(false); // Manga data is loaded
 
           // Now make parallel calls for bookmark status and reading history
           const [bookmarkResponse, historyResponse] = await Promise.all([
-            fetch(`/api/manga/bookmark?mangaId=${mangaApiResponse.data.id}`),
-            fetch(`/api/reading-history?mangaId=${mangaApiResponse.data.id}`),
+            fetch(`/api/manga/bookmark?mangaId=${mangaData.data.id}`),
+            fetch(`/api/reading-history?mangaId=${mangaData.data.id}`),
           ]);
 
           const [bookmarkData, historyData] = await Promise.all([
@@ -91,25 +101,20 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
             bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked
           );
 
-          // Update reading history
           const historyApiResponse = historyData as unknown as ApiResponse<
-            Array<{ chapterNumber: number }>
+            Array<{ chapterDexId: string }>
           >;
-          if (
-            historyApiResponse.success &&
-            historyApiResponse.data &&
-            historyApiResponse.data.length > 0
-          ) {
-            const lastChapter = Math.max(
-              ...historyApiResponse.data.map((h) => h.chapterNumber)
+          if (historyApiResponse.success && historyApiResponse.data) {
+            setReadChapterIds(
+              new Set(
+                historyApiResponse.data.map((h) => h.chapterDexId)
+              )
             );
-            setLastReadChapter(lastChapter);
           }
 
           setMetadataLoading(false); // Metadata is loaded
         } else {
-          console.error("Manga API response:", mangaApiResponse);
-          setError(mangaApiResponse.error || "Manga not found");
+          setError(mangaData.error ?? "Manga not found");
         }
       } catch (err) {
         setError("Failed to load manga details");
@@ -121,7 +126,42 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
     };
 
     fetchMangaData();
-  }, [slug]);
+  }, [mangaId]);
+
+  useEffect(() => {
+    if (!manga?.id) return;
+
+    const refreshReadingHistory = async () => {
+      try {
+        const response = await fetch(
+          `/api/reading-history?mangaId=${manga.id}`
+        );
+        const historyData = (await response.json()) as ApiResponse<
+          Array<{ chapterDexId: string }>
+        >;
+        if (historyData.success && historyData.data) {
+          setReadChapterIds(
+            new Set(historyData.data.map((h) => h.chapterDexId))
+          );
+        }
+      } catch (err) {
+        console.error("Error refreshing reading history:", err);
+      }
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshReadingHistory();
+      }
+    };
+
+    window.addEventListener("focus", refreshReadingHistory);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", refreshReadingHistory);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [manga?.id]);
 
   const handleBookmarkToggle = async () => {
     if (!manga) return;
@@ -161,26 +201,9 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
   const handleStartReading = () => {
     if (!manga) return;
 
-    if (lastReadChapter) {
-      // Resume from last read chapter
-      const nextChapter = manga.chapters.find(
-        (c) => c.chapterNumber === lastReadChapter + 1
-      );
-      if (nextChapter) {
-        window.open(`/reader/${nextChapter.id}`, "_blank");
-      } else {
-        // Start from first chapter if no next chapter
-        const firstChapter = manga.chapters[0];
-        if (firstChapter) {
-          window.open(`/reader/${firstChapter.id}`, "_blank");
-        }
-      }
-    } else {
-      // Start from first chapter
-      const firstChapter = manga.chapters[0];
-      if (firstChapter) {
-        window.open(`/reader/${firstChapter.id}`, "_blank");
-      }
+    const target = getChapterToRead(manga.chapters, readChapterIds);
+    if (target) {
+      window.open(`/reader/${target.id}`, "_blank");
     }
   };
 
@@ -363,9 +386,7 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
                   ) : (
                     <>
                       <Play className="h-4 w-4 mr-2" />
-                      {lastReadChapter
-                        ? `Resume Chapter ${lastReadChapter + 1}`
-                        : "Start Reading"}
+                      {getContinueReadingLabel(manga.chapters, readChapterIds)}
                     </>
                   )}
                 </Button>
@@ -412,10 +433,12 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
           </h2>
 
           <div className="grid gap-4">
-            {manga.chapters.map((chapter) => (
+            {manga.chapters.map((chapter) => {
+              const isRead = readChapterIds.has(chapter.id);
+              return (
               <Card
                 key={chapter.id}
-                className="hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20"
+                className={`hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 ${isRead ? "opacity-80" : ""}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -432,11 +455,21 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">
+                        <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                           Chapter {chapter.chapterNumber}: {chapter.title}
+                          {isRead && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                            >
+                              Read
+                            </Badge>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {chapter.pages} pages
+                          {chapter.pages > 0
+                            ? `${chapter.pages} pages`
+                            : "Page count unavailable"}
                         </p>
                       </div>
                     </div>
@@ -446,12 +479,13 @@ export default function MangaDetailContent({ slug }: MangaDetailContentProps) {
                       className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95"
                     >
                       <BookOpen className="h-4 w-4 mr-2" />
-                      Read
+                      {isRead ? "Read again" : "Read"}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            );
+            })}
           </div>
         </div>
       </main>
