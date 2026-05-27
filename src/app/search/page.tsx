@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, BookOpen, Star, Eye, Heart } from "lucide-react";
+import { Search, BookOpen, Star, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,7 +27,6 @@ import { motion } from "framer-motion";
 interface Manga {
   id: string;
   title: string;
-  slug: string;
   description?: string;
   coverImage?: string;
   status: string;
@@ -324,7 +323,7 @@ export default function SearchPage() {
                 ? `Search Results for "${searchQuery}" (${mangas.length})`
                 : `Popular Manga (${mangas.length})`}
             </motion.h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div className="grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
               {mangas.map((manga, index) => (
                 <motion.div
                   key={manga.id}
@@ -337,10 +336,10 @@ export default function SearchPage() {
                     rotateY: 5,
                     transition: { duration: 0.3 },
                   }}
-                  className="group"
+                  className="group h-full"
                 >
                   <Card className="h-full overflow-hidden border-2 border-transparent bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 dark:from-gray-800 dark:via-blue-900/20 dark:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-blue-400/20 transition-all duration-500 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:via-purple-50 group-hover:to-pink-50 dark:group-hover:from-blue-900/30 dark:group-hover:via-purple-900/30 dark:group-hover:to-pink-900/30">
-                    <CardHeader className="pb-3">
+                    <CardHeader className="shrink-0 pb-3">
                       <div className="flex items-start space-x-4">
                         <motion.div
                           className="relative w-20 h-28 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-lg flex-shrink-0 overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300"
@@ -361,33 +360,28 @@ export default function SearchPage() {
                             initial={{ opacity: 0 }}
                             whileHover={{ opacity: 1 }}
                           />
-                          <motion.div
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                            whileHover={{ scale: 1.2 }}
-                          >
-                            <Heart className="h-4 w-4 text-white drop-shadow-lg" />
-                          </motion.div>
                         </motion.div>
                         <div className="flex-1 min-w-0">
                           <motion.div
                             whileHover={{ x: 5 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <CardTitle className="text-lg line-clamp-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-300 dark:group-hover:via-purple-300 dark:group-hover:to-pink-300 transition-all duration-300">
+                            <CardTitle className="min-h-[2.75rem] text-lg line-clamp-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-300 dark:group-hover:via-purple-300 dark:group-hover:to-pink-300 transition-all duration-300">
                               {manga.title}
                             </CardTitle>
                           </motion.div>
                           {manga.author && (
                             <motion.p
-                              className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center"
+                              className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex min-h-5 items-center line-clamp-1"
+                              title={`by ${manga.author}`}
                               whileHover={{ x: 5 }}
                               transition={{ duration: 0.2 }}
                             >
-                              <BookOpen className="h-3 w-3 mr-1 text-blue-500" />
-                              by {manga.author}
+                              <BookOpen className="mr-1 h-3 w-3 shrink-0 text-blue-500" />
+                              <span className="truncate">by {manga.author}</span>
                             </motion.p>
                           )}
-                          <div className="flex flex-wrap gap-1 mt-2">
+                          <motion.div className="mt-2 flex max-h-6 flex-wrap gap-1 overflow-hidden">
                             <motion.div
                               whileHover={{ scale: 1.1 }}
                               transition={{ duration: 0.2 }}
@@ -418,28 +412,28 @@ export default function SearchPage() {
                                   </Badge>
                                 </motion.div>
                               ))}
-                          </div>
+                          </motion.div>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      {manga.description && (
-                        <motion.div
-                          initial={{ opacity: 0.8 }}
-                          whileHover={{ opacity: 1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <CardDescription className="line-clamp-3 mb-4 text-gray-600 dark:text-gray-300">
-                            {manga.description}
-                          </CardDescription>
-                        </motion.div>
-                      )}
+                    <CardContent className="flex flex-1 flex-col pt-0">
                       <motion.div
+                        className="mb-4 min-h-[3.75rem]"
+                        initial={{ opacity: 0.8 }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <CardDescription className="line-clamp-3 text-gray-600 dark:text-gray-300">
+                          {manga.description ?? ""}
+                        </CardDescription>
+                      </motion.div>
+                      <motion.div
+                        className="mt-auto"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Link href={`/manga/${manga.slug}`}>
+                        <Link href={`/manga/${manga.id}`}>
                           <Button className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-1 active:scale-95">
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
@@ -450,7 +444,7 @@ export default function SearchPage() {
                   </Card>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
         )}
 

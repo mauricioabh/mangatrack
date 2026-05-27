@@ -1,0 +1,37 @@
+---
+description: IDs, URLs y convenciones del proyecto MangaTrack
+globs:
+alwaysApply: true
+---
+
+# MangaTrack — contexto de proyecto
+
+## Repo y deploy
+
+- Completar URL de GitHub y Vercel de producción cuando estén fijados en el README
+- Deploy target: **Vercel** (`vercel.json`)
+- Tras push: ver `deployment-verification.mdc` (`npm run build` + `vercel ls`)
+
+## Servicios
+
+| Servicio | Uso |
+|----------|-----|
+| **Neon** | `DATABASE_URL` — PostgreSQL |
+| **Clerk** | Auth + webhook usuario |
+| **Stripe** | Premium + webhook suscripción |
+| **Resend** | Emails de notificación |
+| **Sentry** | MCP en `.cursor/mcp.json` |
+
+## Env
+
+- Plantilla: `.env.example` → copiar a `.env.local`
+- Documentación: `docs/ENV.md`
+
+## Contenido
+
+- Fuente prevista: **MangaFeeling** (`MANGA_FEELING_BASE_URL`) — ver `docs/MANGA_SOURCE.md`
+- Catálogo: MangaDex API; Neon solo estado de usuario (sin seed)
+
+## Mantener actualizado
+
+Cambio de env, schema o URLs de deploy → actualizar este archivo, `docs/ENV.md` y `.env.example`.

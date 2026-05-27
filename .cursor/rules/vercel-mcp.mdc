@@ -1,0 +1,13 @@
+---
+description: Cuándo usar Vercel MCP
+globs: "**/*"
+alwaysApply: false
+---
+
+# Vercel MCP
+
+Usar para: listar deployments, logs de build, configurar env en proyecto Vercel.
+
+- Root del repo = app Next (no monorepo `apps/web`)
+- Variables: ver `docs/ENV.md`
+- Deploy manual opcional; pushes a `main` suelen auto-desplegar si el repo está conectado

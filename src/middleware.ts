@@ -8,12 +8,21 @@ const isProtectedRoute = createRouteMatcher([
   "/search(.*)",
   "/api/user(.*)",
   "/api/manga(.*)",
+  "/api/chapters(.*)",
   "/api/notifications(.*)",
   "/api/simulate-email(.*)",
   "/api/stripe(.*)",
 ]);
 
+const isPublicApiRoute = createRouteMatcher([
+  "/api/webhook(.*)",
+  "/api/inngest(.*)",
+]);
+
 export default clerkMiddleware((auth, req) => {
+  if (isPublicApiRoute(req)) {
+    return;
+  }
   if (isProtectedRoute(req)) {
     auth.protect();
   }

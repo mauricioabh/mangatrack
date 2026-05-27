@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Mail, Loader2, Wrench, Smartphone } from "lucide-react";
 import { toast } from "sonner";
+import { SAMPLE_MANGA_DEX_IDS } from "@/lib/mangadex/sample-ids";
 // Sentry removed
 
 export function DevToolsDropdown() {
@@ -29,7 +30,7 @@ export function DevToolsDropdown() {
     setIsLoading(true);
 
     try {
-      // For demo purposes, we'll use mock IDs
+      // MangaDex UUIDs for notification simulation
       const payload: Record<string, unknown> = {
         type,
         timestamp: new Date().toISOString(),
@@ -37,13 +38,17 @@ export function DevToolsDropdown() {
 
       // Add type-specific data
       if (type === "NEW_CHAPTER") {
-        const mockMangaId = "clx1234567890abcdef"; // One Piece from mock data
-        const mockChapterId = "chapter-1"; // First chapter
-        payload.mangaId = mockMangaId;
-        payload.chapterId = mockChapterId;
+        payload.mangaId = SAMPLE_MANGA_DEX_IDS.onePiece;
+        const chapterRes = await fetch(
+          `/api/manga/${SAMPLE_MANGA_DEX_IDS.onePiece}`
+        );
+        const chapterData = await chapterRes.json();
+        const firstChapter = chapterData?.data?.chapters?.[0];
+        if (firstChapter?.id) {
+          payload.chapterId = firstChapter.id;
+        }
       } else if (type === "MANGA_UPDATE") {
-        const mockMangaId = "clx1234567890abcdef";
-        payload.mangaId = mockMangaId;
+        payload.mangaId = SAMPLE_MANGA_DEX_IDS.onePiece;
       }
 
       const response = await fetch("/api/simulate-email-notification", {

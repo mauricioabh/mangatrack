@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { db } from "./db";
+import { getClerkUserId } from "./auth-request";
 
 /**
  * Get the current authenticated user from the database
@@ -21,13 +21,12 @@ import { db } from "./db";
  * ```
  */
 export async function getCurrentUser() {
-  const { userId } = await auth();
+  const userId = await getClerkUserId();
 
   if (!userId) {
     return null;
   }
 
-  // Get user from database
   const user = await db.user.findUnique({
     where: {
       clerkId: userId,

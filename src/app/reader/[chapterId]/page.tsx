@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { getChapterNeighbors } from "@/lib/mangadex/mappers";
 
 interface ReaderPageProps {
   params: Promise<{
@@ -30,7 +30,6 @@ interface Chapter {
 interface Manga {
   id: string;
   title: string;
-  slug: string;
 }
 
 export default function ReaderPage({ params }: ReaderPageProps) {
@@ -41,6 +40,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const [loading, setLoading] = useState(true);
   const [readingMode, setReadingMode] = useState("vertical"); // vertical, horizontal
   const [imageFit, setImageFit] = useState("width"); // width, height, original
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const markedChapterIdRef = useRef<string | null>(null);
+  const lastPageObserverRef = useRef<IntersectionObserver | null>(null);
+  const userEngagedRef = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,55 +76,130 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     fetchData();
   }, [params]);
 
+  useEffect(() => {
+    setShowCompleteModal(false);
+    markedChapterIdRef.current = null;
+    userEngagedRef.current = false;
+  }, [chapter?.id]);
+
+  useEffect(() => {
+    const engage = () => {
+      userEngagedRef.current = true;
+    };
+    window.addEventListener("scroll", engage, { passive: true });
+    window.addEventListener("wheel", engage, { passive: true });
+    window.addEventListener("touchstart", engage, { passive: true });
+    window.addEventListener("keydown", engage);
+    return () => {
+      window.removeEventListener("scroll", engage);
+      window.removeEventListener("wheel", engage);
+      window.removeEventListener("touchstart", engage);
+      window.removeEventListener("keydown", engage);
+    };
+  }, [chapter?.id]);
+
+  const markChapterAsRead = useCallback(
+    async (options?: { showCompletionModal?: boolean }) => {
+      if (!chapter || !manga?.id) return false;
+      if (markedChapterIdRef.current === chapter.id) {
+        if (options?.showCompletionModal) {
+          setShowCompleteModal(true);
+        }
+        return true;
+      }
+
+      markedChapterIdRef.current = chapter.id;
+
+      try {
+        const response = await fetch("/api/reading-history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chapterId: chapter.id,
+            mangaId: manga.id,
+          }),
+        });
+        if (!response.ok) {
+          markedChapterIdRef.current = null;
+          return false;
+        }
+        if (options?.showCompletionModal) {
+          setShowCompleteModal(true);
+        }
+        return true;
+      } catch (error) {
+        markedChapterIdRef.current = null;
+        console.error("Error marking as read:", error);
+        return false;
+      }
+    },
+    [chapter, manga?.id]
+  );
+
   const handlePageChange = (direction: "prev" | "next") => {
     if (!chapter) return;
 
     if (direction === "prev" && currentPage > 0) {
       setCurrentPage(currentPage - 1);
     } else if (direction === "next" && currentPage < chapter.pages.length - 1) {
-      setCurrentPage(currentPage + 1);
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      if (nextPage === chapter.pages.length - 1) {
+        userEngagedRef.current = true;
+        void markChapterAsRead({ showCompletionModal: true });
+      }
     }
   };
 
   const handleChapterChange = (direction: "prev" | "next") => {
     if (!chapter) return;
 
-    const currentIndex = chapters.findIndex((c) => c.id === chapter.id);
-
-    if (direction === "prev" && currentIndex > 0) {
-      const prevChapter = chapters[currentIndex - 1];
-      window.location.href = `/reader/${prevChapter.id}`;
-    } else if (direction === "next" && currentIndex < chapters.length - 1) {
-      const nextChapter = chapters[currentIndex + 1];
-      window.location.href = `/reader/${nextChapter.id}`;
-    }
-  };
-
-  // Auto-mark as read when reaching the end
-  useEffect(() => {
-    const markAsRead = async () => {
-      if (!chapter) return;
-
-      try {
-        await fetch("/api/reading-history", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chapterId: chapter.id,
-            mangaId: manga?.id,
-          }),
-        });
-      } catch (error) {
-        console.error("Error marking as read:", error);
+    const goNext = async () => {
+      if (direction === "next") {
+        userEngagedRef.current = true;
+        await markChapterAsRead({ showCompletionModal: false });
+      }
+      const { next, previous } = getChapterNeighbors(chapters, chapter.id);
+      const target = direction === "next" ? next : previous;
+      if (target) {
+        window.location.href = `/reader/${target.id}`;
       }
     };
 
-    if (chapter && currentPage === chapter.pages.length - 1) {
-      markAsRead();
+    void goNext();
+  };
+
+  useEffect(() => {
+    lastPageObserverRef.current?.disconnect();
+    lastPageObserverRef.current = null;
+
+    if (
+      readingMode !== "vertical" ||
+      !chapter ||
+      chapter.pages.length === 0
+    ) {
+      return;
     }
-  }, [currentPage, chapter, manga?.id]);
+
+    const lastPageEl = document.getElementById("reader-last-page");
+    if (!lastPageEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          userEngagedRef.current &&
+          entries.some((e) => e.isIntersecting && e.intersectionRatio >= 0.5)
+        ) {
+          void markChapterAsRead({ showCompletionModal: true });
+        }
+      },
+      { threshold: [0.5, 0.9] }
+    );
+    observer.observe(lastPageEl);
+    lastPageObserverRef.current = observer;
+
+    return () => observer.disconnect();
+  }, [readingMode, chapter, markChapterAsRead]);
 
   if (loading) {
     return (
@@ -177,9 +255,13 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     );
   }
 
-  const currentChapterIndex = chapters.findIndex((c) => c.id === chapter.id);
-  const hasPrevChapter = currentChapterIndex > 0;
-  const hasNextChapter = currentChapterIndex < chapters.length - 1;
+  const { next: nextChapter, previous: previousChapter } =
+    getChapterNeighbors(chapters, chapter.id);
+  const hasNextChapter = nextChapter !== null;
+  const hasPrevChapter = previousChapter !== null;
+
+  const chapterNavButtonClass =
+    "bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:hover:bg-gray-700/40 backdrop-blur-sm disabled:opacity-40 disabled:pointer-events-none";
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -188,7 +270,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href={`/manga/${manga.slug}`}>
+              <Link href={`/manga/${manga.id}`}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -208,7 +290,28 @@ export default function ReaderPage({ params }: ReaderPageProps) {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-wrap justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className={chapterNavButtonClass}
+                onClick={() => handleChapterChange("prev")}
+                disabled={!hasPrevChapter}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={chapterNavButtonClass}
+                onClick={() => handleChapterChange("next")}
+                disabled={!hasNextChapter}
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+
               <Select value={readingMode} onValueChange={setReadingMode}>
                 <SelectTrigger className="w-32 bg-black/50 border-gray-700 text-white">
                   <SelectValue />
@@ -265,12 +368,18 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           // Vertical Reading Mode
           <div className="max-w-4xl mx-auto px-4 py-8">
             {chapter.pages.map((page: string, index: number) => (
-              <div key={index} className="mb-4">
-                <Image
+              <div
+                key={index}
+                id={
+                  index === chapter.pages.length - 1
+                    ? "reader-last-page"
+                    : undefined
+                }
+                className="mb-4"
+              >
+                <img
                   src={page}
                   alt={`Page ${index + 1}`}
-                  width={800}
-                  height={1200}
                   className={`w-full ${
                     imageFit === "width"
                       ? "h-auto"
@@ -279,6 +388,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                         : "h-auto"
                   }`}
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
             ))}
@@ -287,12 +397,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           // Horizontal Reading Mode
           <div className="h-screen flex items-center justify-center">
             <div className="relative w-full h-full flex items-center justify-center">
-              {chapter.pages.length > 0 && (
-                <Image
+              {chapter.pages.length > 0 ? (
+                <img
                   src={chapter.pages[currentPage]}
                   alt={`Page ${currentPage + 1}`}
-                  width={800}
-                  height={1200}
                   className={`max-w-full max-h-full ${
                     imageFit === "width"
                       ? "w-full h-auto"
@@ -300,8 +408,9 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                         ? "h-full w-auto"
                         : "max-w-full max-h-full"
                   }`}
+                  decoding="async"
                 />
-              )}
+              ) : null}
 
               {/* Navigation Overlay */}
               <div className="absolute inset-0 flex items-center justify-between px-8">
@@ -386,7 +495,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       </footer>
 
       {/* Chapter Complete Modal */}
-      {currentPage === chapter.pages.length - 1 && (
+      {showCompleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="bg-gray-900 border-gray-700 text-white max-w-md mx-4">
             <CardContent className="p-6 text-center">
@@ -399,15 +508,16 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 {hasNextChapter && (
                   <Button
                     onClick={() => handleChapterChange("next")}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                   >
                     Read Next Chapter
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 )}
-                <Link href={`/manga/${manga.slug}`} className="w-full">
+                <Link href={`/manga/${manga.id}`} className="w-full">
                   <Button
                     variant="outline"
-                    className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                   >
                     Back to Manga
                   </Button>
@@ -415,7 +525,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 <Link href="/dashboard" className="w-full">
                   <Button
                     variant="outline"
-                    className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                   >
                     Dashboard
                   </Button>

@@ -1,0 +1,11 @@
+---
+description: Cuándo usar GitHub MCP
+globs: "**/*"
+alwaysApply: false
+---
+
+# GitHub MCP
+
+Usar para: crear PRs, revisar checks, issues, comentarios de review.
+
+Tras cambios locales: `/ship` o flujo manual con `gh pr create` según reglas del usuario.

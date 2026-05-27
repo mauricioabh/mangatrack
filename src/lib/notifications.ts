@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { sendNotificationEmail, NotificationEmailData } from "@/lib/email";
 import { NotificationType } from "@prisma/client";
+import { getMangaDetail } from "@/lib/mangadex";
 
 export interface CreateNotificationData {
   userId: string;
@@ -11,14 +12,32 @@ export interface CreateNotificationData {
   chapterId?: string;
 }
 
-/**
- * Create a notification and send email if user has email notifications enabled
- */
+async function resolveMangaChapterTitles(
+  mangaDexId?: string,
+  chapterDexId?: string
+): Promise<{ mangaTitle?: string; chapterTitle?: string }> {
+  if (!mangaDexId) return {};
+
+  try {
+    const detail = await getMangaDetail(mangaDexId);
+    if (!detail) return {};
+
+    let chapterTitle: string | undefined;
+    if (chapterDexId) {
+      const ch = detail.chapters.find((c) => c.id === chapterDexId);
+      chapterTitle = ch?.title;
+    }
+
+    return { mangaTitle: detail.title, chapterTitle };
+  } catch {
+    return {};
+  }
+}
+
 export async function createNotificationWithEmail(
   data: CreateNotificationData
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
   try {
-    // Get user information to check email preferences
     const user = await db.user.findUnique({
       where: { id: data.userId },
       select: {
@@ -33,39 +52,22 @@ export async function createNotificationWithEmail(
       return { success: false, error: "User not found" };
     }
 
-    // Get manga information if mangaId is provided
-    let mangaTitle: string | undefined;
-    let chapterTitle: string | undefined;
+    const { mangaTitle, chapterTitle } = await resolveMangaChapterTitles(
+      data.mangaId,
+      data.chapterId
+    );
 
-    if (data.mangaId) {
-      const manga = await db.manga.findUnique({
-        where: { id: data.mangaId },
-        select: { title: true },
-      });
-      mangaTitle = manga?.title;
-    }
-
-    if (data.chapterId) {
-      const chapter = await db.chapter.findUnique({
-        where: { id: data.chapterId },
-        select: { title: true },
-      });
-      chapterTitle = chapter?.title;
-    }
-
-    // Create the notification in the database
     const notification = await db.notification.create({
       data: {
         userId: data.userId,
         type: data.type,
         title: data.title,
         message: data.message,
-        mangaId: data.mangaId,
-        chapterId: data.chapterId,
+        mangaDexId: data.mangaId,
+        chapterDexId: data.chapterId,
       },
     });
 
-    // Send email if user has email notifications enabled
     if (user.emailNotifications && user.email) {
       const emailData: NotificationEmailData = {
         userName: user.name || "Manga Reader",
@@ -80,7 +82,6 @@ export async function createNotificationWithEmail(
 
       if (!emailResult.success) {
         console.error("Failed to send notification email:", emailResult.error);
-        // Don't fail the notification creation if email fails
       }
     }
 
@@ -94,54 +95,38 @@ export async function createNotificationWithEmail(
   }
 }
 
-/**
- * Create a notification for a new chapter
- */
 export async function createNewChapterNotification(
   userId: string,
-  mangaId: string,
-  chapterId: string
+  mangaDexId: string,
+  chapterDexId: string
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
-  // Get manga and chapter information
-  const [manga, chapter] = await Promise.all([
-    db.manga.findUnique({
-      where: { id: mangaId },
-      select: { title: true },
-    }),
-    db.chapter.findUnique({
-      where: { id: chapterId },
-      select: { title: true, chapterNumber: true },
-    }),
-  ]);
+  const detail = await getMangaDetail(mangaDexId);
+  if (!detail) {
+    return { success: false, error: "Manga not found" };
+  }
 
-  if (!manga || !chapter) {
-    return { success: false, error: "Manga or chapter not found" };
+  const chapter = detail.chapters.find((c) => c.id === chapterDexId);
+  if (!chapter) {
+    return { success: false, error: "Chapter not found" };
   }
 
   return createNotificationWithEmail({
     userId,
     type: "NEW_CHAPTER",
     title: "New Chapter Available!",
-    message: `${manga.title} Chapter ${chapter.chapterNumber} is now available to read.`,
-    mangaId,
-    chapterId,
+    message: `${detail.title} ${chapter.title} is now available to read.`,
+    mangaId: mangaDexId,
+    chapterId: chapterDexId,
   });
 }
 
-/**
- * Create a notification for manga status updates
- */
 export async function createMangaUpdateNotification(
   userId: string,
-  mangaId: string,
+  mangaDexId: string,
   updateMessage: string
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
-  const manga = await db.manga.findUnique({
-    where: { id: mangaId },
-    select: { title: true },
-  });
-
-  if (!manga) {
+  const detail = await getMangaDetail(mangaDexId);
+  if (!detail) {
     return { success: false, error: "Manga not found" };
   }
 
@@ -149,14 +134,11 @@ export async function createMangaUpdateNotification(
     userId,
     type: "MANGA_UPDATE",
     title: "Manga Update",
-    message: `${manga.title}: ${updateMessage}`,
-    mangaId,
+    message: `${detail.title}: ${updateMessage}`,
+    mangaId: mangaDexId,
   });
 }
 
-/**
- * Create a system notification
- */
 export async function createSystemNotification(
   userId: string,
   title: string,
@@ -170,23 +152,15 @@ export async function createSystemNotification(
   });
 }
 
-/**
- * Get user's notification preferences
- */
 export async function getUserNotificationPreferences(userId: string) {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: {
-      emailNotifications: true,
-    },
+    select: { emailNotifications: true },
   });
 
   return user?.emailNotifications ?? true;
 }
 
-/**
- * Update user's email notification preference
- */
 export async function updateEmailNotificationPreference(
   userId: string,
   emailNotifications: boolean
@@ -206,9 +180,3 @@ export async function updateEmailNotificationPreference(
     };
   }
 }
-
-
-
-
-
-

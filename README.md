@@ -91,6 +91,11 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 - **ESLint**: Code linting
 - **Prettier**: Code formatting
 
+## 📚 Project docs
+
+- [AGENTS.md](./AGENTS.md) — guía para agentes AI
+- [docs/](./docs/) — PRD, fases, ENV, modelo de datos, flujo OpenSpec
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -120,7 +125,7 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 3. **Set up environment variables**
 
    ```bash
-   cp env.template .env.local
+   cp .env.example .env.local
    ```
 
    Fill in your environment variables in `.env.local`:
@@ -156,8 +161,8 @@ A comprehensive manga tracking and reading application built with Next.js, featu
 
    ```bash
    npm run db:generate
-   npm run db:push
-   npm run db:seed
+   npm run db:sync
+   npm run db:cleanup-catalog
    ```
 
 5. **Run the development server**

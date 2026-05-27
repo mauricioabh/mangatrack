@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { APP_CONFIG } from "@/lib/constants";
 import { createCheckoutSession } from "@/lib/stripe";
+import { stripeCheckoutSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,20 +23,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { priceId } = body;
+    const { priceId, successUrl, cancelUrl } = stripeCheckoutSchema.parse(body);
 
-    if (!priceId) {
-      return NextResponse.json(
-        { success: false, error: "Price ID is required" },
-        { status: 400 }
-      );
-    }
-
+    const appUrl = APP_CONFIG.APP_URL;
     const session = await createCheckoutSession(
       user.id,
       priceId,
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`
+      successUrl ?? `${appUrl}/dashboard?success=true`,
+      cancelUrl ?? `${appUrl}/settings?canceled=true`
     );
 
     return NextResponse.json({
