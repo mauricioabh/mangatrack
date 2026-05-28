@@ -74,38 +74,39 @@ export async function POST(request: NextRequest) {
       name: `${first_name || ""} ${last_name || ""}`.trim(),
     });
 
+    const name = `${first_name || ""} ${last_name || ""}`.trim() || null;
+
     try {
-      const user = await db.user.create({
-        data: {
-          clerkId: id,
-          email,
-          name: `${first_name || ""} ${last_name || ""}`.trim() || null,
-          avatar: image_url,
-        },
+      const user = await db.user.upsert({
+        where: { clerkId: id },
+        create: { clerkId: id, email, name, avatar: image_url },
+        update: { email, name, avatar: image_url },
       });
-      console.log("✅ User created successfully:", user.id);
+      console.log("✅ User upserted:", user.id);
     } catch (error) {
-      console.error("❌ Error creating user:", error);
+      console.error("❌ Error upserting user:", error);
       return new Response("Failed to create user in database", { status: 500 });
     }
   }
 
   if (eventType === "user.updated") {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const email = email_addresses[0]?.email_address;
+    if (!email) {
+      return new Response("Missing email on user.updated", { status: 422 });
+    }
+
+    const name = `${first_name || ""} ${last_name || ""}`.trim() || null;
 
     try {
-      await db.user.update({
-        where: {
-          clerkId: id,
-        },
-        data: {
-          email: email_addresses[0].email_address,
-          name: `${first_name || ""} ${last_name || ""}`.trim() || null,
-          avatar: image_url,
-        },
+      await db.user.upsert({
+        where: { clerkId: id },
+        create: { clerkId: id, email, name, avatar: image_url },
+        update: { email, name, avatar: image_url },
       });
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Error upserting user on update:", error);
+      return new Response("Failed to update user in database", { status: 500 });
     }
   }
 
