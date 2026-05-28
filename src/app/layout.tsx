@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
+import { AuthThemeProvider } from "@/components/auth-theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import "./globals.css";
 import "./animations.css";
@@ -21,6 +21,9 @@ const geistMono = Geist_Mono({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
   title: "MangaTrack - Discover, Read & Track Manga",
   description:
     "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
@@ -52,10 +55,10 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ThemeProvider>
+          <AuthThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
             <Toaster />
-          </ThemeProvider>
+          </AuthThemeProvider>
         </body>
       </html>
     </ClerkProvider>
