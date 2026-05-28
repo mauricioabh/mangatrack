@@ -52,7 +52,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ThemeProvider defaultTheme="system" storageKey="mangatrack-theme">
+          <ThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
             <Toaster />
           </ThemeProvider>

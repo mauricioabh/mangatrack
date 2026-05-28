@@ -60,7 +60,8 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState("");
   const [notifications, setNotifications] = useState(true);
   const [priceIds, setPriceIds] = useState({ monthly: "", yearly: "" });
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const activeTheme = theme === "system" ? resolvedTheme : theme;
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -454,11 +455,11 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
-                        variant={theme === "light" ? "default" : "outline"}
+                        variant={activeTheme === "light" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setTheme("light")}
                         className={`transition-all duration-300 ${
-                          theme === "light"
+                          activeTheme === "light"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                             : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 hover:scale-105"
                         }`}
@@ -467,11 +468,11 @@ export default function SettingsPage() {
                         Light
                       </Button>
                       <Button
-                        variant={theme === "dark" ? "default" : "outline"}
+                        variant={activeTheme === "dark" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setTheme("dark")}
                         className={`transition-all duration-300 ${
-                          theme === "dark"
+                          activeTheme === "dark"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                             : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 hover:scale-105"
                         }`}
