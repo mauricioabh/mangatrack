@@ -80,6 +80,12 @@ export function DeviceNotificationSettings() {
     return null;
   }
 
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (!configured && !isDev) {
+    return null;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -101,10 +107,17 @@ export function DeviceNotificationSettings() {
       </CardHeader>
       <CardContent className="space-y-4">
         {!configured ? (
-          <p className="text-sm text-muted-foreground">
-            Push is not configured on the server. Add Firebase env vars (see{" "}
-            <code className="text-xs">docs/FIREBASE_SETUP.md</code>).
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Push notifications aren&apos;t available right now.
+            </p>
+            {isDev ? (
+              <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
+                Developer: Firebase web client env vars are not set. See{" "}
+                <code className="text-xs">docs/FIREBASE_SETUP.md</code>.
+              </p>
+            ) : null}
+          </div>
         ) : enabled ? (
           <>
             <p className="text-sm text-muted-foreground">
