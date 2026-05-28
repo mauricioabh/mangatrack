@@ -2,19 +2,32 @@
 
 Copiar `.env.example` a `.env.local` y completar los valores.
 
-## Base de datos
+## Base de datos (Neon)
 
 | Variable       | Descripción                          | Requerida |
 | -------------- | ------------------------------------ | --------- |
 | `DATABASE_URL` | Connection string de Neon PostgreSQL | ✅        |
 
-Obtener de [console.neon.tech](https://console.neon.tech) → tu proyecto → Connection string.
+Proyecto Neon: **mangatrack** (`wispy-surf-27556179`, región `aws-us-east-1`).
+
+### Ramas (dev / prod)
+
+| Rama Neon | Uso | Dónde poner `DATABASE_URL` |
+| --------- | --- | -------------------------- |
+| **`main`** (default) | Producción — datos reales | Vercel **Production**, `.env.production.local` |
+| **`dev`** | Desarrollo y previews — copia aislada de `main` | `.env.local`, Vercel **Preview** / **Development** |
+
+Cada rama tiene su propio host en el connection string (pooler `*.c-2.us-east-1.aws.neon.tech`). No compartas la misma URL entre local y producción si quieres evitar escribir en datos reales desde tu máquina.
+
+Obtener URLs en [console.neon.tech](https://console.neon.tech) → proyecto **mangatrack** → **Branches** → elegir `main` o `dev` → **Connection string** (Pooled, `neondb`).
 
 ```powershell
 npm run db:generate
 npm run db:sync
 npm run db:cleanup-catalog
 ```
+
+Migraciones: aplicar primero contra la rama **`dev`** (`prisma migrate dev` o `db:push`); cuando esté validado, el mismo cambio en **`main`** (prod).
 
 Si `npx prisma` falla con P1012, exportar `$env:DATABASE_URL="..."` o usar `.env.local` con dotenv según tu setup.
 
@@ -31,6 +44,22 @@ Si `npx prisma` falla con P1012, exportar `$env:DATABASE_URL="..."` o usar `.env
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Default `/dashboard`           | ✅        |
 
 Dashboard: [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys.
+
+### Vercel (Clerk + Neon)
+
+| Variable | Production | Preview (rama git `dev`) |
+| -------- | ---------- | ------------------------ |
+| `DATABASE_URL` | Neon rama **`main`** | Neon rama **`dev`** |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_…` | `pk_test_…` (instancia Clerk **Development**) |
+| `CLERK_SECRET_KEY` | `sk_live_…` | `sk_test_…` |
+| `CLERK_WEBHOOK_SECRET` | Secret del endpoint **Production** | Secret del endpoint apuntando al URL del preview |
+| `NEXT_PUBLIC_APP_URL` | `https://mangatrack.wayool.com` | URL estable del deployment preview (ej. `https://mangatrack-git-dev-….vercel.app`) |
+
+No mezclar `pk_live` con `sk_test`. Tras cambiar env en Vercel, **redeploy** el deployment afectado.
+
+### Google OAuth (Clerk)
+
+Clerk usa flujo **redirect** (`/v1/oauth_callback` en `*.clerk.accounts.dev` o dominio Clerk prod). Por eso basta el **URI de redirección** en Google Cloud; los **orígenes JavaScript** solo hacen falta si usas el SDK de Google en tu dominio (GIS / One Tap). Añadir `https://mangatrack.wayool.com` en origins del cliente **PROD** es recomendable, no obligatorio para el login vía Clerk.
 
 **Android:** misma `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` en `android/local.properties` (`clerk.publishableKey`). Activar **Native API** en Clerk. La API acepta `Authorization: Bearer <JWT>` además de cookies web.
 
