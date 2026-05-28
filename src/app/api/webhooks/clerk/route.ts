@@ -61,32 +61,32 @@ export async function POST(request: NextRequest) {
 
   if (eventType === "user.created") {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const email = email_addresses[0]?.email_address;
+
+    if (!email) {
+      console.error("❌ user.created without email:", id);
+      return new Response("Missing email on user.created", { status: 422 });
+    }
 
     console.log("👤 Creating user:", {
       id,
-      email: email_addresses[0]?.email_address,
+      email,
       name: `${first_name || ""} ${last_name || ""}`.trim(),
-      fullData: evt.data,
     });
 
     try {
-      console.log("🔗 Attempting database connection...");
       const user = await db.user.create({
         data: {
           clerkId: id,
-          email: email_addresses[0].email_address,
+          email,
           name: `${first_name || ""} ${last_name || ""}`.trim() || null,
           avatar: image_url,
         },
       });
-      console.log("✅ User created successfully:", user);
+      console.log("✅ User created successfully:", user.id);
     } catch (error) {
       console.error("❌ Error creating user:", error);
-      console.error("❌ Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        code: (error as Record<string, unknown>)?.code,
-        meta: (error as Record<string, unknown>)?.meta,
-      });
+      return new Response("Failed to create user in database", { status: 500 });
     }
   }
 
