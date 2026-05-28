@@ -1,3 +1,4 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { getClerkUserId } from "./auth-request";
 
@@ -22,18 +23,23 @@ import { getClerkUserId } from "./auth-request";
  */
 export async function getCurrentUser() {
   const userId = await getClerkUserId();
+  if (!userId) return null;
 
-  if (!userId) {
-    return null;
-  }
+  const existing = await db.user.findUnique({ where: { clerkId: userId } });
+  if (existing) return existing;
 
-  const user = await db.user.findUnique({
-    where: {
-      clerkId: userId,
-    },
-  });
+  // Clerk session exists but Neon row missing (webhook missed or user pre-dates webhook).
+  const clerkUser = await currentUser();
+  if (!clerkUser || clerkUser.id !== userId) return null;
 
-  return user;
+  const email = clerkUser.emailAddresses[0]?.emailAddress;
+  if (!email) return null;
+
+  const name =
+    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
+    undefined;
+
+  return getOrCreateUser(userId, email, name, clerkUser.imageUrl);
 }
 
 /**

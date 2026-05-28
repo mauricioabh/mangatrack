@@ -16,6 +16,7 @@ const isProtectedRoute = createRouteMatcher([
 
 const isPublicApiRoute = createRouteMatcher([
   "/api/webhook(.*)",
+  "/api/webhooks(.*)",
   "/api/inngest(.*)",
 ]);
 
