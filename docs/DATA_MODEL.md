@@ -3,7 +3,7 @@
 ## Arquitectura de datos
 
 - **Catálogo (manga, capítulos, portadas, páginas):** [MangaDex API](https://api.mangadex.org) vía BFF en rutas `/api/manga/*` y `/api/chapters/*`. No se persisten tablas `Manga` / `Chapter` en Neon.
-- **Estado de usuario:** Neon PostgreSQL (bookmarks, historial, notificaciones).
+- **Estado de usuario:** Neon PostgreSQL (bookmarks, historial, notificaciones). Ramas: **`main`** (prod), **`dev`** (local/previews). Ver `docs/ENV.md`.
 
 ## Entidades en Neon
 
