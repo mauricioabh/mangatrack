@@ -1,5 +1,31 @@
 # MangaTrack
 
+## What is MangaTrack?
+
+MangaTrack is a clean, minimalist web app for discovering, reading, and tracking manga series. It syncs with the MangaDex catalog, sends chapter-update notifications, and keeps your reading progress in one place.
+
+**Live:** https://mangatrack-git-dev-mauricioabhs-projects.vercel.app/
+
+## Who is it for?
+
+Manga readers who want a simple dashboard to follow series, bookmark titles, and read chapters without clutter.
+
+## FAQ
+
+### What does MangaTrack do?
+
+MangaTrack lets you search the MangaDex catalog, save manga to your library, read chapters in-app, and get notified when new chapters drop.
+
+### Do I need an account?
+
+Yes. Sign in with Google or email to sync bookmarks, reading history, and notification preferences across devices.
+
+### Is MangaTrack free?
+
+Core features are free. Premium tiers unlock higher bookmark limits and additional notification options via Stripe.
+
+---
+
 A comprehensive manga tracking and reading application built with Next.js, featuring authentication, email notifications, and premium features.
 
 ## ✨ Features
