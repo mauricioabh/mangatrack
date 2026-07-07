@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthThemeProvider } from "@/components/auth-theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { webApplicationJsonLd } from "@/lib/seo/json-ld";
+import { rootLayoutMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 import "./animations.css";
 
@@ -20,29 +22,7 @@ const geistMono = Geist_Mono({
 /** Clerk + env-dependent UI: avoid static prerender with placeholder keys at build time. */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-  },
-  title: "MangaTrack - Discover, Read & Track Manga",
-  description:
-    "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
-  keywords: ["manga", "anime", "reading", "tracking", "otaku"],
-  authors: [{ name: "MangaTrack Team" }],
-  openGraph: {
-    title: "MangaTrack - Discover, Read & Track Manga",
-    description:
-      "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
-    type: "website",
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "MangaTrack - Discover, Read & Track Manga",
-    description:
-      "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
-  },
-};
+export const metadata = rootLayoutMetadata();
 
 export default function RootLayout({
   children,
@@ -52,6 +32,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          <JsonLd data={webApplicationJsonLd()} />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
