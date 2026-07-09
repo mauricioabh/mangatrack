@@ -339,9 +339,12 @@ Access development utilities from the header:
 Make sure to set these in your deployment platform:
 
 - All variables from `.env.local`
+- `SENTRY_DSN` for error monitoring and **Core Web Vitals** (Sentry Performance → Web Vitals)
 - Update `NEXT_PUBLIC_APP_URL` to your production URL
 - Set `NODE_ENV=production`
 - Configure webhook URLs in external services
+
+**Performance CI:** Lighthouse audits on PRs (`.github/workflows/lighthouse.yml`).
 
 ## 🧪 Testing
 
