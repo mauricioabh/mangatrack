@@ -12,8 +12,8 @@ jobs:
     env:
       SKIP_ENV_VALIDATION: "1"
       DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder?sslmode=require"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder_must_replace_in_production_00
-      CLERK_SECRET_KEY: sk_test_placeholder_must_replace_in_production_00000000
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
+      CLERK_SECRET_KEY: sk_test_placeholder_for_ci_build_only_not_real
       NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
       NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
       NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
