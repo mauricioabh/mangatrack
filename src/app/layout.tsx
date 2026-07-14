@@ -27,6 +27,8 @@ export const dynamic = "force-dynamic";
 export const metadata = rootLayoutMetadata();
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
@@ -46,7 +48,7 @@ export default function RootLayout({
           <JsonLd data={webApplicationJsonLd()} />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden antialiased`}
         >
           <AuthThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>

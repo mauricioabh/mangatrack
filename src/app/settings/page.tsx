@@ -313,33 +313,33 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-8">
+          <h1 className="mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:mb-8 sm:text-3xl">
             Settings
           </h1>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-gradient-to-r from-blue-50 to-purple-50 p-1 border border-blue-200 dark:from-blue-900/20 dark:to-purple-900/20 dark:border-blue-800 sm:grid-cols-4">
               <TabsTrigger
                 value="profile"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30"
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 sm:text-sm"
               >
                 Profile
               </TabsTrigger>
               <TabsTrigger
                 value="preferences"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30"
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 sm:text-sm"
               >
                 Preferences
               </TabsTrigger>
               <TabsTrigger
                 value="billing"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30"
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 sm:text-sm"
               >
                 Billing
               </TabsTrigger>
               <TabsTrigger
                 value="danger"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-red-100/50 dark:hover:bg-red-900/30"
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:bg-red-100/50 dark:hover:bg-red-900/30 sm:text-sm"
               >
                 Danger
               </TabsTrigger>
@@ -430,8 +430,8 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <Label htmlFor="notifications">Email Notifications</Label>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         Receive notifications for new chapters
@@ -441,24 +441,25 @@ export default function SettingsPage() {
                       id="notifications"
                       checked={notifications}
                       onCheckedChange={handleUpdatePreferences}
+                      className="shrink-0 self-start sm:self-auto"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <Label htmlFor="theme">Theme</Label>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         Choose your preferred theme
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant={activeTheme === "light" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setTheme("light")}
-                        className={`transition-all duration-300 ${
+                        className={`flex-1 transition-all duration-300 sm:flex-none ${
                           activeTheme === "light"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                             : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 hover:scale-105"
@@ -471,7 +472,7 @@ export default function SettingsPage() {
                         variant={activeTheme === "dark" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setTheme("dark")}
-                        className={`transition-all duration-300 ${
+                        className={`flex-1 transition-all duration-300 sm:flex-none ${
                           activeTheme === "dark"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                             : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 hover:scale-105"
@@ -505,8 +506,8 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
+                  <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <h3 className="font-medium text-gray-900 dark:text-white">
                         Current Plan
                       </h3>
@@ -547,8 +548,8 @@ export default function SettingsPage() {
                       {/* Pricing Cards */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Monthly Plan Card */}
-                        <div className="relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 overflow-hidden">
-                          <div className="p-8">
+                        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg transition-all duration-300 dark:border-gray-700 dark:bg-gray-800 sm:hover:scale-105 sm:hover:shadow-xl">
+                          <div className="p-5 sm:p-8">
                             <div className="text-center mb-6">
                               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                                 Monthly Plan
@@ -598,13 +599,13 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Yearly Plan Card - Featured */}
-                        <div className="relative bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden">
+                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 shadow-xl transition-all duration-300 sm:hover:scale-105 sm:hover:shadow-2xl">
                           {/* Popular Badge */}
-                          <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-4 py-1 text-xs font-bold rounded-bl-lg">
+                          <div className="absolute top-0 right-0 rounded-bl-lg bg-yellow-400 px-4 py-1 text-xs font-bold text-yellow-900">
                             POPULAR
                           </div>
 
-                          <div className="p-8 text-white">
+                          <div className="p-5 text-white sm:p-8">
                             <div className="text-center mb-6">
                               <h3 className="text-2xl font-bold mb-2">
                                 Yearly Plan

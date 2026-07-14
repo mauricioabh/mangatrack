@@ -167,7 +167,7 @@ export default function SearchPage() {
           transition={{ duration: 0.6 }}
         >
           <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-2"
+            className="mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-4xl"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -175,7 +175,7 @@ export default function SearchPage() {
             Discover Amazing Manga
           </motion.h1>
           <motion.p
-            className="text-lg text-gray-600 dark:text-gray-300 mb-8"
+            className="mb-6 text-base text-gray-600 dark:text-gray-300 sm:mb-8 sm:text-lg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -190,87 +190,92 @@ export default function SearchPage() {
             transition={{ duration: 0.6, delay: 0.6 }}
           >
             {/* Search Input */}
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <motion.div
-                className="flex-1 relative"
-                whileHover={{ scale: 1.02 }}
+                className="relative min-w-0 flex-1"
+                whileHover={{ scale: 1.01 }}
                 transition={{ duration: 0.2 }}
               >
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-500" />
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-blue-500" />
                 <Input
-                  placeholder="Search for manga titles, authors, or genres..."
+                  placeholder="Search titles, authors, genres..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="pl-12 h-12 text-lg border-2 border-blue-200 focus:border-blue-400 dark:border-blue-800 dark:focus:border-blue-600 transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:shadow-xl hover:border-blue-300 dark:hover:border-blue-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                  className="h-11 border-2 border-blue-200 bg-white/80 pl-12 text-base backdrop-blur-sm transition-all duration-300 hover:border-blue-300 focus:border-blue-400 focus:shadow-xl focus:ring-4 focus:ring-blue-500/20 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 dark:focus:border-blue-600 sm:h-12 sm:text-lg"
                 />
               </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="h-12 px-8 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              <div className="flex gap-2 sm:gap-4">
+                <motion.div
+                  className="flex-1 sm:flex-none"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {loading ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    >
-                      <Search className="h-5 w-5" />
-                    </motion.div>
-                  ) : (
-                    <>
-                      <Search className="h-5 w-5 mr-2" />
-                      Search
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setStatusFilter("all");
-                    setGenreFilter("all");
-                    loadAllManga();
-                  }}
-                  variant="outline"
-                  className="h-12 px-6 border-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 transition-all duration-300"
+                  <Button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="h-11 w-full border-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-4 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:px-8"
+                  >
+                    {loading ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      >
+                        <Search className="h-5 w-5" />
+                      </motion.div>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-5 w-5" />
+                        Search
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+                <motion.div
+                  className="flex-1 sm:flex-none"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <Star className="h-5 w-5 mr-2" />
-                  Browse All
-                </Button>
-              </motion.div>
+                  <Button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                      setGenreFilter("all");
+                      loadAllManga();
+                    }}
+                    variant="outline"
+                    className="h-11 w-full border-2 border-emerald-200 px-3 text-emerald-600 transition-all duration-300 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 sm:h-12 sm:px-6"
+                  >
+                    <Star className="mr-1 h-5 w-5 sm:mr-2" />
+                    <span className="truncate">Browse All</span>
+                  </Button>
+                </motion.div>
+              </div>
             </div>
 
             {/* Filters */}
             <motion.div
-              className="flex gap-4"
+              className="flex flex-col gap-3 sm:flex-row sm:gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
             >
               <motion.div
-                whileHover={{ scale: 1.02 }}
+                className="min-w-0 flex-1 sm:flex-none"
+                whileHover={{ scale: 1.01 }}
                 transition={{ duration: 0.2 }}
               >
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48 h-12 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                  <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-blue-300 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 sm:h-12 sm:w-48">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-800">
+                  <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="ONGOING">Ongoing</SelectItem>
                     <SelectItem value="COMPLETED">Completed</SelectItem>
@@ -281,14 +286,15 @@ export default function SearchPage() {
               </motion.div>
 
               <motion.div
-                whileHover={{ scale: 1.02 }}
+                className="min-w-0 flex-1 sm:flex-none"
+                whileHover={{ scale: 1.01 }}
                 transition={{ duration: 0.2 }}
               >
                 <Select value={genreFilter} onValueChange={setGenreFilter}>
-                  <SelectTrigger className="w-48 h-12 border-2 border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                  <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:border-purple-800 dark:bg-gray-800/80 dark:hover:border-purple-700 sm:h-12 sm:w-48">
                     <SelectValue placeholder="Filter by genre" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-800">
+                  <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
                     <SelectItem value="all">All Genres</SelectItem>
                     <SelectItem value="Action">Action</SelectItem>
                     <SelectItem value="Adventure">Adventure</SelectItem>
@@ -313,8 +319,8 @@ export default function SearchPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <motion.h2
-              className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-6"
+          <motion.h2
+              className="mb-4 break-words bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:mb-6 sm:text-2xl"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}

@@ -266,31 +266,31 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700 shadow-2xl border-b-4 border-white/20 dark:border-gray-800/20 backdrop-blur-sm z-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href={`/manga/${manga.id}`}>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b-4 border-white/20 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl backdrop-blur-sm dark:border-gray-800/20 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700">
+        <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
+              <Link href={`/manga/${manga.id}`} className="shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:text-white dark:hover:bg-gray-700/40 transition-all duration-300 transform hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+                  className="border-white/30 bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 dark:border-gray-700/50 dark:bg-gray-800/30 dark:text-white dark:hover:bg-gray-700/40 sm:hover:scale-105 sm:hover:shadow-lg"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back</span>
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-lg font-semibold truncate max-w-md text-white drop-shadow-lg">
+              <div className="min-w-0">
+                <h1 className="truncate text-sm font-semibold text-white drop-shadow-lg sm:max-w-md sm:text-lg">
                   {manga.title}
                 </h1>
-                <p className="text-sm text-white/80 drop-shadow-md">
-                  Chapter {chapter.chapterNumber}: {chapter.title}
+                <p className="truncate text-xs text-white/80 drop-shadow-md sm:text-sm">
+                  Ch. {chapter.chapterNumber}: {chapter.title}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -298,7 +298,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 onClick={() => handleChapterChange("prev")}
                 disabled={!hasPrevChapter}
               >
-                <ArrowLeft className="h-4 w-4 mr-1" />
+                <ArrowLeft className="h-4 w-4 sm:mr-1" />
                 <span className="hidden sm:inline">Previous</span>
               </Button>
               <Button
@@ -309,14 +309,14 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 disabled={!hasNextChapter}
               >
                 <span className="hidden sm:inline">Next</span>
-                <ArrowRight className="h-4 w-4 ml-1" />
+                <ArrowRight className="h-4 w-4 sm:ml-1" />
               </Button>
 
               <Select value={readingMode} onValueChange={setReadingMode}>
-                <SelectTrigger className="w-32 bg-black/50 border-gray-700 text-white">
+                <SelectTrigger className="h-8 w-[7.5rem] border-gray-700 bg-black/50 text-xs text-white sm:h-9 sm:w-32 sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectContent className="border-gray-700 bg-gray-900">
                   <SelectItem
                     value="vertical"
                     className="text-white hover:bg-gray-800 focus:bg-gray-800"
@@ -333,10 +333,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
               </Select>
 
               <Select value={imageFit} onValueChange={setImageFit}>
-                <SelectTrigger className="w-32 bg-black/50 border-gray-700 text-white">
+                <SelectTrigger className="h-8 w-[7.5rem] border-gray-700 bg-black/50 text-xs text-white sm:h-9 sm:w-32 sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectContent className="border-gray-700 bg-gray-900">
                   <SelectItem
                     value="width"
                     className="text-white hover:bg-gray-800 focus:bg-gray-800"
@@ -363,7 +363,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       </header>
 
       {/* Reader Content */}
-      <main className="pt-16">
+      <main className="pt-28 pb-20 sm:pt-20 sm:pb-16">
         {readingMode === "vertical" ? (
           // Vertical Reading Mode
           <div className="max-w-4xl mx-auto px-4 py-8">
@@ -413,25 +413,25 @@ export default function ReaderPage({ params }: ReaderPageProps) {
               ) : null}
 
               {/* Navigation Overlay */}
-              <div className="absolute inset-0 flex items-center justify-between px-8">
+              <div className="absolute inset-0 flex items-center justify-between px-2 sm:px-8">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="bg-black/50 border-gray-700 text-white hover:bg-gray-800"
+                  className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
                   onClick={() => handlePageChange("prev")}
                   disabled={currentPage === 0}
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
 
                 <Button
                   variant="outline"
                   size="lg"
-                  className="bg-black/50 border-gray-700 text-white hover:bg-gray-800"
+                  className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
                   onClick={() => handlePageChange("next")}
                   disabled={currentPage === chapter.pages.length - 1}
                 >
-                  <ArrowRight className="h-6 w-6" />
+                  <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               </div>
             </div>
@@ -440,54 +440,54 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       </main>
 
       {/* Bottom Navigation */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-800 z-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-black/80 backdrop-blur-sm">
+        <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-black/50 border-gray-700 text-white hover:bg-gray-800"
+                className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
                 onClick={() => handleChapterChange("prev")}
                 disabled={!hasPrevChapter}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous Chapter
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Previous Chapter</span>
+                <span className="sm:hidden">Prev</span>
               </Button>
 
               {readingMode === "horizontal" && (
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-400">
+                  <span className="text-xs text-gray-400 sm:text-sm">
                     {currentPage + 1} / {chapter.pages.length}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 sm:space-x-4">
               {readingMode === "horizontal" && (
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-black/50 border-gray-700 text-white hover:bg-gray-800"
-                    onClick={() => setCurrentPage(0)}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    First Page
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden border-gray-700 bg-black/50 text-white hover:bg-gray-800 sm:inline-flex"
+                  onClick={() => setCurrentPage(0)}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  First Page
+                </Button>
               )}
 
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-black/50 border-gray-700 text-white hover:bg-gray-800"
+                className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
                 onClick={() => handleChapterChange("next")}
                 disabled={!hasNextChapter}
               >
-                Next Chapter
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <span className="hidden sm:inline">Next Chapter</span>
+                <span className="sm:hidden">Next</span>
+                <ArrowRight className="ml-1 h-4 w-4 sm:ml-2" />
               </Button>
             </div>
           </div>
