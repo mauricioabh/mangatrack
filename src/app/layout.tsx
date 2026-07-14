@@ -1,9 +1,11 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import type { Viewport } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthThemeProvider } from "@/components/auth-theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { webApplicationJsonLd } from "@/lib/seo/json-ld";
 import { rootLayoutMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
@@ -24,6 +26,14 @@ export const dynamic = "force-dynamic";
 
 export const metadata = rootLayoutMetadata();
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+  colorScheme: "light dark",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,6 +50,7 @@ export default function RootLayout({
         >
           <AuthThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
+            <ServiceWorkerRegister />
             <Toaster />
           </AuthThemeProvider>
         </body>
