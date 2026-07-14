@@ -322,23 +322,23 @@ export default function MangaDetailContent({
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Cover Image */}
-            <div className="flex-shrink-0">
-              <div className="w-64 h-80 bg-gray-200 dark:bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+            <div className="mx-auto w-full max-w-[16rem] flex-shrink-0 md:mx-0">
+              <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-gray-200 shadow-lg dark:bg-gray-700 sm:h-80 sm:aspect-auto">
                 {manga.coverImage && (
                   <Image
                     src={manga.coverImage}
                     alt={manga.title}
                     width={256}
                     height={320}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 )}
               </div>
             </div>
 
             {/* Manga Info */}
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="mb-4 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold break-words text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-3xl md:text-4xl">
                 {manga.title}
               </h1>
 
@@ -371,12 +371,12 @@ export default function MangaDetailContent({
                 {manga.description}
               </p>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                 <Button
                   onClick={handleStartReading}
                   disabled={metadataLoading}
                   size="lg"
-                  className={`bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95 ${metadataLoading ? "opacity-50" : ""}`}
+                  className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 sm:w-auto transform sm:hover:scale-105 sm:hover:-translate-y-1 active:scale-95 ${metadataLoading ? "opacity-50" : ""}`}
                 >
                   {metadataLoading ? (
                     <>
@@ -395,7 +395,7 @@ export default function MangaDetailContent({
                   disabled={bookmarkLoading || metadataLoading}
                   variant="outline"
                   size="lg"
-                  className={`border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
+                  className={`w-full border-2 transition-all duration-300 sm:w-auto sm:transform sm:hover:scale-105 sm:hover:shadow-lg ${
                     isBookmarked
                       ? "border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
                       : "border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
@@ -440,27 +440,27 @@ export default function MangaDetailContent({
                 key={chapter.id}
                 className={`hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 ${isRead ? "opacity-80" : ""}`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-16 bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
+                      <div className="h-14 w-10 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700 sm:h-16 sm:w-12">
                         {manga.coverImage && (
                           <Image
                             src={manga.coverImage}
                             alt={manga.title}
                             width={48}
                             height={64}
-                            className="w-full h-full object-cover rounded"
+                            className="h-full w-full rounded object-cover"
                           />
                         )}
                       </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <h3 className="flex flex-wrap items-center gap-2 font-medium break-words text-gray-900 dark:text-white">
                           Chapter {chapter.chapterNumber}: {chapter.title}
                           {isRead && (
                             <Badge
                               variant="secondary"
-                              className="text-xs bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                              className="bg-green-100 text-xs text-green-800 dark:bg-green-900/40 dark:text-green-300"
                             >
                               Read
                             </Badge>
@@ -476,9 +476,9 @@ export default function MangaDetailContent({
                     <Button
                       onClick={() => handleReadChapter(chapter.id)}
                       size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95"
+                      className="w-full shrink-0 border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl sm:w-auto sm:transform sm:hover:scale-105 sm:hover:-translate-y-1 active:scale-95"
                     >
-                      <BookOpen className="h-4 w-4 mr-2" />
+                      <BookOpen className="mr-2 h-4 w-4" />
                       {isRead ? "Read again" : "Read"}
                     </Button>
                   </div>

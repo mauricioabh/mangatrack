@@ -190,10 +190,10 @@ export default function DashboardContent() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Section with Total Bookmarks */}
-        <div className="grid lg:grid-cols-4 gap-8 mb-8">
+        <div className="mb-8 grid gap-4 lg:grid-cols-4 lg:gap-8">
           {/* Welcome Message - Left Side */}
-          <div className="lg:col-span-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-2">
+          <div className="min-w-0 lg:col-span-3">
+            <h1 className="mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold break-words text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-3xl">
               Welcome back, {user.name}!
             </h1>
             <p className="text-gray-700 dark:text-gray-300">
@@ -224,17 +224,17 @@ export default function DashboardContent() {
 
         {/* Recent Bookmarks */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Recent Bookmarks
             </h2>
-            <Link href="/search">
+            <Link href="/search" className="shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+                className="w-full border-blue-200 text-blue-600 transition-all duration-300 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 sm:w-auto sm:transform sm:hover:scale-105 sm:hover:shadow-md"
               >
-                <Search className="h-4 w-4 mr-2" />
+                <Search className="mr-2 h-4 w-4" />
                 Browse More
               </Button>
             </Link>
@@ -250,33 +250,33 @@ export default function DashboardContent() {
                   key={bookmark.id}
                   className="hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20"
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-3 sm:space-x-4">
+                      <div className="h-20 w-16 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700">
                         {manga.coverImage && (
                           <Image
                             src={manga.coverImage}
                             alt={manga.title}
                             width={64}
                             height={80}
-                            className="w-full h-full object-cover rounded"
+                            className="h-full w-full rounded object-cover"
                           />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate font-medium text-gray-900 dark:text-white">
                           {manga.title}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="truncate text-sm text-gray-500 dark:text-gray-400">
                           by {manga.author}
                         </p>
-                        <div className="flex items-center space-x-2 mt-1">
+                        <div className="mt-1 flex items-center space-x-2">
                           <Badge variant="secondary" className="text-xs">
                             {manga.status}
                           </Badge>
                         </div>
                       </div>
-                      <Link href={`/manga/${manga.id}`}>
+                      <Link href={`/manga/${manga.id}`} className="shrink-0">
                         <Button size="sm" variant="outline">
                           Read
                         </Button>

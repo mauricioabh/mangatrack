@@ -43,14 +43,14 @@ export default async function Home() {
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-8">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent mb-4">
+          <h1 className="mb-4 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-3xl">
             Discover, Read & Track
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
               {" "}
               Manga
             </span>
           </h1>
-          <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+          <p className="mx-auto mb-6 max-w-2xl text-base text-gray-700 dark:text-gray-300 sm:text-lg">
             A beautiful, modern web app for discovering, reading, and tracking
             your favorite manga series with automated updates and seamless
             reading experience.

@@ -68,43 +68,55 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl mx-4 z-50"
+            className="fixed top-16 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 transform sm:top-20 sm:w-[calc(100%-2rem)]"
           >
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
               {/* Search Input */}
-              <div className="flex items-center px-6 py-4">
-                <Search className="h-6 w-6 text-gray-400 mr-4" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Search for manga titles, authors, or genres..."
-                  className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none text-xl"
-                />
-                <button
-                  onClick={handleSearch}
-                  disabled={!query.trim()}
-                  className="ml-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={onClose}
-                  className="ml-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-400" />
-                </button>
+              <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-4">
+                <div className="flex min-w-0 flex-1 items-center">
+                  <Search className="mr-2 h-5 w-5 shrink-0 text-gray-400 sm:mr-4 sm:h-6 sm:w-6" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search manga..."
+                    className="min-w-0 flex-1 bg-transparent text-base text-gray-900 outline-none placeholder-gray-500 dark:text-white dark:placeholder-gray-400 sm:text-xl"
+                  />
+                  <button
+                    onClick={onClose}
+                    className="ml-2 rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700 sm:hidden"
+                    aria-label="Close search"
+                  >
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 sm:ml-4">
+                  <button
+                    onClick={handleSearch}
+                    disabled={!query.trim()}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:flex-none sm:px-6"
+                  >
+                    Search
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="hidden rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700 sm:block"
+                    aria-label="Close search"
+                  >
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
               </div>
 
               {/* Search Tips */}
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+              <div className="border-t border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-900/50 sm:px-6 sm:py-4">
+                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
                   <p>Type your search query and press Enter or click Search</p>
                   <p>
                     Press{" "}
-                    <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">
+                    <kbd className="rounded bg-gray-200 px-2 py-1 font-mono text-xs dark:bg-gray-700">
                       Esc
                     </kbd>{" "}
                     to close
