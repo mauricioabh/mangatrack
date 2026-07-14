@@ -62,6 +62,13 @@ export function rootLayoutMetadata(): Metadata {
 
   return {
     metadataBase: new URL(getSiteUrl()),
+    applicationName: SITE_NAME,
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      title: SITE_NAME,
+      statusBarStyle: "default",
+    },
     title: {
       default: DEFAULT_TITLE,
       template: `%s | ${SITE_NAME}`,
@@ -97,7 +104,12 @@ export function rootLayoutMetadata(): Metadata {
       description: DEFAULT_DESCRIPTION,
     },
     icons: {
-      icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/icons/192", sizes: "192x192", type: "image/png" },
+        { url: "/icons/512", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
     },
   };
 }

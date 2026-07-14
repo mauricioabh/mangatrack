@@ -1,3 +1,8 @@
+/**
+ * Legacy Firebase messaging SW.
+ * Active PWA + FCM worker is /sw.js — keep this file so old registrations
+ * still receive push until browsers migrate to the new controller.
+ */
 /* eslint-disable no-undef */
 importScripts(
   "https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"
@@ -25,7 +30,7 @@ function initFirebaseMessaging() {
           payload.notification?.title ?? "MangaTrack";
         const options = {
           body: payload.notification?.body ?? "",
-          icon: "/favicon.ico",
+          icon: "/icons/192",
           data: payload.data ?? {},
         };
         return self.registration.showNotification(title, options);

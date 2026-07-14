@@ -14,7 +14,8 @@ import {
   isFirebaseWebConfigured,
 } from "@/lib/firebase/config";
 
-const SW_PATH = "/firebase-messaging-sw.js";
+/** Shared PWA + FCM worker (see public/sw.js). */
+const SW_PATH = "/sw.js";
 const TOKEN_STORAGE_KEY = "mangatrack_fcm_token";
 
 let firebaseApp: FirebaseApp | undefined;
