@@ -6,35 +6,15 @@ on:
   pull_request:
     branches: [main, dev]
 
+# Lab CWV against production (HTTPS). Local Next + Clerk placeholders made
+# Chromium hit chrome-error:// interstitials (CHROME_INTERSTITIAL_ERROR).
+# Build correctness stays covered by workflow "CI".
 jobs:
   lighthouse:
     name: Core Web Vitals (lab)
     runs-on: ubuntu-latest
-    env:
-      SKIP_ENV_VALIDATION: "1"
-      DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder?sslmode=require"
-      # Format-valid mock key (base64 of clerk.example.com$) — not a real Clerk instance
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
-      CLERK_SECRET_KEY: sk_test_placeholder_for_ci_build_only_not_real
-      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
-      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
-      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
-      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /dashboard
-      # Prefer IPv4 explicit host — Chrome on GHA can hit ::1 while Next listens on IPv4
-      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
-
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build
-        run: npm run build
 
       - name: Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
