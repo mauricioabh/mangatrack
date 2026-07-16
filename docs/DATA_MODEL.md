@@ -2,8 +2,8 @@
 
 ## Arquitectura de datos
 
-- **Catálogo (manga, capítulos, portadas, páginas):** [MangaDex API](https://api.mangadex.org) vía BFF en rutas `/api/manga/*` y `/api/chapters/*`. No se persisten tablas `Manga` / `Chapter` en Neon.
-- **Estado de usuario:** Neon PostgreSQL (bookmarks, historial, notificaciones). Ramas: **`main`** (prod), **`dev`** (local/previews). Ver `docs/ENV.md`.
+- **Catálogo (manga, capítulos, portadas, páginas):** Consumet API self-hosted (`CONSUMET_BASE_URL`) vía BFF en `/api/manga/*` y `/api/chapters/*`. No se persisten tablas `Manga` / `Chapter` en Neon.
+- **Estado de usuario:** Neon PostgreSQL (favorites, historial, notificaciones) keyed por `(provider, externalId)`. Ramas: **`main`** (prod), **`dev`** (local/previews). Ver `docs/ENV.md`.
 
 ## Entidades en Neon
 
@@ -24,60 +24,64 @@ Cuenta sincronizada con Clerk.
 
 ### UserFavorite (`user_favorites`)
 
-Manga en favoritos (bookmark) por usuario; ID externo MangaDex.
+Manga en favoritos (bookmark) por usuario; identidad = provider + id externo Consumet.
 
-| Campo        | Tipo   | Descripción                    |
-| ------------ | ------ | ------------------------------ |
-| `userId`     | FK     | → User                         |
-| `mangaDexId` | UUID   | ID manga en MangaDex           |
+| Campo                   | Tipo    | Descripción                                      |
+| ----------------------- | ------- | ------------------------------------------------ |
+| `userId`                | FK      | → User                                           |
+| `provider`              | String  | ej. `mangahere`, `mangapill`                     |
+| `externalMangaId`       | String  | ID manga en ese provider                         |
+| `lastNotifiedChapterId` | String? | Watermark para poll diario de capítulos nuevos   |
 
-**Unique:** `(userId, mangaDexId)` — índice en `mangaDexId` para webhooks de capítulo.
+**Unique:** `(userId, provider, externalMangaId)` — índice `(provider, externalMangaId)` para jobs.
 
 ### UserPushToken (`user_push_tokens`)
 
 Tokens FCM por dispositivo (varios por usuario).
 
-| Campo   | Tipo   | Descripción              |
-| ------- | ------ | ------------------------ |
-| `userId`| FK     | → User                   |
-| `token` | String | Token FCM del dispositivo|
-| `platform` | PushTokenPlatform | `WEB` \| `ANDROID` |
+| Campo      | Tipo              | Descripción              |
+| ---------- | ----------------- | ------------------------ |
+| `userId`   | FK                | → User                   |
+| `token`    | String            | Token FCM del dispositivo|
+| `platform` | PushTokenPlatform | `WEB` \| `ANDROID`       |
 
 **Unique:** `(userId, token)`
 
 ### ReadingHistory
 
-Progreso por capítulo (IDs MangaDex).
+Progreso por capítulo (IDs de provider Consumet).
 
-| Campo          | Tipo     | Descripción              |
-| -------------- | -------- | ------------------------ |
-| `userId`       | FK       | → User                   |
-| `mangaDexId`   | UUID     | Manga en MangaDex        |
-| `chapterDexId` | UUID     | Capítulo en MangaDex     |
-| `readAt`       | DateTime | Marca de lectura         |
+| Campo               | Tipo     | Descripción              |
+| ------------------- | -------- | ------------------------ |
+| `userId`            | FK       | → User                   |
+| `provider`          | String   | Provider Consumet        |
+| `externalMangaId`   | String   | Manga en ese provider    |
+| `externalChapterId` | String   | Capítulo en ese provider |
+| `readAt`            | DateTime | Marca de lectura         |
 
-**Unique:** `(userId, chapterDexId)`
+**Unique:** `(userId, provider, externalChapterId)`
 
 ### Notification
 
-Notificación in-app; títulos de manga/capítulo se resuelven contra MangaDex al crear.
+Notificación in-app; títulos de manga/capítulo se resuelven contra Consumet al crear.
 
-| Campo          | Tipo             | Descripción                    |
-| -------------- | ---------------- | ------------------------------ |
-| `type`         | NotificationType | NEW_CHAPTER, MANGA_UPDATE, SYSTEM |
-| `mangaDexId`   | UUID?            | Manga relacionado              |
-| `chapterDexId` | UUID?            | Capítulo (NEW_CHAPTER)         |
-| `read`         | Boolean          | Leída o no                     |
+| Campo               | Tipo             | Descripción                    |
+| ------------------- | ---------------- | ------------------------------ |
+| `type`              | NotificationType | NEW_CHAPTER, MANGA_UPDATE, SYSTEM |
+| `provider`          | String?          | Provider del listing           |
+| `externalMangaId`   | String?          | Manga relacionado              |
+| `externalChapterId` | String?          | Capítulo (NEW_CHAPTER)         |
+| `read`              | Boolean          | Leída o no                     |
 
-## Catálogo (MangaDex, no en BD)
+## Catálogo (Consumet, no en BD)
 
-Tipos de aplicación en `src/lib/mangadex/types.ts`:
+Tipos de aplicación en `src/lib/consumet/types.ts`:
 
-- `MangaListItem` / `MangaDetail` — búsqueda y detalle
-- `ChapterListItem` — lista en ficha de manga
-- Reader payload — URLs de páginas desde `/at-home/server/{chapterId}`
+- `MangaSummary` / `MangaDetail` — búsqueda y detalle
+- `Chapter` — lista en ficha de manga
+- `Page` — URLs de páginas (+ Referer) desde Consumet read
 
-URLs de la app: `/manga/[mangaDexId]`, `/reader/[chapterDexId]`.
+URLs de la app: `/manga/[provider]/[mangaId]`, `/reader/[provider]/[chapterId]` (chapter ids con `/` se codifican con `~`).
 
 ## Límites de negocio
 
@@ -90,14 +94,9 @@ No hay seed de catálogo. Tras clonar o cambiar `schema.prisma`:
 
 ```powershell
 npm run db:generate
+npm run db:wipe-library   # limpia favorites/historial/notif manga antes de cutover
 npm run db:sync
 npm run db:cleanup-catalog   # elimina tablas legacy mangas/chapters si quedaron
 ```
 
-Los favorites e historial se crean en uso (búsqueda + UI), con UUIDs de MangaDex.
-
-Si la BD aún tiene la tabla legacy `user_mangas`:
-
-```powershell
-npx dotenv -e .env.local -- prisma db execute --file prisma/rename-user-mangas-to-favorites.sql --schema prisma/schema.prisma
-```
+Cutover provider-scoped: wipe + push (ver `prisma/wipe-legacy-library.sql`).

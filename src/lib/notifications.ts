@@ -1,30 +1,32 @@
 import { db } from "@/lib/db";
 import { sendNotificationEmail, NotificationEmailData } from "@/lib/email";
 import { NotificationType } from "@prisma/client";
-import { getMangaDetail } from "@/lib/mangadex";
+import { getMangaInfo } from "@/lib/consumet";
 
 export interface CreateNotificationData {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
+  provider?: string;
   mangaId?: string;
   chapterId?: string;
 }
 
 async function resolveMangaChapterTitles(
-  mangaDexId?: string,
-  chapterDexId?: string
+  provider?: string,
+  externalMangaId?: string,
+  externalChapterId?: string
 ): Promise<{ mangaTitle?: string; chapterTitle?: string }> {
-  if (!mangaDexId) return {};
+  if (!provider || !externalMangaId) return {};
 
   try {
-    const detail = await getMangaDetail(mangaDexId);
+    const detail = await getMangaInfo(provider, externalMangaId);
     if (!detail) return {};
 
     let chapterTitle: string | undefined;
-    if (chapterDexId) {
-      const ch = detail.chapters.find((c) => c.id === chapterDexId);
+    if (externalChapterId) {
+      const ch = detail.chapters.find((c) => c.id === externalChapterId);
       chapterTitle = ch?.title;
     }
 
@@ -53,6 +55,7 @@ export async function createNotificationWithEmail(
     }
 
     const { mangaTitle, chapterTitle } = await resolveMangaChapterTitles(
+      data.provider,
       data.mangaId,
       data.chapterId
     );
@@ -63,8 +66,9 @@ export async function createNotificationWithEmail(
         type: data.type,
         title: data.title,
         message: data.message,
-        mangaDexId: data.mangaId,
-        chapterDexId: data.chapterId,
+        provider: data.provider,
+        externalMangaId: data.mangaId,
+        externalChapterId: data.chapterId,
       },
     });
 
@@ -97,15 +101,16 @@ export async function createNotificationWithEmail(
 
 export async function createNewChapterNotification(
   userId: string,
-  mangaDexId: string,
-  chapterDexId: string
+  provider: string,
+  externalMangaId: string,
+  externalChapterId: string
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
-  const detail = await getMangaDetail(mangaDexId);
+  const detail = await getMangaInfo(provider, externalMangaId);
   if (!detail) {
     return { success: false, error: "Manga not found" };
   }
 
-  const chapter = detail.chapters.find((c) => c.id === chapterDexId);
+  const chapter = detail.chapters.find((c) => c.id === externalChapterId);
   if (!chapter) {
     return { success: false, error: "Chapter not found" };
   }
@@ -115,17 +120,19 @@ export async function createNewChapterNotification(
     type: "NEW_CHAPTER",
     title: "New Chapter Available!",
     message: `${detail.title} ${chapter.title} is now available to read.`,
-    mangaId: mangaDexId,
-    chapterId: chapterDexId,
+    provider,
+    mangaId: externalMangaId,
+    chapterId: externalChapterId,
   });
 }
 
 export async function createMangaUpdateNotification(
   userId: string,
-  mangaDexId: string,
+  provider: string,
+  externalMangaId: string,
   updateMessage: string
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
-  const detail = await getMangaDetail(mangaDexId);
+  const detail = await getMangaInfo(provider, externalMangaId);
   if (!detail) {
     return { success: false, error: "Manga not found" };
   }
@@ -135,7 +142,8 @@ export async function createMangaUpdateNotification(
     type: "MANGA_UPDATE",
     title: "Manga Update",
     message: `${detail.title}: ${updateMessage}`,
-    mangaId: mangaDexId,
+    provider,
+    mangaId: externalMangaId,
   });
 }
 

@@ -20,6 +20,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:cleanup-catalog": "dotenv -e .env.local -- prisma db execute --file prisma/cleanup-legacy-catalog.sql --schema prisma/schema.prisma",
+    "db:wipe-library": "dotenv -e .env.local -- npx tsx scripts/wipe-provider-scoped-library.ts",
     "db:sync": "dotenv -e .env.local -- prisma db push --accept-data-loss",
     "test": "jest",
     "test:watch": "jest --watch",

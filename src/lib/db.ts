@@ -27,7 +27,7 @@ const globalForPrisma = globalThis as unknown as {
  * 
  * const users = await db.user.findMany();
  * const manga = await db.manga.create({
- *   data: { userId: '...', mangaDexId: '<mangadex-uuid>' }
+ *   data: { userId: '...', provider: 'mangahere', externalMangaId: 'one_piece' }
  * });
  * ```
  */

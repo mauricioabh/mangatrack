@@ -10,6 +10,15 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
+    // Avoid PWA caching (cache-first assets, network-first-with-fallback pages)
+    // fighting Turbopack HMR during local development.
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister()))
+        .catch(() => undefined);
+      return;
+    }
 
     let cancelled = false;
     let onVisible: (() => void) | null = null;

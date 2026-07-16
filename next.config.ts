@@ -22,6 +22,61 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/data-saver/**",
       },
+      {
+        protocol: "http",
+        hostname: "fmcdn.mangahere.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "fmcdn.mangahere.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.mangahere.org",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.mangapill.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.mangapill.com",
+        port: "",
+        pathname: "/**",
+      },
+      // MangaPill / scrape providers often serve covers from title-specific CDNs
+      {
+        protocol: "https",
+        hostname: "cdn.readdetectiveconan.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.readdetectiveconan.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.mangapill.me",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "zjcdn.mangahere.org",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

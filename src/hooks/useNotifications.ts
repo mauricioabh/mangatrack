@@ -8,7 +8,9 @@ interface Notification {
   type: "NEW_CHAPTER" | "MANGA_UPDATE" | "SYSTEM";
   title: string;
   message: string;
+  provider?: string;
   mangaId?: string;
+  chapterId?: string;
   read: boolean;
   createdAt: string;
 }

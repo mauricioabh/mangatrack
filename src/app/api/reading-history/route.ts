@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { chapterReadSchema } from "@/lib/validations";
-import { getMangaChapters } from "@/lib/mangadex";
+import { getMangaInfo } from "@/lib/consumet";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,12 +17,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = chapterReadSchema.parse(body);
+    const provider = validatedData.provider.toLowerCase();
 
     const existingHistory = await db.readingHistory.findUnique({
       where: {
-        userId_chapterDexId: {
+        userId_provider_externalChapterId: {
           userId: user.id,
-          chapterDexId: validatedData.chapterId,
+          provider,
+          externalChapterId: validatedData.chapterId,
         },
       },
     });
@@ -36,8 +38,9 @@ export async function POST(request: NextRequest) {
       await db.readingHistory.create({
         data: {
           userId: user.id,
-          mangaDexId: validatedData.mangaId,
-          chapterDexId: validatedData.chapterId,
+          provider,
+          externalMangaId: validatedData.mangaId,
+          externalChapterId: validatedData.chapterId,
         },
       });
     }
@@ -68,13 +71,21 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const mangaId = searchParams.get("mangaId");
+    const provider = searchParams.get("provider")?.toLowerCase();
 
-    const where: { userId: string; mangaDexId?: string } = {
+    const where: {
+      userId: string;
+      externalMangaId?: string;
+      provider?: string;
+    } = {
       userId: user.id,
     };
 
     if (mangaId) {
-      where.mangaDexId = mangaId;
+      where.externalMangaId = mangaId;
+    }
+    if (provider) {
+      where.provider = provider;
     }
 
     const history = await db.readingHistory.findMany({
@@ -82,27 +93,34 @@ export async function GET(request: NextRequest) {
       orderBy: { readAt: "desc" },
     });
 
-    if (!mangaId || history.length === 0) {
+    if (!mangaId || !provider || history.length === 0) {
       return NextResponse.json({
         success: true,
         data: history,
       });
     }
 
-    const chapters = await getMangaChapters(mangaId);
-    const chapterNumById = new Map(
-      chapters.map((c) => [c.id, c.chapterNumber])
-    );
+    try {
+      const detail = await getMangaInfo(provider, mangaId);
+      const chapterNumById = new Map(
+        (detail?.chapters ?? []).map((c) => [c.id, c.chapterNumber])
+      );
 
-    const data = history.map((h) => ({
-      ...h,
-      chapterNumber: chapterNumById.get(h.chapterDexId) ?? null,
-    }));
+      const data = history.map((h) => ({
+        ...h,
+        chapterNumber: chapterNumById.get(h.externalChapterId) ?? null,
+      }));
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
+      return NextResponse.json({
+        success: true,
+        data,
+      });
+    } catch {
+      return NextResponse.json({
+        success: true,
+        data: history,
+      });
+    }
   } catch (error) {
     console.error("Error fetching reading history:", error);
     return NextResponse.json(

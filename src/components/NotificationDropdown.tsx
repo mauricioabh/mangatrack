@@ -181,8 +181,10 @@ export function NotificationDropdown() {
                               </Button>
                             )}
 
-                            {notification.mangaId && (
-                              <Link href={`/manga/${notification.mangaId}`}>
+                            {notification.mangaId && notification.provider && (
+                              <Link
+                                href={`/manga/${encodeURIComponent(notification.provider)}/${encodeURIComponent(notification.mangaId)}`}
+                              >
                                 <Button
                                   variant="ghost"
                                   size="sm"

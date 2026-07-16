@@ -57,12 +57,11 @@ This calls `POST /api/user/push-token` and stores the token in `user_push_tokens
 
 With `npm run dev`, `npx inngest-cli@latest dev`, Firebase env set, and a manga in favorites:
 
-```powershell
-# Same body as MangaDex webhook test
-Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/webhook/mangadex" -ContentType "application/json" -Body $body
-```
+1. Open http://localhost:8288 → **Functions** → *Poll Consumet for new chapters on favorites* → **Invoke**.
+2. First run on a favorite without watermark → `seeded` (no flood). To force a push, set `lastNotifiedChapterId` in Neon to an older chapter id and Invoke again.
+3. Check Inngest run → FCM steps; device should receive notification (foreground: toast; background: system notification via service worker).
 
-Check Inngest run → FCM batch steps; device should receive notification (foreground: toast; background: system notification via service worker).
+`POST /api/webhook/mangadex` returns **410 Gone** and is no longer used for chapter notifications.
 
 ## 6. Vercel production
 

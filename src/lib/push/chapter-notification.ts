@@ -1,74 +1,47 @@
-import { getMangaDetail } from "@/lib/mangadex";
+import { getMangaInfo } from "@/lib/consumet";
 
 export interface ChapterPushContent {
   title: string;
   body: string;
-  mangaDexId: string;
-  chapterDexId: string;
+  provider: string;
+  externalMangaId: string;
+  externalChapterId: string;
 }
 
-function getChapterId(chapter: Record<string, unknown>): string | undefined {
-  if (typeof chapter.id === "string") {
-    return chapter.id;
-  }
-  const data = chapter.data;
-  if (
-    data &&
-    typeof data === "object" &&
-    "id" in data &&
-    typeof (data as { id: unknown }).id === "string"
-  ) {
-    return (data as { id: string }).id;
-  }
-  return undefined;
-}
+export async function buildChapterPushContent(options: {
+  provider: string;
+  externalMangaId: string;
+  externalChapterId: string;
+  chapterTitle?: string;
+  chapterNumber?: number;
+}): Promise<ChapterPushContent | null> {
+  const {
+    provider,
+    externalMangaId,
+    externalChapterId,
+    chapterTitle,
+    chapterNumber,
+  } = options;
 
-function getChapterLabel(chapter: Record<string, unknown>): string {
-  const attrs =
-    chapter.attributes && typeof chapter.attributes === "object"
-      ? (chapter.attributes as Record<string, unknown>)
-      : null;
+  if (!externalChapterId) return null;
 
-  if (attrs) {
-    const volume = attrs.volume;
-    const number = attrs.chapter;
-    const title = attrs.title;
-    const parts: string[] = [];
-    if (volume != null && String(volume).length > 0) {
-      parts.push(`Vol. ${volume}`);
-    }
-    if (number != null && String(number).length > 0) {
-      parts.push(`Ch. ${number}`);
-    }
-    if (typeof title === "string" && title.trim().length > 0) {
-      parts.push(title.trim());
-    }
-    if (parts.length > 0) {
-      return parts.join(" · ");
-    }
+  let mangaTitle = "Your manga";
+  try {
+    const detail = await getMangaInfo(provider, externalMangaId);
+    if (detail?.title) mangaTitle = detail.title;
+  } catch {
+    // keep fallback title
   }
 
-  return "New chapter";
-}
-
-export async function buildChapterPushContent(
-  mangaDexId: string,
-  chapter: Record<string, unknown>,
-  translatedLanguage: string
-): Promise<ChapterPushContent | null> {
-  const chapterDexId = getChapterId(chapter);
-  if (!chapterDexId) {
-    return null;
-  }
-
-  const detail = await getMangaDetail(mangaDexId);
-  const mangaTitle = detail?.title ?? "Your manga";
-  const chapterLabel = getChapterLabel(chapter);
+  const label =
+    chapterTitle?.trim() ||
+    (chapterNumber != null ? `Ch. ${chapterNumber}` : "New chapter");
 
   return {
     title: "New chapter available",
-    body: `${mangaTitle} — ${chapterLabel} (${translatedLanguage})`,
-    mangaDexId,
-    chapterDexId,
+    body: `${mangaTitle} — ${label}`,
+    provider,
+    externalMangaId,
+    externalChapterId,
   };
 }

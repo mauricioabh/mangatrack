@@ -2,7 +2,7 @@
 
 ## What is MangaTrack?
 
-MangaTrack is a clean, minimalist web app for discovering, reading, and tracking manga series. It syncs with the MangaDex catalog, sends chapter-update notifications, and keeps your reading progress in one place.
+MangaTrack is a clean, minimalist web app for discovering, reading, and tracking manga series. It syncs with a self-hosted Consumet catalog, sends chapter-update notifications, and keeps your reading progress in one place.
 
 **Live:** https://mangatrack-git-dev-mauricioabhs-projects.vercel.app/
 
@@ -14,7 +14,7 @@ Manga readers who want a simple dashboard to follow series, bookmark titles, and
 
 ### What does MangaTrack do?
 
-MangaTrack lets you search the MangaDex catalog, save manga to your library, read chapters in-app, and get notified when new chapters drop.
+MangaTrack lets you search a multi-provider Consumet catalog, save manga to your library, read chapters in-app, and get notified when new chapters drop.
 
 ### Do I need an account?
 
@@ -307,10 +307,11 @@ Access development utilities from the header:
 - `PATCH /api/user/preferences` - Update user preferences
 - `DELETE /api/user/delete` - Delete user account
 - `GET /api/manga/bookmarks` - Get user's bookmarked manga
-- `POST /api/manga/bookmark` - Bookmark a manga
+- `POST /api/manga/bookmark` - Bookmark a manga (`provider` + `mangaId`)
 - `DELETE /api/manga/bookmark` - Remove manga bookmark
-- `GET /api/chapters/[chapterId]` - Get chapter details
-- `POST /api/reading-history` - Mark chapter as read
+- `GET /api/manga/[provider]/[mangaId]` - Manga detail + chapters
+- `GET /api/chapters/[provider]/[chapterId]` - Chapter reader payload
+- `POST /api/reading-history` - Mark chapter as read (`provider` + ids)
 - `GET /api/reading-history` - Get user's reading history
 - `POST /api/stripe/create-checkout` - Create Stripe checkout session
 - `POST /api/stripe/create-portal` - Create Stripe customer portal

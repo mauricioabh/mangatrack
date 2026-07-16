@@ -64,7 +64,12 @@ try {
     }
 
     const body = await request.json();
-    const { type, mangaId, chapterId } = body;
+    const { type, mangaId, chapterId, provider } = body as {
+      type?: string;
+      mangaId?: string;
+      chapterId?: string;
+      provider?: string;
+    };
 
     if (!type) {
       return NextResponse.json(
@@ -77,31 +82,37 @@ try {
 
     switch (type) {
       case "NEW_CHAPTER":
-        if (!mangaId || !chapterId) {
+        if (!provider || !mangaId || !chapterId) {
           return NextResponse.json(
             {
               success: false,
-              error: "mangaId and chapterId are required for NEW_CHAPTER",
+              error:
+                "provider, mangaId and chapterId are required for NEW_CHAPTER",
             },
             { status: 400 }
           );
         }
         result = await createNewChapterNotification(
           user.id,
+          provider,
           mangaId,
           chapterId
         );
         break;
 
       case "MANGA_UPDATE":
-        if (!mangaId) {
+        if (!provider || !mangaId) {
           return NextResponse.json(
-            { success: false, error: "mangaId is required for MANGA_UPDATE" },
+            {
+              success: false,
+              error: "provider and mangaId are required for MANGA_UPDATE",
+            },
             { status: 400 }
           );
         }
         result = await createMangaUpdateNotification(
           user.id,
+          provider,
           mangaId,
           "This is a simulated manga update notification for testing purposes."
         );

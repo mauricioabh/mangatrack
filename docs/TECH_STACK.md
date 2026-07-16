@@ -17,6 +17,8 @@
 - **Clerk** — auth (`@clerk/nextjs`, `src/middleware.ts`)
 - **Stripe** — suscripciones premium (`src/lib/stripe.ts`, webhooks)
 - **Resend** — emails (`src/lib/email.ts`)
+- **Inngest** — jobs (`src/inngest/`, `/api/inngest`)
+- **Consumet** — catálogo BFF (`src/lib/consumet/`)
 
 ## Testing
 
@@ -33,20 +35,23 @@
 - **Vercel** (target) — ver `vercel.json`
 - Variables: ver `docs/ENV.md`
 
-## Fuente de contenido (pendiente)
+## Fuente de contenido
 
-- **MangaFeeling** — previsto vía scraping; no integrado aún
+- **Consumet** self-hosted (`CONSUMET_BASE_URL`) — multiprovider (`mangahere`, `mangapill`, …). Ver `docs/MANGA_SOURCE.md`.
+- **Inngest** — cron diario `poll-favorite-chapters-daily` + jobs FCM.
 
 ## Comandos npm
 
 | Script        | Uso                    |
 | ------------- | ---------------------- |
-| `npm run dev` | Desarrollo             |
+| `npm run dev` | Desarrollo (`INNGEST_DEV=1`) |
 | `npm run build` | Build producción     |
 | `npm run typecheck` | `tsc --noEmit`   |
 | `npm run lint` | ESLint                |
+| `npm test` | Jest unit             |
 | `npm run db:push` | Sync schema dev    |
 | `npm run db:migrate` | Migraciones formales |
 | `npm run db:sync` | Alinear schema Neon |
+| `npm run db:wipe-library` | Wipe favorites/historial (cutover) |
 | `npm run db:cleanup-catalog` | Quitar tablas legacy `mangas`/`chapters` |
 | `npm run test:e2e` | Playwright         |

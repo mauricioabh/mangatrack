@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import Image from "next/image";
+import { CatalogCover } from "@/components/manga/catalog-cover";
 // Cache removed - using regular fetch for fresh data
 
 interface Manga {
   id: string;
+  provider?: string;
   title: string;
   author: string;
   description: string;
@@ -29,7 +30,8 @@ interface Bookmark {
   id: string;
   userId: string;
   mangaId: string;
-  mangaDexId: string;
+  provider: string;
+  externalMangaId: string;
   manga: Manga | null;
   createdAt: string;
 }
@@ -254,11 +256,12 @@ export default function DashboardContent() {
                     <div className="flex items-center gap-3 sm:space-x-4">
                       <div className="h-20 w-16 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700">
                         {manga.coverImage && (
-                          <Image
+                          <CatalogCover
                             src={manga.coverImage}
                             alt={manga.title}
                             width={64}
                             height={80}
+                            provider={bookmark.provider}
                             className="h-full w-full rounded object-cover"
                           />
                         )}
@@ -271,12 +274,18 @@ export default function DashboardContent() {
                           by {manga.author}
                         </p>
                         <div className="mt-1 flex items-center space-x-2">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {bookmark.provider}
+                          </Badge>
                           <Badge variant="secondary" className="text-xs">
                             {manga.status}
                           </Badge>
                         </div>
                       </div>
-                      <Link href={`/manga/${manga.id}`} className="shrink-0">
+                      <Link
+                        href={`/manga/${encodeURIComponent(bookmark.provider)}/${encodeURIComponent(manga.id)}`}
+                        className="shrink-0"
+                      >
                         <Button size="sm" variant="outline">
                           Read
                         </Button>

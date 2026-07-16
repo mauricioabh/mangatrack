@@ -46,6 +46,12 @@ Dashboard functionality tests:
 - Empty state display
 - Navigation functionality
 
+### Unit (Jest, `*.test.ts`)
+
+- `consumet/mappers.test.ts` — Consumet search/detail/chapter mappers
+- `consumet/ids.test.ts` — `~` encoding for slashy chapter ids
+- `reading-progress.test.ts` — continue-reading helpers
+
 ### `example.spec.ts`
 
 Simple example tests:

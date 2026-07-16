@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface BookmarkButtonProps {
+  provider: string;
   mangaId: string;
   isBookmarked: boolean;
   onBookmarkChange?: (isBookmarked: boolean) => void;
 }
 
 export function BookmarkButton({
+  provider,
   mangaId,
   isBookmarked,
   onBookmarkChange,
@@ -32,6 +34,7 @@ export function BookmarkButton({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          provider,
           mangaId,
         }),
       });

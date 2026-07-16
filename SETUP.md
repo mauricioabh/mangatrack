@@ -79,7 +79,7 @@ Complete setup guide for the MangaTrack application with authentication, email n
 
 - ✅ Prisma ORM with PostgreSQL
 - ✅ Neon schema for users, bookmarks, reading history, notifications
-- ✅ Catalog (manga/chapters) from MangaDex API — not stored in PostgreSQL
+- ✅ Catalog (manga/chapters) from Consumet API (self-hosted) — not stored in PostgreSQL
 - ✅ User tier system with limits
 - ✅ Notification system with email preferences
 
