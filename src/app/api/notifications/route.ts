@@ -83,8 +83,9 @@ export async function GET() {
       type: n.type,
       title: n.title,
       message: n.message,
-      mangaId: n.mangaDexId ?? undefined,
-      chapterId: n.chapterDexId ?? undefined,
+      provider: n.provider ?? undefined,
+      mangaId: n.externalMangaId ?? undefined,
+      chapterId: n.externalChapterId ?? undefined,
       read: n.read,
       createdAt: n.createdAt,
     }));

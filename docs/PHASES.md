@@ -13,21 +13,24 @@
 - [ ] Añadir job Playwright opcional en CI (secrets Clerk)
 - [ ] Unificar referencias `.env.example` en README/SETUP
 
-## Fase 2 — Catálogo MangaDex (ver plan maestro)
+## Fase 2 — Catálogo Consumet (cutover) ✅
 
-Plan detallado: **`docs/MANGADEX_MIGRATION_PLAN.md`**
+- [x] Cliente `src/lib/consumet` + env `CONSUMET_*`
+- [x] Schema Neon provider-scoped + wipe legacy MangaDex IDs
+- [x] BFF search/detail/reader multi-provider
+- [x] UI provider-labeled search + rutas `/manga/[provider]/[id]`
+- [x] Cover proxy `/api/catalog/cover` + badge chapter-count en search
+- [x] Poll diario Inngest; webhook MangaDex → 410
+- [x] Tests Jest `tests/consumet/*` (mappers + ids)
 
-- [ ] Fase A: `src/lib/mangadex` + tests unitarios
-- [ ] Fase B: Schema Neon (bookmarks por `mangaDexId`, sin tablas Manga/Chapter)
-- [ ] Fase C–E: BFF search/detail/reader + bookmarks compose
-- [ ] Fase F (opcional): RLS Neon — `docs/SECURITY.md`
-- [ ] Fase G: Limpieza docs, E2E, deprecar MangaFeeling
+Plan histórico (superseded): `docs/MANGADEX_MIGRATION_PLAN.md`
 
 ## Fase 3 — Notificaciones automáticas
 
-- [ ] Detectar capítulos nuevos post-ingest
-- [ ] Disparar email + in-app + browser según preferencias
+- [x] Detectar capítulos nuevos vía poll Consumet (watermark en favorites)
+- [x] Disparar email + in-app + push según preferencias
 - [ ] Tests de integración Resend (sandbox)
+- [ ] “Check now” / cadencia configurable (opcional)
 
 ## Fase 4 — MSW y desarrollo offline
 

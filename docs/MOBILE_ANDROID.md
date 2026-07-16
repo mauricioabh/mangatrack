@@ -22,8 +22,8 @@ App Android en `android/` dentro del mismo repo que la web. Comparte API, Clerk,
 
 | Capa | Comportamiento |
 |------|----------------|
-| MangaDex webhook | `POST /api/webhook/mangadex` |
-| Inngest | `manga/chapter.published` |
+| Cron Inngest | `poll-favorite-chapters-daily` (`0 2 * * *`) — poll Consumet `info` vs `lastNotifiedChapterId` |
+| Evento legacy | `manga/chapter.published` (push helper); webhook MangaDex → **410** |
 | Por usuario | In-app + email (preferencias) + FCM si hay token |
 | Android | `POST /api/user/push-token` con `platform: "ANDROID"` |
 
@@ -74,7 +74,7 @@ La web sigue en la raíz (`npm run dev`); el deploy Vercel **no** incluye el APK
 ## Lector
 
 - Detalle manga → capítulo → `ReaderScreen` (scroll vertical).
-- Imágenes vía proxy autenticado: `/api/chapters/{id}/pages/{n}` (mismo JWT que el resto de la API).
+- Imágenes vía proxy autenticado: `/api/chapters/{provider}/{chapterId}/pages/{n}` (mismo JWT que el resto de la API; `chapterId` con `/` usa encoding `~`).
 
 ## Stripe Premium
 

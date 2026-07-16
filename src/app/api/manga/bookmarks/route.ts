@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getMangaByIds } from "@/lib/mangadex";
+import { getMangaInfo } from "@/lib/consumet";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,36 +37,58 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const mangaDexIds = bookmarks.map((b) => b.mangaDexId);
-    const mangaList = await getMangaByIds(mangaDexIds);
-    const mangaById = new Map(mangaList.map((m) => [m.id, m]));
-
-    const data = bookmarks.map((bookmark) => {
-      const manga = mangaById.get(bookmark.mangaDexId);
-      return {
-        id: bookmark.id,
-        userId: bookmark.userId,
-        mangaId: bookmark.mangaDexId,
-        mangaDexId: bookmark.mangaDexId,
-        createdAt: bookmark.createdAt,
-        manga: manga
-          ? {
-              id: manga.id,
-              title: manga.title,
-              author: manga.author ?? "",
-              description: manga.description ?? "",
-              coverImage: manga.coverImage ?? "",
-              status: manga.status,
-              genres: manga.genres,
+    const hydrated = await Promise.all(
+      bookmarks.map(async (bookmark) => {
+        let manga = null;
+        try {
+          const detail = await getMangaInfo(
+            bookmark.provider,
+            bookmark.externalMangaId
+          );
+          if (detail) {
+            manga = {
+              id: detail.id,
+              provider: detail.provider,
+              title: detail.title,
+              author: detail.author ?? "",
+              description: detail.description ?? "",
+              coverImage: detail.coverImage ?? "",
+              coverReferer: detail.coverReferer,
+              status: detail.status,
+              genres: detail.genres,
               chapters: [],
-            }
-          : null,
-      };
-    });
+            };
+          }
+        } catch {
+          manga = {
+            id: bookmark.externalMangaId,
+            provider: bookmark.provider,
+            title: bookmark.externalMangaId,
+            author: "",
+            description: "",
+            coverImage: "",
+            status: "ONGOING" as const,
+            genres: [] as string[],
+            chapters: [],
+            degraded: true,
+          };
+        }
+
+        return {
+          id: bookmark.id,
+          userId: bookmark.userId,
+          provider: bookmark.provider,
+          mangaId: bookmark.externalMangaId,
+          externalMangaId: bookmark.externalMangaId,
+          createdAt: bookmark.createdAt,
+          manga,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      data,
+      data: hydrated,
       pagination: {
         page,
         limit,

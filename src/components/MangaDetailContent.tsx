@@ -16,8 +16,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import Image from "next/image";
 import { toast } from "sonner";
+import { CatalogCover } from "@/components/manga/catalog-cover";
 import {
   getChapterToRead,
   getContinueReadingLabel,
@@ -25,10 +25,12 @@ import {
 
 interface Manga {
   id: string;
+  provider: string;
   title: string;
   author: string;
   description: string;
   coverImage: string;
+  coverReferer?: string;
   status: string;
   genres: string[];
   chapters: Array<{
@@ -36,10 +38,10 @@ interface Manga {
     chapterNumber: number;
     title: string;
     pages: number;
-    pagesData?: string[]; // Original pages array for reader
+    pagesData?: string[];
   }>;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse<T> {
@@ -50,10 +52,12 @@ interface ApiResponse<T> {
 }
 
 interface MangaDetailContentProps {
+  provider: string;
   mangaId: string;
 }
 
 export default function MangaDetailContent({
+  provider,
   mangaId,
 }: MangaDetailContentProps) {
   const [manga, setManga] = useState<Manga | null>(null);
@@ -66,67 +70,71 @@ export default function MangaDetailContent({
   const [mangaLoading, setMangaLoading] = useState(true);
   const [metadataLoading, setMetadataLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchMangaData = async () => {
-      try {
-        // Fetch manga details first to get the manga ID
-        const mangaResponse = await fetch(`/api/manga/${mangaId}`);
-        const mangaData = (await mangaResponse.json()) as ApiResponse<Manga>;
+  const fetchMangaData = async () => {
+    setMangaLoading(true);
+    setError(null);
+    try {
+      const mangaResponse = await fetch(
+        `/api/manga/${encodeURIComponent(provider)}/${encodeURIComponent(mangaId)}`
+      );
+      const mangaData = (await mangaResponse.json()) as ApiResponse<Manga>;
 
-        if (!mangaResponse.ok) {
-          setError(mangaData.error ?? "Failed to load manga details");
-          return;
-        }
-
-        if (mangaData.success && mangaData.data) {
-          setManga(mangaData.data);
-          setMangaLoading(false); // Manga data is loaded
-
-          // Now make parallel calls for bookmark status and reading history
-          const [bookmarkResponse, historyResponse] = await Promise.all([
-            fetch(`/api/manga/bookmark?mangaId=${mangaData.data.id}`),
-            fetch(`/api/reading-history?mangaId=${mangaData.data.id}`),
-          ]);
-
-          const [bookmarkData, historyData] = await Promise.all([
-            bookmarkResponse.json(),
-            historyResponse.json(),
-          ]);
-
-          // Update bookmark status
-          const bookmarkApiResponse = bookmarkData as unknown as ApiResponse<{
-            isBookmarked: boolean;
-          }>;
-          setIsBookmarked(
-            bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked
-          );
-
-          const historyApiResponse = historyData as unknown as ApiResponse<
-            Array<{ chapterDexId: string }>
-          >;
-          if (historyApiResponse.success && historyApiResponse.data) {
-            setReadChapterIds(
-              new Set(
-                historyApiResponse.data.map((h) => h.chapterDexId)
-              )
-            );
-          }
-
-          setMetadataLoading(false); // Metadata is loaded
-        } else {
-          setError(mangaData.error ?? "Manga not found");
-        }
-      } catch (err) {
-        setError("Failed to load manga details");
-        console.error("Error fetching manga:", err);
-      } finally {
-        setMangaLoading(false);
-        setMetadataLoading(false);
+      if (!mangaResponse.ok) {
+        setError(mangaData.error ?? "Failed to load manga details");
+        return;
       }
-    };
 
-    fetchMangaData();
-  }, [mangaId]);
+      if (mangaData.success && mangaData.data) {
+        setManga({ ...mangaData.data, provider });
+        setMangaLoading(false);
+
+        const [bookmarkResponse, historyResponse] = await Promise.all([
+          fetch(
+            `/api/manga/bookmark?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`
+          ),
+          fetch(
+            `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`
+          ),
+        ]);
+
+        const [bookmarkData, historyData] = await Promise.all([
+          bookmarkResponse.json(),
+          historyResponse.json(),
+        ]);
+
+        const bookmarkApiResponse = bookmarkData as unknown as ApiResponse<{
+          isBookmarked: boolean;
+        }>;
+        setIsBookmarked(
+          bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked
+        );
+
+        const historyApiResponse = historyData as unknown as ApiResponse<
+          Array<{ externalChapterId: string }>
+        >;
+        if (historyApiResponse.success && historyApiResponse.data) {
+          setReadChapterIds(
+            new Set(historyApiResponse.data.map((h) => h.externalChapterId))
+          );
+        }
+
+        setMetadataLoading(false);
+      } else {
+        setError(mangaData.error ?? "Manga not found");
+      }
+    } catch (err) {
+      setError("Failed to load manga details");
+      console.error("Error fetching manga:", err);
+    } finally {
+      setMangaLoading(false);
+      setMetadataLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchMangaData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when route ids change
+  }, [provider, mangaId]);
 
   useEffect(() => {
     if (!manga?.id) return;
@@ -134,14 +142,14 @@ export default function MangaDetailContent({
     const refreshReadingHistory = async () => {
       try {
         const response = await fetch(
-          `/api/reading-history?mangaId=${manga.id}`
+          `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(manga.id)}`
         );
         const historyData = (await response.json()) as ApiResponse<
-          Array<{ chapterDexId: string }>
+          Array<{ externalChapterId: string }>
         >;
         if (historyData.success && historyData.data) {
           setReadChapterIds(
-            new Set(historyData.data.map((h) => h.chapterDexId))
+            new Set(historyData.data.map((h) => h.externalChapterId))
           );
         }
       } catch (err) {
@@ -161,7 +169,7 @@ export default function MangaDetailContent({
       window.removeEventListener("focus", refreshReadingHistory);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [manga?.id]);
+  }, [manga?.id, provider]);
 
   const handleBookmarkToggle = async () => {
     if (!manga) return;
@@ -175,6 +183,7 @@ export default function MangaDetailContent({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          provider,
           mangaId: manga.id,
         }),
       });
@@ -198,17 +207,20 @@ export default function MangaDetailContent({
     }
   };
 
+  const chapterHref = (chapterId: string) =>
+    `/reader/${encodeURIComponent(provider)}/${chapterId.replaceAll("/", "~")}`;
+
   const handleStartReading = () => {
     if (!manga) return;
 
     const target = getChapterToRead(manga.chapters, readChapterIds);
     if (target) {
-      window.open(`/reader/${target.id}`, "_blank");
+      window.open(chapterHref(target.id), "_blank");
     }
   };
 
   const handleReadChapter = (chapterId: string) => {
-    window.open(`/reader/${chapterId}`, "_blank");
+    window.open(chapterHref(chapterId), "_blank");
   };
 
   // Show skeleton loading while manga data is loading
@@ -286,17 +298,25 @@ export default function MangaDetailContent({
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Manga Not Found
+            Could not load manga
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             {error || "The manga you're looking for doesn't exist."}
           </p>
-          <Link href="/search">
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95">
-              <Search className="h-4 w-4 mr-2" />
-              Browse Manga
+          <div className="flex gap-3 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => void fetchMangaData()}
+            >
+              Retry
             </Button>
-          </Link>
+            <Link href="/search">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg">
+                <Search className="h-4 w-4 mr-2" />
+                Browse Manga
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -325,11 +345,13 @@ export default function MangaDetailContent({
             <div className="mx-auto w-full max-w-[16rem] flex-shrink-0 md:mx-0">
               <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-gray-200 shadow-lg dark:bg-gray-700 sm:h-80 sm:aspect-auto">
                 {manga.coverImage && (
-                  <Image
+                  <CatalogCover
                     src={manga.coverImage}
                     alt={manga.title}
                     width={256}
                     height={320}
+                    provider={provider}
+                    referer={manga.coverReferer}
                     className="h-full w-full object-cover"
                   />
                 )}
@@ -341,18 +363,25 @@ export default function MangaDetailContent({
               <h1 className="mb-4 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold break-words text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-3xl md:text-4xl">
                 {manga.title}
               </h1>
+              <div className="mb-4">
+                <Badge variant="outline" className="text-sm capitalize">
+                  {provider}
+                </Badge>
+              </div>
 
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center text-gray-600 dark:text-gray-300">
                   <User className="h-4 w-4 mr-2" />
-                  <span className="font-medium">{manga.author}</span>
+                  <span className="font-medium">{manga.author || "Unknown"}</span>
                 </div>
+                {manga.updatedAt && (
                 <div className="flex items-center text-gray-600 dark:text-gray-300">
                   <Calendar className="h-4 w-4 mr-2" />
                   <span>{new Date(manga.updatedAt).toLocaleDateString()}</span>
                 </div>
+                )}
                 <Badge
-                  variant={manga.status === "Ongoing" ? "default" : "secondary"}
+                  variant={manga.status === "ONGOING" || manga.status === "Ongoing" ? "default" : "secondary"}
                   className="text-sm"
                 >
                   {manga.status}
@@ -445,11 +474,13 @@ export default function MangaDetailContent({
                     <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
                       <div className="h-14 w-10 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700 sm:h-16 sm:w-12">
                         {manga.coverImage && (
-                          <Image
+                          <CatalogCover
                             src={manga.coverImage}
                             alt={manga.title}
                             width={48}
                             height={64}
+                            provider={provider}
+                            referer={manga.coverReferer}
                             className="h-full w-full rounded object-cover"
                           />
                         )}

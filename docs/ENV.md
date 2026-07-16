@@ -95,7 +95,8 @@ Clerk usa flujo **redirect** (`/v1/oauth_callback` en `*.clerk.accounts.dev` o d
 
 | `INNGEST_DEV`          | `1` en local (usa Dev Server; no hace falta event key) | Dev ✅    |
 
-Dev local: `npm run dev` (incluye `INNGEST_DEV=1`) + `npx inngest-cli@latest dev` → `http://localhost:3000/api/inngest`.
+Dev local: `npm run dev` (incluye `INNGEST_DEV=1`) + `npx inngest-cli@latest dev` → UI en http://localhost:8288, app en `http://localhost:3000/api/inngest`.  
+Cómo invocar el cron a mano: `docs/TESTING.md` (sección Inngest).
 
 ## Firebase (FCM push)
 
@@ -123,16 +124,20 @@ Guía paso a paso: [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
 
 UI: Settings → **Push Notifications (FCM)**. API: `POST /api/user/push-token` (Clerk).
 
-## MangaDex (catálogo y webhooks)
+## Consumet (catálogo)
 
-| Variable                    | Descripción                                      | Requerida |
-| --------------------------- | ------------------------------------------------ | --------- |
-| `MANGADEX_API_BASE_URL`     | API base (default `https://api.mangadex.org`)    | Opcional  |
-| `MANGADEX_CONTENT_RATINGS`  | Ratings permitidos, CSV (ej. `safe,suggestive`)  | Opcional  |
-| `MANGADEX_DEFAULT_LOCALE`   | Locale preferido para títulos (`en`, `es`, …)    | Opcional  |
-| `MANGADEX_WEBHOOK_SECRET`   | Secret opcional para `/api/webhook/mangadex`       | Opcional  |
+Catálogo vía instancia self-hosted Wayool — no usar `api.consumet.org` ni `api.mangadex.org`.
 
-Webhook de capítulos: `POST /api/webhook/mangadex` — evento `chapter.created`; idiomas `es`, `es-la`, `en` disparan `manga/chapter.published` en Inngest.
+| Variable | Descripción | Requerida |
+| -------- | ----------- | --------- |
+| `CONSUMET_BASE_URL` | Origen Consumet (ej. `https://consumet.wayool.com`) | ✅ |
+| `CONSUMET_TIMEOUT_MS` | Timeout por request en ms (default `45000`) | Opcional |
+| `CONSUMET_PROVIDER_ALLOWLIST` | Providers CSV para búsqueda multi-fuente (default `mangahere,mangapill`) | Opcional |
+| `CONSUMET_MANGA_PROVIDER` | Preferencia suave para scripts/debug o orden; **no** oculta otros providers en la UI | Opcional |
+
+Notificaciones de capítulo nuevo: cron diario Inngest (poll de favoritos), no webhook MangaDex.
+
+Variables `MANGADEX_*` están **deprecadas** y ya no se usan para catálogo.
 
 ## Testing / desarrollo
 

@@ -18,19 +18,21 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const mangaId = searchParams.get("mangaId");
+    const provider = searchParams.get("provider")?.toLowerCase();
 
-    if (!mangaId) {
+    if (!mangaId || !provider) {
       return NextResponse.json(
-        { success: false, error: "Manga ID is required" },
+        { success: false, error: "provider and mangaId are required" },
         { status: 400 }
       );
     }
 
     const bookmark = await db.userFavorite.findUnique({
       where: {
-        userId_mangaDexId: {
+        userId_provider_externalMangaId: {
           userId: user.id,
-          mangaDexId: mangaId,
+          provider,
+          externalMangaId: mangaId,
         },
       },
     });
@@ -61,13 +63,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = mangaBookmarkSchema.parse(body);
-    const mangaDexId = validatedData.mangaId;
+    const provider = validatedData.provider.toLowerCase();
+    const externalMangaId = validatedData.mangaId;
 
     const existingBookmark = await db.userFavorite.findUnique({
       where: {
-        userId_mangaDexId: {
+        userId_provider_externalMangaId: {
           userId: user.id,
-          mangaDexId,
+          provider,
+          externalMangaId,
         },
       },
     });
@@ -98,7 +102,8 @@ export async function POST(request: NextRequest) {
     const bookmark = await db.userFavorite.create({
       data: {
         userId: user.id,
-        mangaDexId,
+        provider,
+        externalMangaId,
       },
     });
 
@@ -129,12 +134,14 @@ export async function DELETE(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = mangaBookmarkSchema.parse(body);
+    const provider = validatedData.provider.toLowerCase();
 
     await db.userFavorite.delete({
       where: {
-        userId_mangaDexId: {
+        userId_provider_externalMangaId: {
           userId: user.id,
-          mangaDexId: validatedData.mangaId,
+          provider,
+          externalMangaId: validatedData.mangaId,
         },
       },
     });

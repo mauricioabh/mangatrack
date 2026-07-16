@@ -29,8 +29,8 @@ alwaysApply: true
 
 ## Contenido
 
-- Fuente prevista: **MangaFeeling** (`MANGA_FEELING_BASE_URL`) — ver `docs/MANGA_SOURCE.md`
-- Catálogo: MangaDex API; Neon solo estado de usuario (sin seed)
+- Fuente catálogo: **Consumet** (`CONSUMET_BASE_URL`) — ver `docs/MANGA_SOURCE.md`
+- Catálogo: Consumet multiprovider; Neon solo estado de usuario (sin seed)
 
 ## Mantener actualizado
 

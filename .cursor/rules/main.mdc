@@ -60,4 +60,4 @@ Ver `docs/` y `AGENTS.md`.
 
 ## Pendiente
 
-Ingest desde `MANGA_FEELING_BASE_URL` — ver `docs/MANGA_SOURCE.md`.
+Catálogo vía Consumet — ver `docs/MANGA_SOURCE.md`. Poll diario para notificaciones de capítulo.

@@ -10,7 +10,7 @@
  *  - Firebase Cloud Messaging (background) via compat SDK.
  */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL_CACHE = `mangatrack-shell-${VERSION}`;
 const STATIC_CACHE = `mangatrack-static-${VERSION}`;
 const IMAGE_CACHE = `mangatrack-images-${VERSION}`;

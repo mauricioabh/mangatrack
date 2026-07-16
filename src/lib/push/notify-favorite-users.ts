@@ -2,21 +2,34 @@ import { db } from "@/lib/db";
 import { buildChapterPushContent } from "@/lib/push/chapter-notification";
 import { createNotificationWithEmail } from "@/lib/notifications";
 
-export async function notifyFavoriteUsersInAppAndEmail(
-  userIds: string[],
-  mangaDexId: string,
-  chapter: Record<string, unknown>,
-  translatedLanguage: string
-): Promise<{ inApp: number; emailsAttempted: number; errors: number }> {
+export async function notifyFavoriteUsersInAppAndEmail(options: {
+  userIds: string[];
+  provider: string;
+  externalMangaId: string;
+  externalChapterId: string;
+  chapterTitle?: string;
+  chapterNumber?: number;
+}): Promise<{ inApp: number; emailsAttempted: number; errors: number }> {
+  const {
+    userIds,
+    provider,
+    externalMangaId,
+    externalChapterId,
+    chapterTitle,
+    chapterNumber,
+  } = options;
+
   if (userIds.length === 0) {
     return { inApp: 0, emailsAttempted: 0, errors: 0 };
   }
 
-  const pushContent = await buildChapterPushContent(
-    mangaDexId,
-    chapter,
-    translatedLanguage
-  );
+  const pushContent = await buildChapterPushContent({
+    provider,
+    externalMangaId,
+    externalChapterId,
+    chapterTitle,
+    chapterNumber,
+  });
 
   if (!pushContent) {
     return { inApp: 0, emailsAttempted: 0, errors: userIds.length };
@@ -35,8 +48,9 @@ export async function notifyFavoriteUsersInAppAndEmail(
       type: "NEW_CHAPTER",
       title,
       message,
-      mangaId: pushContent.mangaDexId,
-      chapterId: pushContent.chapterDexId,
+      provider,
+      mangaId: pushContent.externalMangaId,
+      chapterId: pushContent.externalChapterId,
     });
 
     if (result.success) {
@@ -51,10 +65,11 @@ export async function notifyFavoriteUsersInAppAndEmail(
 }
 
 export async function getFavoriteUserIdsForManga(
-  mangaDexId: string
+  provider: string,
+  externalMangaId: string
 ): Promise<string[]> {
   const favorites = await db.userFavorite.findMany({
-    where: { mangaDexId },
+    where: { provider, externalMangaId },
     select: { userId: true },
   });
   return [...new Set(favorites.map((f) => f.userId))];

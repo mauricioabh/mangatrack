@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { SAMPLE_MANGA_DEX_IDS } from "@/lib/mangadex/sample-ids";
+import { SAMPLE_CONSUMET_MANGA } from "@/lib/consumet/sample-ids";
 
 export function EmailSimulatorButton() {
   const [isClient, setIsClient] = useState(false);
@@ -30,13 +30,13 @@ export function EmailSimulatorButton() {
     setIsLoading(true);
 
     try {
-      // Resolve first chapter from MangaDex via BFF for NEW_CHAPTER simulation
       const payload: Record<string, unknown> = { type };
-
+      const sample = SAMPLE_CONSUMET_MANGA.onePieceMangaHere;
       if (type === "NEW_CHAPTER") {
-        payload.mangaId = SAMPLE_MANGA_DEX_IDS.onePiece;
+        payload.provider = sample.provider;
+        payload.mangaId = sample.id;
         const chapterRes = await fetch(
-          `/api/manga/${SAMPLE_MANGA_DEX_IDS.onePiece}`
+          `/api/manga/${encodeURIComponent(sample.provider)}/${encodeURIComponent(sample.id)}`
         );
         const chapterData = await chapterRes.json();
         const firstChapter = chapterData?.data?.chapters?.[0];
@@ -44,7 +44,8 @@ export function EmailSimulatorButton() {
           payload.chapterId = firstChapter.id;
         }
       } else if (type === "MANGA_UPDATE") {
-        payload.mangaId = SAMPLE_MANGA_DEX_IDS.onePiece;
+        payload.provider = sample.provider;
+        payload.mangaId = sample.id;
       }
 
       const response = await fetch("/api/simulate-email-notification", {

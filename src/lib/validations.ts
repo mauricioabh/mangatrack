@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const uuidSchema = z.string().uuid("Invalid UUID");
-
 export const userUpdateSchema = z.object({
   name: z
     .string()
@@ -24,8 +22,17 @@ export const mangaSearchSchema = z.object({
   status: z.enum(["ONGOING", "COMPLETED", "HIATUS", "CANCELLED"]).optional(),
 });
 
+const providerSchema = z
+  .string()
+  .min(1, "Provider is required")
+  .max(64)
+  .regex(/^[a-z0-9_-]+$/i, "Invalid provider");
+
+const externalIdSchema = z.string().min(1, "External id is required").max(512);
+
 export const mangaBookmarkSchema = z.object({
-  mangaId: uuidSchema,
+  provider: providerSchema,
+  mangaId: externalIdSchema,
 });
 
 export const pushTokenPlatformSchema = z.enum(["WEB", "ANDROID"]);
@@ -42,8 +49,9 @@ export const stripeCheckoutSchema = z.object({
 });
 
 export const chapterReadSchema = z.object({
-  chapterId: uuidSchema,
-  mangaId: uuidSchema,
+  provider: providerSchema,
+  chapterId: externalIdSchema,
+  mangaId: externalIdSchema,
 });
 
 export const notificationUpdateSchema = z.object({

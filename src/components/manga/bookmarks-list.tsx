@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +11,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { CatalogCover } from "@/components/manga/catalog-cover";
 
 interface Bookmark {
   id: string;
   createdAt: string;
-  mangaDexId: string;
+  provider: string;
+  externalMangaId: string;
   manga: {
     id: string;
+    provider?: string;
     title: string;
     coverImage?: string;
     author?: string;
@@ -99,11 +101,12 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
                 >
                   <div className="w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0">
                     {manga.coverImage && (
-                      <Image
+                      <CatalogCover
                         src={manga.coverImage}
                         alt={manga.title}
                         width={64}
                         height={80}
+                        provider={bookmark.provider || manga.provider}
                         className="w-full h-full object-cover rounded"
                       />
                     )}
@@ -117,7 +120,9 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
                         by {manga.author}
                       </p>
                     )}
-                    <Link href={`/manga/${manga.id}`}>
+                    <Link
+                      href={`/manga/${encodeURIComponent(bookmark.provider || manga.provider || "")}/${encodeURIComponent(manga.id)}`}
+                    >
                       <Button size="sm" variant="outline" className="mt-2">
                         View
                       </Button>

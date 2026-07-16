@@ -9,6 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   "/api/user(.*)",
   "/api/manga(.*)",
   "/api/chapters(.*)",
+  "/api/catalog(.*)",
   "/api/notifications(.*)",
   "/api/simulate-email(.*)",
   "/api/stripe(.*)",
@@ -20,19 +21,15 @@ const isPublicApiRoute = createRouteMatcher([
   "/api/inngest(.*)",
 ]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isPublicApiRoute(req)) {
     return;
   }
   if (isProtectedRoute(req)) {
-    auth.protect();
+    await auth.protect();
   }
 });
 
 export const config = {
-  // Protects all routes including api/trpc routes
-  // Please edit this to allow other routes to be public as needed.
-  // See https://clerk.com/docs/references/nextjs/auth-middleware
-  // for more information about configuring your Middleware
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
