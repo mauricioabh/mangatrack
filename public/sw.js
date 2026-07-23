@@ -10,7 +10,7 @@
  *  - Firebase Cloud Messaging (background) via compat SDK.
  */
 
-const VERSION = "v2";
+const VERSION = "v5";
 const SHELL_CACHE = `mangatrack-shell-${VERSION}`;
 const STATIC_CACHE = `mangatrack-static-${VERSION}`;
 const IMAGE_CACHE = `mangatrack-images-${VERSION}`;
@@ -21,8 +21,11 @@ const PRECACHE_URLS = [OFFLINE_URL, "/icons/192", "/icons/512"];
 
 const IMAGE_CACHE_LIMIT = 120;
 const API_CACHE_LIMIT = 60;
+const PUSH_DEDUPE_MS = 5000;
 
 /* eslint-disable no-undef */
+/* Sync importScripts (not fetch().then) so FCM is ready when Android wakes the SW. */
+importScripts("/api/firebase/sw-config");
 importScripts(
   "https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js",
 );
@@ -30,34 +33,110 @@ importScripts(
   "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging-compat.js",
 );
 
-function initFirebaseMessaging() {
-  return fetch("/api/firebase/config")
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("Firebase config unavailable");
-      }
-      return res.json();
-    })
-    .then((config) => {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(config);
-      }
-      const messaging = firebase.messaging();
+/** Prevents double shade when both `push` and `onBackgroundMessage` fire. */
+const recentlyShownNotifications = new Map();
 
-      messaging.onBackgroundMessage((payload) => {
-        const title = payload.notification?.title ?? "MangaTrack";
-        const options = {
-          body: payload.notification?.body ?? "",
-          icon: "/icons/192",
-          data: payload.data ?? {},
-        };
-        return self.registration.showNotification(title, options);
-      });
-    })
-    .catch((err) => {
-      console.error("[mangatrack-sw] firebase", err);
-    });
+function notificationFromPayload(payload) {
+  // FCM may nest fields under data, or flatten them on the root.
+  const data = {
+    ...(payload?.data ?? {}),
+  };
+  const title =
+    payload?.notification?.title ||
+    data.title ||
+    payload?.title ||
+    "MangaTrack";
+  const body =
+    payload?.notification?.body || data.body || payload?.body || "";
+  return {
+    title,
+    options: {
+      body,
+      icon: "/icons/192",
+      badge: "/icons/192",
+      tag: data.externalChapterId || data.tag || "mangatrack",
+      renotify: true,
+      requireInteraction: false,
+      data: {
+        ...data,
+        url: data.url || payload?.fcmOptions?.link || "/",
+      },
+    },
+  };
 }
+
+async function hasVisibleClient() {
+  const clientList = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  return clientList.some(
+    (client) => client.visibilityState === "visible" || client.focused,
+  );
+}
+
+async function showChapterNotification(title, options) {
+  const key = `${options.tag}|${title}|${options.body}`;
+  const now = Date.now();
+  const prev = recentlyShownNotifications.get(key);
+  if (prev != null && now - prev < PUSH_DEDUPE_MS) {
+    return;
+  }
+  recentlyShownNotifications.set(key, now);
+  for (const [k, t] of recentlyShownNotifications) {
+    if (now - t >= PUSH_DEDUPE_MS) {
+      recentlyShownNotifications.delete(k);
+    }
+  }
+  await self.registration.showNotification(title, options);
+}
+
+function initFirebaseMessaging() {
+  try {
+    if (typeof self.__FIREBASE_CONFIG__ === "undefined") {
+      throw new Error("Firebase SW config missing (__FIREBASE_CONFIG__)");
+    }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(self.__FIREBASE_CONFIG__);
+    }
+    const messaging = firebase.messaging();
+
+    messaging.onBackgroundMessage((payload) => {
+      const { title, options } = notificationFromPayload(payload);
+      return showChapterNotification(title, options);
+    });
+  } catch (err) {
+    console.error("[mangatrack-sw] firebase", err);
+  }
+}
+
+/**
+ * Fallback when FCM background handler is late (common on Android Chrome PWA).
+ * Skip system UI when a visible tab will show a foreground toast via onMessage.
+ */
+self.addEventListener("push", (event) => {
+  if (!event.data) {
+    return;
+  }
+  event.waitUntil(
+    (async () => {
+      if (await hasVisibleClient()) {
+        return;
+      }
+      let payload;
+      try {
+        payload = event.data.json();
+      } catch {
+        return;
+      }
+      const { title, options } = notificationFromPayload(payload);
+      if (!title && !options.body) {
+        return;
+      }
+      await showChapterNotification(title, options);
+    })(),
+  );
+});
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
