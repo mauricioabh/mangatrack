@@ -26,6 +26,9 @@ Suites relevantes:
 | `tests/consumet/mappers.test.ts` | `mapStatus`, search/detail/chapter/pages, neighbors, proxy paths |
 | `tests/consumet/ids.test.ts` | encode `~` para chapter ids con `/`, rutas app/API |
 | `tests/reading-progress.test.ts` | orden y “continue reading” |
+| `tests/push/fcm-multicast.test.ts` | FCM data-only multicast (sin `notification`) |
+
+Push FCM (Android PWA): ver `docs/FIREBASE_SETUP.md` §5–6. Manual preferido en preview/prod; script `scripts/test-fcm-send.ts`.
 
 ## E2E (Playwright)
 

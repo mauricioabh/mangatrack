@@ -33,13 +33,14 @@ export async function buildChapterPushContent(options: {
     // keep fallback title
   }
 
-  const label =
+  const chapterLabel =
     chapterTitle?.trim() ||
-    (chapterNumber != null ? `Ch. ${chapterNumber}` : "New chapter");
+    (chapterNumber != null ? `Chapter ${chapterNumber}` : "a new chapter");
 
+  // Android shade shows `title` prominently; put the manga name there.
   return {
-    title: "New chapter available",
-    body: `${mangaTitle} — ${label}`,
+    title: mangaTitle,
+    body: `New chapter available: ${chapterLabel}`,
     provider,
     externalMangaId,
     externalChapterId,

@@ -4,6 +4,7 @@ import { getMangaInfo } from "@/lib/consumet";
 import { getFirebaseMessaging } from "@/lib/firebase-admin";
 import { buildChapterPushContent } from "@/lib/push/chapter-notification";
 import { chunkTokens } from "@/lib/push/chunk-tokens";
+import { buildChapterMulticastMessage } from "@/lib/push/fcm-multicast";
 import { notifyFavoriteUsersInAppAndEmail } from "@/lib/push/notify-favorite-users";
 import { readerPath } from "@/lib/consumet/ids";
 
@@ -113,19 +114,17 @@ export const pollFavoriteChapters = inngest.createFunction(
               )}`;
               const messaging = getFirebaseMessaging();
               for (const batch of chunkTokens(unique)) {
-                await messaging.sendEachForMulticast({
-                  tokens: batch,
-                  notification: {
+                await messaging.sendEachForMulticast(
+                  buildChapterMulticastMessage({
+                    tokens: batch,
                     title: pushContent.title,
                     body: pushContent.body,
-                  },
-                  data: {
+                    url,
                     provider: fav.provider,
                     externalMangaId: fav.externalMangaId,
                     externalChapterId: newest.id,
-                    url,
-                  },
-                });
+                  })
+                );
               }
             }
           }

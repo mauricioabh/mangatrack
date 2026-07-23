@@ -35,7 +35,7 @@ export async function notifyFavoriteUsersInAppAndEmail(options: {
     return { inApp: 0, emailsAttempted: 0, errors: userIds.length };
   }
 
-  const title = "New chapter available";
+  const title = pushContent.title;
   const message = pushContent.body;
 
   let inApp = 0;
