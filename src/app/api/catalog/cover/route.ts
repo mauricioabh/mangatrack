@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getProviderReferer } from "@/lib/consumet/referers";
 
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 const UPSTREAM_TIMEOUT_MS = 12_000;
 const MAX_CONCURRENT = 4;
-
-/** Default Referer headers scrapers expect for cover hotlink CDNs */
-const PROVIDER_REFERERS: Record<string, string> = {
-  mangahere: "https://mangahere.cc/",
-  mangapill: "https://mangapill.com/",
-};
 
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -93,9 +88,7 @@ export async function GET(request: NextRequest) {
   }
 
   const referer =
-    explicitReferer ||
-    (provider ? PROVIDER_REFERERS[provider] : undefined) ||
-    undefined;
+    explicitReferer || getProviderReferer(provider) || undefined;
 
   try {
     const result = await withConcurrencyLimit(async () => {

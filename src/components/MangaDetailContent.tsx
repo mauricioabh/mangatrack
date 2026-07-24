@@ -22,6 +22,11 @@ import {
   getChapterToRead,
   getContinueReadingLabel,
 } from "@/lib/reading-progress";
+import {
+  encodeExternalId,
+  mangaApiPath,
+  readerPath,
+} from "@/lib/consumet/ids";
 
 interface Manga {
   id: string;
@@ -74,9 +79,7 @@ export default function MangaDetailContent({
     setMangaLoading(true);
     setError(null);
     try {
-      const mangaResponse = await fetch(
-        `/api/manga/${encodeURIComponent(provider)}/${encodeURIComponent(mangaId)}`
-      );
+      const mangaResponse = await fetch(mangaApiPath(provider, mangaId));
       const mangaData = (await mangaResponse.json()) as ApiResponse<Manga>;
 
       if (!mangaResponse.ok) {
@@ -208,7 +211,9 @@ export default function MangaDetailContent({
   };
 
   const chapterHref = (chapterId: string) =>
-    `/reader/${encodeURIComponent(provider)}/${chapterId.replaceAll("/", "~")}`;
+    manga?.id
+      ? readerPath(provider, chapterId, manga.id)
+      : `/reader/${encodeURIComponent(provider)}/${encodeExternalId(chapterId)}`;
 
   const handleStartReading = () => {
     if (!manga) return;

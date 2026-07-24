@@ -20,6 +20,8 @@
 
 Search UI enriquece conteos en background (concurrency limitada) y muestra badge **N caps**. Covers scrape CDN pasan por el proxy (Referer + retry).
 
+IDs con `/` (p. ej. MangaPill `3069/naruto`) se codifican con `~` en rutas App Router (`3069~naruto`); `%2F` no es fiable. El info de MangaPill a menudo viene sin `image` — el BFF sintetiza cover desde el id numérico. Páginas de lectura usan Referer por provider (sin eso el CDN de MangaPill responde 403).
+
 ## Notificaciones de capítulo
 
 Cron Inngest diario (`0 2 * * *`, función `poll-favorite-chapters-daily`) consulta Consumet `info` por cada favorite y compara con `lastNotifiedChapterId`.  

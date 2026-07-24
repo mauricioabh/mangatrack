@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SAMPLE_CONSUMET_MANGA } from "@/lib/consumet/sample-ids";
+import { mangaApiPath } from "@/lib/consumet/ids";
 
 export function EmailSimulatorButton() {
   const [isClient, setIsClient] = useState(false);
@@ -36,7 +37,7 @@ export function EmailSimulatorButton() {
         payload.provider = sample.provider;
         payload.mangaId = sample.id;
         const chapterRes = await fetch(
-          `/api/manga/${encodeURIComponent(sample.provider)}/${encodeURIComponent(sample.id)}`
+          mangaApiPath(sample.provider, sample.id)
         );
         const chapterData = await chapterRes.json();
         const firstChapter = chapterData?.data?.chapters?.[0];

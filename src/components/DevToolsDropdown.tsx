@@ -14,6 +14,7 @@ import {
 import { Mail, Loader2, Wrench, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { SAMPLE_CONSUMET_MANGA } from "@/lib/consumet/sample-ids";
+import { mangaApiPath } from "@/lib/consumet/ids";
 // Sentry removed
 
 export function DevToolsDropdown() {
@@ -41,7 +42,7 @@ export function DevToolsDropdown() {
         payload.provider = sample.provider;
         payload.mangaId = sample.id;
         const chapterRes = await fetch(
-          `/api/manga/${encodeURIComponent(sample.provider)}/${encodeURIComponent(sample.id)}`
+          mangaApiPath(sample.provider, sample.id)
         );
         const chapterData = await chapterRes.json();
         const firstChapter = chapterData?.data?.chapters?.[0];

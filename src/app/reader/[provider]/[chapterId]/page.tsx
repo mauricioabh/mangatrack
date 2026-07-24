@@ -13,6 +13,12 @@ import {
 } from "@/components/ui/select";
 import Link from "next/link";
 import { getChapterNeighbors } from "@/lib/consumet/mappers";
+import {
+  chapterApiPath,
+  decodeExternalId,
+  mangaPath,
+  readerPath,
+} from "@/lib/consumet/ids";
 
 interface ReaderPageProps {
   params: Promise<{
@@ -55,10 +61,15 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     try {
       const resolved = await params;
       const p = decodeURIComponent(resolved.provider);
-      const chapterId = decodeURIComponent(resolved.chapterId);
+      const chapterId = decodeExternalId(resolved.chapterId);
+      const mangaIdParam =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("mangaId") ??
+            undefined
+          : undefined;
       setProvider(p);
       const response = await fetch(
-        `/api/chapters/${encodeURIComponent(p)}/${chapterId}`
+        chapterApiPath(p, chapterId, mangaIdParam ?? undefined)
       );
       const data = await response.json();
 
@@ -173,7 +184,11 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       const { next, previous } = getChapterNeighbors(chapters, chapter.id);
       const target = direction === "next" ? next : previous;
       if (target) {
-        window.location.href = `/reader/${encodeURIComponent(provider)}/${target.id.replaceAll("/", "~")}`;
+        window.location.href = readerPath(
+          provider,
+          target.id,
+          manga?.id
+        );
       }
     };
 
@@ -268,7 +283,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
-              <Link href={`/manga/${encodeURIComponent(provider)}/${encodeURIComponent(manga.id)}`} className="shrink-0">
+              <Link href={mangaPath(provider, manga.id)} className="shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
@@ -512,7 +527,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 )}
-                <Link href={`/manga/${encodeURIComponent(provider)}/${encodeURIComponent(manga.id)}`} className="w-full">
+                <Link href={mangaPath(provider, manga.id)} className="w-full">
                   <Button
                     variant="outline"
                     className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-95"

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
+import { mangaPath } from "@/lib/consumet/ids";
 
 interface Bookmark {
   id: string;
@@ -121,7 +122,10 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
                       </p>
                     )}
                     <Link
-                      href={`/manga/${encodeURIComponent(bookmark.provider || manga.provider || "")}/${encodeURIComponent(manga.id)}`}
+                      href={mangaPath(
+                        bookmark.provider || manga.provider || "",
+                        manga.id
+                      )}
                     >
                       <Button size="sm" variant="outline" className="mt-2">
                         View
