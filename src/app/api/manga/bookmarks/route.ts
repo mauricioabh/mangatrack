@@ -115,10 +115,45 @@ export async function GET(request: NextRequest) {
       );
     });
 
+    const latestChapterIds = [
+      ...new Set(
+        hydrated
+          .map((item) => item.latestChapter?.id)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+
+    const readLatestRows =
+      latestChapterIds.length > 0
+        ? await db.readingHistory.findMany({
+            where: {
+              userId: user.id,
+              externalChapterId: { in: latestChapterIds },
+            },
+            select: {
+              provider: true,
+              externalChapterId: true,
+            },
+          })
+        : [];
+
+    const readLatestKeys = new Set(
+      readLatestRows.map(
+        (row) => `${row.provider.toLowerCase()}:${row.externalChapterId}`
+      )
+    );
+
     const start = (page - 1) * limit;
     const pageData = hydrated.slice(start, start + limit).map((item) => {
       const { latestUpdatedAtMs: _sortKey, ...rest } = item;
-      return rest;
+      const latestId = item.latestChapter?.id;
+      const hasUnreadLatest = Boolean(
+        latestId &&
+          !readLatestKeys.has(
+            `${item.provider.toLowerCase()}:${latestId}`
+          )
+      );
+      return { ...rest, hasUnreadLatest };
     });
 
     return NextResponse.json({
