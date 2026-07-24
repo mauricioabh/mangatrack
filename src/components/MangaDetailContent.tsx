@@ -502,11 +502,11 @@ export default function MangaDetailContent({
                             </Badge>
                           )}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {chapter.pages > 0
-                            ? `${chapter.pages} pages`
-                            : "Page count unavailable"}
-                        </p>
+                        {chapter.publishedAt ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {chapter.publishedAt}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                     <Button
