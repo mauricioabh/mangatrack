@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import SearchOverlay from "./SearchOverlay";
 import { NotificationDropdown } from "./NotificationDropdown";
-import { DevToolsDropdown } from "./DevToolsDropdown";
 // Cache removed - using regular fetch for fresh data
 
 export default function GlobalHeader() {
@@ -75,9 +74,6 @@ export default function GlobalHeader() {
 
             {/* Notifications Button */}
             <NotificationDropdown />
-
-            {/* Dev Tools Button */}
-            <DevToolsDropdown />
 
             {/* Settings Button */}
             <Link href="/settings">
