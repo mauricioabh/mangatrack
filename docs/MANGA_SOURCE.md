@@ -20,7 +20,7 @@
 
 Search UI enriquece conteos en background (concurrency limitada) y muestra badge **N caps**. Covers scrape CDN pasan por el proxy (Referer + retry).
 
-La búsqueda reordena resultados por relevancia de título (frase exacta arriba; ruido tipo OR abajo). `match=exact` o comillas `"demon slayer"` filtran a frase completa. El filtro multi-select de providers en `/search` solo consulta el subset del allowlist (`providers=`). Controles pensados para PWA: chips `min-h-11`, scroll horizontal en móvil.
+La búsqueda reordena resultados por relevancia de título (frase exacta arriba; ruido tipo OR abajo). `match=exact` o comillas `"demon slayer"` filtran a frase completa. En `/search`, el filtro **Providers** es un dropdown multi-select (checkboxes) junto a status/genre; solo consulta el subset del allowlist (`providers=`). Trigger táctil `min-h-11` para PWA.
 
 IDs con `/` (p. ej. MangaPill `3069/naruto`) se codifican con `~` en rutas App Router (`3069~naruto`); `%2F` no es fiable. El info de MangaPill a menudo viene sin `image` — el BFF sintetiza cover desde el id numérico. Páginas de lectura usan Referer por provider (sin eso el CDN de MangaPill responde 403).
 
