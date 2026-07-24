@@ -50,6 +50,21 @@ interface User {
   tier: string;
 }
 
+function formatLatestUpdate(publishedAt?: string): string | null {
+  if (!publishedAt?.trim()) return null;
+  const ms = Date.parse(publishedAt);
+  if (Number.isNaN(ms)) {
+    return publishedAt.length > 28
+      ? `${publishedAt.slice(0, 28)}…`
+      : publishedAt;
+  }
+  return new Date(ms).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -155,6 +170,9 @@ export default function DashboardContent() {
             {bookmarks.map((bookmark) => {
               if (!bookmark.manga) return null;
               const manga = bookmark.manga;
+              const latestUpdate = formatLatestUpdate(
+                bookmark.latestChapter?.publishedAt
+              );
               return (
                 <Link
                   key={bookmark.id}
@@ -186,6 +204,11 @@ export default function DashboardContent() {
                           ? `Ch. ${bookmark.latestChapter.chapterNumber} · ${bookmark.provider}`
                           : bookmark.provider}
                       </p>
+                      {latestUpdate ? (
+                        <p className="mt-0.5 truncate text-[11px] text-white/70">
+                          Updated {latestUpdate}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </Link>
