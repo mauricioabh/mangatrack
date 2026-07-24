@@ -39,6 +39,7 @@ interface Bookmark {
     chapterNumber: number;
     publishedAt?: string;
   } | null;
+  hasUnreadLatest?: boolean;
 }
 
 interface User {
@@ -194,6 +195,16 @@ export default function DashboardContent() {
                         <BookOpen className="h-10 w-10 text-gray-400" />
                       </div>
                     )}
+                    {bookmark.hasUnreadLatest ? (
+                      <span
+                        className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
+                        title="New unread chapter"
+                        aria-label="New unread chapter"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
+                      </span>
+                    ) : null}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-8 sm:p-2.5">
                       <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">
                         {manga.title}
