@@ -6,7 +6,7 @@
 
 Checklist sugerido:
 
-1. `npm run dev` → `/search` → buscar (ej. `one piece`) y ver provider + badge **N caps**
+1. `npm run dev` → `/search` → buscar (ej. `one piece` / `"demon slayer"`) y ver provider + badge **N caps**; probar Exact phrase y chips de providers
 2. Abrir `/manga/[provider]/[mangaId]` → bookmark / quitar (Basic: límite 50)
 3. Abrir capítulo en `/reader/[provider]/[chapterId]`
 4. Dashboard con bookmarks enriquecidos desde Consumet (no MangaDex)
@@ -24,6 +24,7 @@ Suites relevantes:
 | Archivo | Qué cubre |
 | ------- | --------- |
 | `tests/consumet/mappers.test.ts` | `mapStatus`, search/detail/chapter/pages, neighbors, proxy paths |
+| `tests/consumet/search-relevance.test.ts` | Ranking, exact phrase, providers intersect |
 | `tests/consumet/ids.test.ts` | encode `~` para chapter ids con `/`, rutas app/API |
 | `tests/reading-progress.test.ts` | orden y “continue reading” |
 

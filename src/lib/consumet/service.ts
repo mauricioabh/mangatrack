@@ -10,6 +10,13 @@ import {
   mapPages,
   mapSearchResult,
 } from "./mappers";
+import {
+  applySearchRelevance,
+  parseSearchQuery,
+  resolveMatchMode,
+  resolveSearchProviders,
+  type SearchMatchMode,
+} from "./search-relevance";
 import type {
   ConsumetInfoResponse,
   ConsumetReadResponse,
@@ -52,21 +59,52 @@ export interface MultiSearchProviderResult {
   error?: string;
 }
 
+export interface MultiSearchOptions {
+  page?: number;
+  /** Subset of allowlist; empty/undefined = all allowlisted providers */
+  providers?: string[];
+  /** ranked (default) or exact phrase filter */
+  match?: SearchMatchMode;
+}
+
 export async function searchMangaMultiProvider(
   query: string,
-  page = 1
+  pageOrOptions: number | MultiSearchOptions = 1
 ): Promise<{
   data: MangaSummary[];
   providers: MultiSearchProviderResult[];
+  availableProviders: string[];
+  match: SearchMatchMode;
   total: number;
   page: number;
 }> {
-  const providers = getProviderAllowlist();
+  const options: MultiSearchOptions =
+    typeof pageOrOptions === "number"
+      ? { page: pageOrOptions }
+      : pageOrOptions;
+  const page = options.page ?? 1;
+  const allowlist = getProviderAllowlist();
+  const availableProviders = allowlist;
+  const providers = resolveSearchProviders(allowlist, options.providers);
   const preferred = getSoftPreferredProvider();
+
+  const { query: parsedQuery, quotedExact } = parseSearchQuery(query);
+  const match = resolveMatchMode(options.match, quotedExact);
+
+  if (providers.length === 0) {
+    return {
+      data: [],
+      providers: [],
+      availableProviders,
+      match,
+      total: 0,
+      page,
+    };
+  }
 
   const settled = await Promise.allSettled(
     providers.map(async (provider) => {
-      const result = await searchManga(provider, query, page);
+      const result = await searchManga(provider, parsedQuery, page);
       return { provider, ...result } as MultiSearchProviderResult & {
         hasNextPage: boolean;
       };
@@ -74,7 +112,7 @@ export async function searchMangaMultiProvider(
   );
 
   const providerResults: MultiSearchProviderResult[] = [];
-  const all: MangaSummary[] = [];
+  let all: MangaSummary[] = [];
 
   for (let i = 0; i < settled.length; i++) {
     const provider = providers[i];
@@ -94,6 +132,7 @@ export async function searchMangaMultiProvider(
     }
   }
 
+  // Soft provider preference as tie-breaker after relevance
   if (preferred) {
     all.sort((a, b) => {
       if (a.provider === preferred && b.provider !== preferred) return -1;
@@ -104,9 +143,13 @@ export async function searchMangaMultiProvider(
     all.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 
+  all = applySearchRelevance(all, parsedQuery, match);
+
   return {
     data: all,
     providers: providerResults,
+    availableProviders,
+    match,
     total: all.length,
     page,
   };

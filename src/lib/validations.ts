@@ -14,19 +14,23 @@ export const userPreferencesSchema = z.object({
   emailNotifications: z.boolean(),
 });
 
+const providerSchema = z
+  .string()
+  .min(1, "Provider is required")
+  .max(64)
+  .regex(/^[a-z0-9_-]+$/i, "Invalid provider");
+
 export const mangaSearchSchema = z.object({
   query: z.string().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(50).default(20),
   genres: z.array(z.string()).optional(),
   status: z.enum(["ONGOING", "COMPLETED", "HIATUS", "CANCELLED"]).optional(),
+  /** ranked (default) | exact phrase filter */
+  match: z.enum(["ranked", "exact"]).optional(),
+  /** Subset of allowlist; omit / empty = all */
+  providers: z.array(providerSchema).optional(),
 });
-
-const providerSchema = z
-  .string()
-  .min(1, "Provider is required")
-  .max(64)
-  .regex(/^[a-z0-9_-]+$/i, "Invalid provider");
 
 const externalIdSchema = z.string().min(1, "External id is required").max(512);
 

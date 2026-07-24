@@ -19,11 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaApiPath, mangaPath } from "@/lib/consumet/ids";
-// Cache removed - using regular fetch for fresh data
+import { cn } from "@/lib/utils";
 
 interface Manga {
   id: string;
@@ -37,12 +39,6 @@ interface Manga {
   author?: string;
   chapterCount?: number | null;
   chapterCountLoading?: boolean;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
 }
 
 const CHAPTER_COUNT_CONCURRENCY = 3;
@@ -116,12 +112,17 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mangas, setMangas] = useState<Manga[]>([]);
   const [providerNotices, setProviderNotices] = useState<string[]>([]);
+  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
+  /** Empty = all allowlisted providers */
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [exactMatch, setExactMatch] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const enrichGeneration = useRef(0);
+  const [filtersReady, setFiltersReady] = useState(false);
 
   const applySearchResults = (results: Manga[]) => {
     const generation = ++enrichGeneration.current;
@@ -148,36 +149,78 @@ export default function SearchPage() {
     });
   };
 
+  const providersParam = (): string | undefined => {
+    if (selectedProviders.length === 0) return undefined;
+    if (
+      availableProviders.length > 0 &&
+      availableProviders.every((p) => selectedProviders.includes(p))
+    ) {
+      return undefined;
+    }
+    return selectedProviders.join(",");
+  };
+
+  const buildSearchParams = (query: string) => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.append("query", query);
+    if (statusFilter !== "all") params.append("status", statusFilter);
+    if (genreFilter !== "all") params.append("genre", genreFilter);
+    if (exactMatch) params.append("match", "exact");
+    const providers = providersParam();
+    if (providers) params.append("providers", providers);
+    return params;
+  };
+
+  const ingestProviderMeta = (data: {
+    availableProviders?: string[];
+    providers?: { error?: string; provider: string }[];
+  }) => {
+    if (Array.isArray(data.availableProviders) && data.availableProviders.length) {
+      setAvailableProviders(data.availableProviders);
+    }
+    const notices = (data.providers ?? [])
+      .filter((p) => p.error)
+      .map((p) => `${p.provider}: unavailable`);
+    setProviderNotices(notices);
+  };
+
+  const isProviderActive = (provider: string) =>
+    selectedProviders.length === 0 || selectedProviders.includes(provider);
+
+  const toggleProvider = (provider: string) => {
+    setSelectedProviders((prev) => {
+      const base =
+        prev.length === 0
+          ? availableProviders.length > 0
+            ? [...availableProviders]
+            : [provider]
+          : [...prev];
+      if (base.includes(provider)) {
+        const next = base.filter((p) => p !== provider);
+        return next;
+      }
+      const next = [...base, provider];
+      if (
+        availableProviders.length > 0 &&
+        availableProviders.every((p) => next.includes(p))
+      ) {
+        return [];
+      }
+      return next;
+    });
+  };
+
   const handleSearch = async () => {
     setLoading(true);
     setSearchError(null);
     try {
-      const params = new URLSearchParams();
-
-      if (searchQuery.trim()) {
-        params.append("query", searchQuery);
-      }
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-      if (genreFilter !== "all") {
-        params.append("genre", genreFilter);
-      }
-
+      const params = buildSearchParams(searchQuery);
       const response = await fetch(`/api/manga/search?${params}`);
       const data = await response.json();
 
       if (data.success) {
         applySearchResults(data.data);
-        const notices = (data.providers ?? [])
-          .filter(
-            (p: { error?: string; provider: string }) => p.error
-          )
-          .map(
-            (p: { error?: string; provider: string }) =>
-              `${p.provider}: unavailable`
-          );
-        setProviderNotices(notices);
+        ingestProviderMeta(data);
       } else {
         setMangas([]);
         setSearchError(data.error ?? "Search failed");
@@ -192,16 +235,19 @@ export default function SearchPage() {
     }
   };
 
-  // Load all manga function
-  const loadAllManga = async () => {
+  const resetFiltersAndBrowse = async () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setGenreFilter("all");
+    setSelectedProviders([]);
+    setExactMatch(false);
     setLoading(true);
     try {
       const response = await fetch("/api/manga/search");
       const data = await response.json();
-
-      const apiResponse = data as unknown as ApiResponse<Manga[]>;
-      if (apiResponse.success) {
-        applySearchResults(apiResponse.data);
+      if (data.success) {
+        applySearchResults(data.data);
+        ingestProviderMeta(data);
       }
     } catch (error) {
       console.error("Error loading manga:", error);
@@ -214,34 +260,29 @@ export default function SearchPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
   // Perform search when debounced query or filters change
   useEffect(() => {
+    if (!filtersReady) return;
+
     const performSearch = async () => {
       setLoading(true);
+      setSearchError(null);
       try {
-        const params = new URLSearchParams();
-
-        if (debouncedQuery.trim()) {
-          params.append("query", debouncedQuery);
-        }
-        if (statusFilter !== "all") {
-          params.append("status", statusFilter);
-        }
-        if (genreFilter !== "all") {
-          params.append("genre", genreFilter);
-        }
-
+        const params = buildSearchParams(debouncedQuery);
         const response = await fetch(`/api/manga/search?${params}`);
         const data = await response.json();
 
-        const apiResponse = data as unknown as ApiResponse<Manga[]>;
-        if (apiResponse.success) {
-          applySearchResults(apiResponse.data);
+        if (data.success) {
+          applySearchResults(data.data);
+          ingestProviderMeta(data);
+        } else {
+          setMangas([]);
+          setSearchError(data.error ?? "Search failed");
         }
       } catch (error) {
         console.error("Search error:", error);
@@ -251,21 +292,25 @@ export default function SearchPage() {
     };
 
     performSearch();
-    // applySearchResults is stable enough for this page-level effect
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, statusFilter, genreFilter]);
+  }, [
+    filtersReady,
+    debouncedQuery,
+    statusFilter,
+    genreFilter,
+    exactMatch,
+    selectedProviders,
+  ]);
 
-  // Load all manga on component mount or handle URL query
+  // Handle URL ?q= before enabling search effect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get("q");
-
     if (queryParam) {
       setSearchQuery(queryParam);
-    } else {
-      // Load all manga initially
-      loadAllManga();
+      setDebouncedQuery(queryParam);
     }
+    setFiltersReady(true);
   }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -362,10 +407,7 @@ export default function SearchPage() {
                 >
                   <Button
                     onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("all");
-                      setGenreFilter("all");
-                      loadAllManga();
+                      void resetFiltersAndBrowse();
                     }}
                     variant="outline"
                     className="h-11 w-full border-2 border-emerald-200 px-3 text-emerald-600 transition-all duration-300 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 sm:h-12 sm:px-6"
@@ -377,54 +419,124 @@ export default function SearchPage() {
               </div>
             </div>
 
-            {/* Filters */}
+            {/* Filters — stacked on narrow PWA viewports */}
             <motion.div
-              className="flex flex-col gap-3 sm:flex-row sm:gap-4"
+              className="flex flex-col gap-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
             >
-              <motion.div
-                className="min-w-0 flex-1 sm:flex-none"
-                whileHover={{ scale: 1.01 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-blue-300 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 sm:h-12 sm:w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="ONGOING">Ongoing</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="HIATUS">Hiatus</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </motion.div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                <motion.div
+                  className="min-w-0 flex-1 sm:flex-none"
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-blue-300 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 sm:h-12 sm:w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="ONGOING">Ongoing</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="HIATUS">Hiatus</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
 
-              <motion.div
-                className="min-w-0 flex-1 sm:flex-none"
-                whileHover={{ scale: 1.01 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Select value={genreFilter} onValueChange={setGenreFilter}>
-                  <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:border-purple-800 dark:bg-gray-800/80 dark:hover:border-purple-700 sm:h-12 sm:w-48">
-                    <SelectValue placeholder="Filter by genre" />
-                  </SelectTrigger>
-                  <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
-                    <SelectItem value="all">All Genres</SelectItem>
-                    <SelectItem value="Action">Action</SelectItem>
-                    <SelectItem value="Adventure">Adventure</SelectItem>
-                    <SelectItem value="Comedy">Comedy</SelectItem>
-                    <SelectItem value="Drama">Drama</SelectItem>
-                    <SelectItem value="Fantasy">Fantasy</SelectItem>
-                    <SelectItem value="Romance">Romance</SelectItem>
-                    <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
-                    <SelectItem value="Slice of Life">Slice of Life</SelectItem>
-                  </SelectContent>
-                </Select>
-              </motion.div>
+                <motion.div
+                  className="min-w-0 flex-1 sm:flex-none"
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Select value={genreFilter} onValueChange={setGenreFilter}>
+                    <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:border-purple-800 dark:bg-gray-800/80 dark:hover:border-purple-700 sm:h-12 sm:w-48">
+                      <SelectValue placeholder="Filter by genre" />
+                    </SelectTrigger>
+                    <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
+                      <SelectItem value="all">All Genres</SelectItem>
+                      <SelectItem value="Action">Action</SelectItem>
+                      <SelectItem value="Adventure">Adventure</SelectItem>
+                      <SelectItem value="Comedy">Comedy</SelectItem>
+                      <SelectItem value="Drama">Drama</SelectItem>
+                      <SelectItem value="Fantasy">Fantasy</SelectItem>
+                      <SelectItem value="Romance">Romance</SelectItem>
+                      <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
+                      <SelectItem value="Slice of Life">Slice of Life</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+
+                <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border-2 border-teal-200 bg-white/80 px-3 py-2 backdrop-blur-sm dark:border-teal-800 dark:bg-gray-800/80 sm:min-h-12 sm:justify-start">
+                  <Label
+                    htmlFor="exact-match"
+                    className="cursor-pointer text-sm text-teal-800 dark:text-teal-200"
+                  >
+                    Exact phrase
+                  </Label>
+                  <Switch
+                    id="exact-match"
+                    checked={exactMatch}
+                    onCheckedChange={setExactMatch}
+                    className="h-6 w-11 data-[state=checked]:bg-teal-600"
+                    aria-label="Exact phrase match"
+                  />
+                </div>
+              </div>
+
+              {availableProviders.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Providers
+                  </p>
+                  <div
+                    className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 touch-pan-x sm:flex-wrap sm:overflow-visible"
+                    role="group"
+                    aria-label="Filter by provider"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProviders([])}
+                      aria-pressed={selectedProviders.length === 0}
+                      className={cn(
+                        "min-h-11 shrink-0 rounded-md border-2 px-3 text-sm font-medium capitalize transition-colors",
+                        selectedProviders.length === 0
+                          ? "border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-500 dark:bg-amber-900/40 dark:text-amber-100"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-amber-300 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200"
+                      )}
+                    >
+                      All
+                    </button>
+                    {availableProviders.map((provider) => {
+                      const active = isProviderActive(provider);
+                      return (
+                        <button
+                          key={provider}
+                          type="button"
+                          onClick={() => toggleProvider(provider)}
+                          aria-pressed={active && selectedProviders.length > 0}
+                          className={cn(
+                            "min-h-11 shrink-0 rounded-md border-2 px-3 text-sm font-medium capitalize transition-colors",
+                            active && selectedProviders.length > 0
+                              ? "border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-500 dark:bg-amber-900/40 dark:text-amber-100"
+                              : selectedProviders.length === 0
+                                ? "border-amber-200/80 bg-amber-50/80 text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200"
+                                : "border-gray-200 bg-white/80 text-gray-700 hover:border-amber-300 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200"
+                          )}
+                        >
+                          {provider}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Tip: wrap a query in quotes for exact match, e.g.{" "}
+                    <span className="font-mono">&quot;demon slayer&quot;</span>
+                  </p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         </motion.div>

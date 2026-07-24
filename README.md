@@ -298,7 +298,7 @@ Access development utilities from the header:
 
 ### Public Endpoints
 
-- `GET /api/manga/search` - Search manga with filters (no auth required)
+- `GET /api/manga/search` - Search manga with filters (`query`, `match=ranked|exact`, `providers=a,b`; no auth required)
 
 ### Authenticated Endpoints
 
