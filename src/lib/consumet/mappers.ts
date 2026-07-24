@@ -46,6 +46,22 @@ export function resolveTitle(
   return "Untitled";
 }
 
+/** Prefer non-empty image; mangapill info often omits cover — synthesize from id. */
+export function resolveCoverImage(
+  provider: string,
+  id: string,
+  image?: string | null
+): string | undefined {
+  if (typeof image === "string" && image.trim()) return image.trim();
+  if (provider === "mangapill") {
+    const numeric = id.split("/")[0];
+    if (/^\d+$/.test(numeric)) {
+      return `https://cdn.readdetectiveconan.com/file/mangapill/i/${numeric}.jpg`;
+    }
+  }
+  return undefined;
+}
+
 export function mapSearchResult(
   item: ConsumetSearchResult,
   provider: string
@@ -55,7 +71,7 @@ export function mapSearchResult(
     provider,
     title: resolveTitle(item.title, item.altTitles),
     description: item.description ?? undefined,
-    coverImage: item.image ?? undefined,
+    coverImage: resolveCoverImage(provider, item.id, item.image),
     coverReferer:
       item.headerForImage?.Referer ?? item.headerForImage?.referer,
     status: mapStatus(item.status),
@@ -118,7 +134,7 @@ export function mapMangaDetail(
     provider,
     title: resolveTitle(info.title, info.altTitles, fallbackTitle),
     description: info.description ?? undefined,
-    coverImage: info.image ?? undefined,
+    coverImage: resolveCoverImage(provider, info.id, info.image),
     coverReferer: info.headers?.Referer ?? info.headers?.referer,
     status: mapStatus(info.status),
     genres: info.genres ?? [],
@@ -128,20 +144,26 @@ export function mapMangaDetail(
   };
 }
 
+/**
+ * Map Consumet pages and normalize to 0-based indices for proxy paths.
+ * MangaPill uses 1-based `page`; MangaHere uses 0-based — proxy always uses 0..n-1.
+ */
 export function mapPages(raw: ConsumetPageRaw[]): Page[] {
   const pages: Page[] = [];
   for (let i = 0; i < raw.length; i++) {
     const p = raw[i];
     const url = p.img;
     if (!url) continue;
-    const index = typeof p.page === "number" ? p.page : i;
+    const sortKey = typeof p.page === "number" ? p.page : i;
     pages.push({
-      index,
+      index: sortKey,
       url,
       referer: p.headerForImage?.Referer ?? p.headerForImage?.referer,
     });
   }
-  return pages.sort((a, b) => a.index - b.index);
+  return pages
+    .sort((a, b) => a.index - b.index)
+    .map((p, i) => ({ ...p, index: i }));
 }
 
 export function getChapterNeighbors<T extends { id: string }>(

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
+import { mangaPath } from "@/lib/consumet/ids";
 // Cache removed - using regular fetch for fresh data
 
 interface Manga {
@@ -283,7 +284,7 @@ export default function DashboardContent() {
                         </div>
                       </div>
                       <Link
-                        href={`/manga/${encodeURIComponent(bookmark.provider)}/${encodeURIComponent(manga.id)}`}
+                        href={mangaPath(bookmark.provider, manga.id)}
                         className="shrink-0"
                       >
                         <Button size="sm" variant="outline">

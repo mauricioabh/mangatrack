@@ -154,6 +154,25 @@ export async function getChapterPages(
   return mapPages(raw);
 }
 
+/**
+ * Infer manga id when the reader opens without `?mangaId=`.
+ * MangaPill chapters look like `3069-10700500/naruto-chapter-700.5`
+ * while the manga id is `3069/naruto` (not the prefix before `/`).
+ */
+export function inferMangaIdFromChapterId(
+  provider: string,
+  chapterId: string
+): string | undefined {
+  const p = provider.toLowerCase();
+  if (p === "mangapill") {
+    const match = chapterId.match(/^(\d+)-\d+\/(.+)-chapter-/i);
+    if (match) return `${match[1]}/${match[2]}`;
+  }
+  const slash = chapterId.indexOf("/");
+  if (slash > 0) return chapterId.slice(0, slash);
+  return undefined;
+}
+
 export async function getChapterReaderPayload(
   provider: string,
   chapterId: string,
@@ -169,13 +188,8 @@ export async function getChapterReaderPayload(
   manga: MangaSummary;
   chapters: MangaDetail["chapters"];
 } | null> {
-  let resolvedMangaId = mangaId;
-
-  if (!resolvedMangaId) {
-    // Best-effort: many providers nest manga slug as first path segment
-    const slash = chapterId.indexOf("/");
-    if (slash > 0) resolvedMangaId = chapterId.slice(0, slash);
-  }
+  const resolvedMangaId =
+    mangaId?.trim() || inferMangaIdFromChapterId(provider, chapterId);
 
   if (!resolvedMangaId) {
     throw new ConsumetError(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { ConsumetError, getMangaInfo } from "@/lib/consumet";
+import { ConsumetError, decodeExternalId, getMangaInfo } from "@/lib/consumet";
 
 interface MangaRouteProps {
   params: Promise<{
@@ -11,7 +11,7 @@ interface MangaRouteProps {
 
 export async function GET(request: NextRequest, { params }: MangaRouteProps) {
   const { provider, mangaId: rawId } = await params;
-  const mangaId = decodeURIComponent(rawId);
+  const mangaId = decodeExternalId(rawId);
 
   try {
     const user = await getCurrentUser();

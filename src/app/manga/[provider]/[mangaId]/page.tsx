@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import MangaDetailContent from "@/components/MangaDetailContent";
+import { decodeExternalId } from "@/lib/consumet/ids";
 
 interface MangaDetailPageProps {
   params: Promise<{
@@ -22,7 +23,7 @@ export default async function MangaDetailPage({
   return (
     <MangaDetailContent
       provider={decodeURIComponent(provider)}
-      mangaId={decodeURIComponent(mangaId)}
+      mangaId={decodeExternalId(mangaId)}
     />
   );
 }

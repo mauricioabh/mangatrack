@@ -8,6 +8,7 @@ import {
   mapStatus,
   resolveTitle,
 } from "@/lib/consumet/mappers";
+import { inferMangaIdFromChapterId } from "@/lib/consumet/service";
 
 describe("consumet mappers", () => {
   describe("mapStatus", () => {
@@ -116,17 +117,35 @@ describe("consumet mappers", () => {
   });
 
   describe("mapPages", () => {
-    it("maps page urls and sorts by index", () => {
+    it("maps page urls, sorts, and reindexes to 0-based", () => {
       const pages = mapPages([
         { img: "https://cdn/p2.jpg", page: 2 },
         { img: "https://cdn/p1.jpg", page: 1, headerForImage: { Referer: "https://x" } },
       ]);
-      expect(pages.map((p) => p.index)).toEqual([1, 2]);
+      expect(pages.map((p) => p.index)).toEqual([0, 1]);
+      expect(pages[0].url).toBe("https://cdn/p1.jpg");
       expect(pages[0].referer).toBe("https://x");
     });
 
     it("skips entries without img", () => {
       expect(mapPages([{ page: 0 }])).toEqual([]);
+    });
+  });
+
+  describe("resolveCoverImage via mapMangaDetail", () => {
+    it("synthesizes mangapill cover when info image is empty", () => {
+      const detail = mapMangaDetail(
+        {
+          id: "3069/naruto",
+          title: "Naruto",
+          image: "",
+          chapters: [],
+        },
+        "mangapill"
+      );
+      expect(detail.coverImage).toBe(
+        "https://cdn.readdetectiveconan.com/file/mangapill/i/3069.jpg"
+      );
     });
   });
 
@@ -162,5 +181,22 @@ describe("consumet mappers", () => {
         "/api/chapters/mangahere/one_piece~100/pages/1",
       ]);
     });
+  });
+});
+
+describe("inferMangaIdFromChapterId", () => {
+  it("parses mangapill chapter ids into manga ids", () => {
+    expect(
+      inferMangaIdFromChapterId(
+        "mangapill",
+        "3069-10700500/naruto-chapter-700.5"
+      )
+    ).toBe("3069/naruto");
+  });
+
+  it("uses path prefix for mangahere-style chapter ids", () => {
+    expect(
+      inferMangaIdFromChapterId("mangahere", "naruto_dj/c002")
+    ).toBe("naruto_dj");
   });
 });

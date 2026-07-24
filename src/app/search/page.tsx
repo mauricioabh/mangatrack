@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CatalogCover } from "@/components/manga/catalog-cover";
+import { mangaApiPath, mangaPath } from "@/lib/consumet/ids";
 // Cache removed - using regular fetch for fresh data
 
 interface Manga {
@@ -61,9 +62,7 @@ async function fetchChapterCount(
       }
     }
 
-    const detailRes = await fetch(
-      `/api/manga/${encodeURIComponent(provider)}/${encodeURIComponent(id)}`
-    );
+    const detailRes = await fetch(mangaApiPath(provider, id));
     if (!detailRes.ok) return null;
     const detailJson = await detailRes.json();
     const chapters = detailJson?.data?.chapters;
@@ -556,9 +555,7 @@ export default function SearchPage() {
                         whileTap={{ scale: 0.98 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Link
-                          href={`/manga/${encodeURIComponent(manga.provider)}/${encodeURIComponent(manga.id)}`}
-                        >
+                        <Link href={mangaPath(manga.provider, manga.id)}>
                           <Button
                             size="sm"
                             className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-1 active:scale-95"

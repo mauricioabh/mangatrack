@@ -5,6 +5,7 @@ import {
   decodeExternalId,
   getChapterPages,
 } from "@/lib/consumet";
+import { getProviderReferer } from "@/lib/consumet/referers";
 
 interface PageRouteProps {
   params: Promise<{
@@ -17,6 +18,7 @@ interface PageRouteProps {
 export async function GET(request: NextRequest, { params }: PageRouteProps) {
   const { provider, chapterId: rawChapterId, page } = await params;
   const chapterId = decodeExternalId(rawChapterId);
+  const providerKey = provider.toLowerCase();
 
   try {
     const user = await getCurrentUser();
@@ -35,8 +37,9 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
       );
     }
 
-    const pages = await getChapterPages(provider.toLowerCase(), chapterId);
-    const pageEntry = pages.find((p) => p.index === pageIndex) ?? pages[pageIndex];
+    const pages = await getChapterPages(providerKey, chapterId);
+    const pageEntry =
+      pages.find((p) => p.index === pageIndex) ?? pages[pageIndex];
     if (!pageEntry?.url) {
       return NextResponse.json(
         { success: false, error: "Page not found" },
@@ -45,12 +48,18 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     }
 
     const referer =
-      pageEntry.referer ??
-      request.headers.get("referer") ??
+      pageEntry.referer ||
+      getProviderReferer(providerKey) ||
+      request.headers.get("referer") ||
       undefined;
 
     const imageRes = await fetch(pageEntry.url, {
-      headers: referer ? { Referer: referer } : undefined,
+      headers: {
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ...(referer ? { Referer: referer } : {}),
+      },
       cache: "no-store",
       signal: AbortSignal.timeout(30_000),
     });

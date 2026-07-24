@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 // import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications } from "@/hooks/useNotifications";
 import Link from "next/link";
+import { mangaPath } from "@/lib/consumet/ids";
 
 export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -183,7 +184,10 @@ export function NotificationDropdown() {
 
                             {notification.mangaId && notification.provider && (
                               <Link
-                                href={`/manga/${encodeURIComponent(notification.provider)}/${encodeURIComponent(notification.mangaId)}`}
+                                href={mangaPath(
+                                  notification.provider,
+                                  notification.mangaId
+                                )}
                               >
                                 <Button
                                   variant="ghost"
