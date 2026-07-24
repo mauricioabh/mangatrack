@@ -114,6 +114,39 @@ export function mapChapter(
   };
 }
 
+/** Newest chapter by `publishedAt`, else scraper newest-first (`chapters[0]`). */
+export function getLatestChapterUpdate(chapters: Chapter[]): {
+  chapterId?: string;
+  chapterNumber: number;
+  publishedAt?: string;
+  publishedAtMs: number | null;
+} {
+  if (chapters.length === 0) {
+    return { chapterNumber: 0, publishedAtMs: null };
+  }
+
+  let best: Chapter | null = null;
+  let bestMs = -1;
+
+  for (const chapter of chapters) {
+    if (!chapter.publishedAt) continue;
+    const ms = Date.parse(chapter.publishedAt);
+    if (Number.isNaN(ms)) continue;
+    if (ms > bestMs) {
+      bestMs = ms;
+      best = chapter;
+    }
+  }
+
+  const newest = best ?? chapters[0];
+  return {
+    chapterId: newest.id,
+    chapterNumber: newest.chapterNumber,
+    publishedAt: newest.publishedAt,
+    publishedAtMs: best ? bestMs : null,
+  };
+}
+
 export function mapMangaDetail(
   info: ConsumetInfoResponse,
   provider: string,

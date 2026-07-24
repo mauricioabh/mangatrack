@@ -34,6 +34,11 @@ interface Bookmark {
   externalMangaId: string;
   manga: Manga | null;
   createdAt: string;
+  latestChapter?: {
+    id?: string;
+    chapterNumber: number;
+    publishedAt?: string;
+  } | null;
 }
 
 interface User {
@@ -176,7 +181,10 @@ export default function DashboardContent() {
                         {manga.title}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] capitalize text-white/80">
-                        {bookmark.provider}
+                        {bookmark.latestChapter &&
+                        bookmark.latestChapter.chapterNumber > 0
+                          ? `Ch. ${bookmark.latestChapter.chapterNumber} · ${bookmark.provider}`
+                          : bookmark.provider}
                       </p>
                     </div>
                   </div>

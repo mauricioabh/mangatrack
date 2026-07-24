@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getMangaInfo } from "@/lib/consumet";
+import { getMangaInfo, getLatestChapterUpdate } from "@/lib/consumet";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,12 +25,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Load all favorites first: sort key (latest chapter date) comes from Consumet,
+    // so DB skip/take would paginate in the wrong order.
     const [bookmarks, total] = await Promise.all([
       db.userFavorite.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
       }),
       db.userFavorite.count({
         where: { userId: user.id },
@@ -40,12 +40,28 @@ export async function GET(request: NextRequest) {
     const hydrated = await Promise.all(
       bookmarks.map(async (bookmark) => {
         let manga = null;
+        let latestChapter: {
+          id?: string;
+          chapterNumber: number;
+          publishedAt?: string;
+        } | null = null;
+        let latestUpdatedAtMs: number | null = null;
+
         try {
           const detail = await getMangaInfo(
             bookmark.provider,
             bookmark.externalMangaId
           );
           if (detail) {
+            const latest = getLatestChapterUpdate(detail.chapters);
+            latestUpdatedAtMs = latest.publishedAtMs;
+            if (detail.chapters.length > 0) {
+              latestChapter = {
+                id: latest.chapterId,
+                chapterNumber: latest.chapterNumber,
+                publishedAt: latest.publishedAt,
+              };
+            }
             manga = {
               id: detail.id,
               provider: detail.provider,
@@ -81,14 +97,33 @@ export async function GET(request: NextRequest) {
           mangaId: bookmark.externalMangaId,
           externalMangaId: bookmark.externalMangaId,
           createdAt: bookmark.createdAt,
+          latestChapter,
+          latestUpdatedAtMs,
           manga,
         };
       })
     );
 
+    hydrated.sort((a, b) => {
+      const aMs = a.latestUpdatedAtMs ?? 0;
+      const bMs = b.latestUpdatedAtMs ?? 0;
+      if (bMs !== aMs) return bMs - aMs;
+
+      // No release dates from the source: keep bookmark date as tie-breaker
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+
+    const start = (page - 1) * limit;
+    const pageData = hydrated.slice(start, start + limit).map((item) => {
+      const { latestUpdatedAtMs: _sortKey, ...rest } = item;
+      return rest;
+    });
+
     return NextResponse.json({
       success: true,
-      data: hydrated,
+      data: pageData,
       pagination: {
         page,
         limit,
