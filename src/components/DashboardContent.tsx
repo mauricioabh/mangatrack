@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, Star, Search } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaPath } from "@/lib/consumet/ids";
-// Cache removed - using regular fetch for fresh data
 
 interface Manga {
   id: string;
@@ -53,10 +52,6 @@ export default function DashboardContent() {
 
   const fetchData = async () => {
     try {
-      console.log("🔄 Dashboard fetching data...");
-
-      // Make API calls in parallel for fresh data every time
-      // Note: notifications are handled by NotificationDropdown component
       const [userResponse, bookmarksResponse] = await Promise.all([
         fetch("/api/user/profile"),
         fetch("/api/manga/bookmarks"),
@@ -67,25 +62,13 @@ export default function DashboardContent() {
         bookmarksResponse.json(),
       ]);
 
-      console.log("📊 Dashboard data received:", {
-        user: userData?.user?.name || "No user",
-        bookmarks: bookmarksData?.data?.length || 0,
-      });
-
-      console.log("User profile response:", userData);
-      console.log("Bookmarks response:", bookmarksData);
-
-      // Update state with all data
       if (userData?.success) {
         setUser(userData.user || null);
       }
 
       if (bookmarksData?.success) {
         setBookmarks(bookmarksData.data);
-        console.log("Set bookmarks:", bookmarksData.data);
       }
-
-      // Notifications are handled by NotificationDropdown component
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -93,17 +76,13 @@ export default function DashboardContent() {
     }
   };
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Refresh data when user returns to dashboard (e.g., from manga details)
   useEffect(() => {
     const handleFocus = () => {
-      // Only refresh if we're not already loading
       if (!loading) {
-        console.log("🔄 Dashboard focused - refreshing data");
         fetchData();
       }
     };
@@ -115,59 +94,21 @@ export default function DashboardContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
-        <main className="container mx-auto px-4 py-8">
-          {/* Welcome Section with Total Bookmarks Skeleton */}
-          <div className="grid lg:grid-cols-4 gap-8 mb-8">
-            {/* Welcome Message Skeleton - Left Side */}
-            <div className="lg:col-span-3">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
-            </div>
-
-            {/* Total Bookmarks Skeleton - Right Side */}
-            <div className="lg:col-span-1">
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30 border-blue-200 dark:border-blue-800 h-full">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
-                  <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-2 animate-pulse"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-                </CardContent>
-              </Card>
-            </div>
+        <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
+          <div className="mb-5 flex items-center gap-2 sm:mb-6">
+            <div className="h-7 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700 sm:h-8 sm:w-36" />
+            <div className="h-5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
           </div>
-
-          {/* Recent Bookmarks Skeleton */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card
-                  key={i}
-                  className="border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2 animate-pulse"></div>
-                        <div className="flex items-center space-x-2">
-                          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
-                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
-                        </div>
-                      </div>
-                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="overflow-hidden rounded-lg">
+                <div className="aspect-[2/3] animate-pulse bg-gray-200 dark:bg-gray-700" />
+                <div className="mt-2 space-y-1.5 px-0.5">
+                  <div className="h-3.5 w-4/5 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+            ))}
           </div>
         </main>
       </div>
@@ -176,9 +117,9 @@ export default function DashboardContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
             Welcome to MangaTrack
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
@@ -191,132 +132,77 @@ export default function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section with Total Bookmarks */}
-        <div className="mb-8 grid gap-4 lg:grid-cols-4 lg:gap-8">
-          {/* Welcome Message - Left Side */}
-          <div className="min-w-0 lg:col-span-3">
-            <h1 className="mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold break-words text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-3xl">
-              Welcome back, {user.name}!
-            </h1>
-            <p className="text-gray-700 dark:text-gray-300">
-              Here&apos;s what&apos;s happening with your manga collection.
-            </p>
-          </div>
-
-          {/* Total Bookmarks - Right Side */}
-          <div className="lg:col-span-1">
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30 border-blue-200 dark:border-blue-800 hover:shadow-lg transition-all duration-300 h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Total Bookmarks
-                </CardTitle>
-                <Star className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {bookmarks.length}
-                </div>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Manga in your collection
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
+        <div className="mb-5 flex items-center gap-2.5 sm:mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+            Bookmarks
+          </h1>
+          <Badge
+            variant="secondary"
+            className="rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums"
+          >
+            {bookmarks.length}
+          </Badge>
         </div>
 
-        {/* Recent Bookmarks */}
-        <div className="mb-8">
-          <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Recent Bookmarks
-            </h2>
-            <Link href="/search" className="shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-blue-200 text-blue-600 transition-all duration-300 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 sm:w-auto sm:transform sm:hover:scale-105 sm:hover:shadow-md"
-              >
-                <Search className="mr-2 h-4 w-4" />
-                Browse More
-              </Button>
-            </Link>
-          </div>
-
-          {bookmarks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {bookmarks.slice(0, 6).map((bookmark) => {
-                if (!bookmark.manga) return null;
-                const manga = bookmark.manga;
-                return (
-                <Card
+        {bookmarks.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {bookmarks.map((bookmark) => {
+              if (!bookmark.manga) return null;
+              const manga = bookmark.manga;
+              return (
+                <Link
                   key={bookmark.id}
-                  className="hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20"
+                  href={mangaPath(bookmark.provider, manga.id)}
+                  className="group block overflow-hidden rounded-lg border border-blue-200/80 bg-white/70 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-blue-800/60 dark:bg-slate-900/40 dark:hover:border-blue-700"
                 >
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center gap-3 sm:space-x-4">
-                      <div className="h-20 w-16 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700">
-                        {manga.coverImage && (
-                          <CatalogCover
-                            src={manga.coverImage}
-                            alt={manga.title}
-                            width={64}
-                            height={80}
-                            provider={bookmark.provider}
-                            className="h-full w-full rounded object-cover"
-                          />
-                        )}
+                  <div className="relative aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
+                    {manga.coverImage ? (
+                      <CatalogCover
+                        src={manga.coverImage}
+                        alt={manga.title}
+                        width={280}
+                        height={420}
+                        provider={bookmark.provider}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <BookOpen className="h-10 w-10 text-gray-400" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-medium text-gray-900 dark:text-white">
-                          {manga.title}
-                        </h3>
-                        <p className="truncate text-sm text-gray-500 dark:text-gray-400">
-                          by {manga.author}
-                        </p>
-                        <div className="mt-1 flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {bookmark.provider}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {manga.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Link
-                        href={mangaPath(bookmark.provider, manga.id)}
-                        className="shrink-0"
-                      >
-                        <Button size="sm" variant="outline">
-                          Read
-                        </Button>
-                      </Link>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-8 sm:p-2.5">
+                      <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">
+                        {manga.title}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] capitalize text-white/80">
+                        {bookmark.provider}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <Card className="border-dashed border-2 border-gray-300 dark:border-gray-600">
-              <CardContent className="p-8 text-center">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No bookmarks yet
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  Start exploring and bookmark your favorite manga!
-                </p>
-                <Link href="/search">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 active:scale-95">
-                    <Search className="h-4 w-4 mr-2" />
-                    Discover Manga
-                  </Button>
+                  </div>
                 </Link>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <CardContent className="p-8 text-center">
+              <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+              <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+                No bookmarks yet
+              </h3>
+              <p className="mb-4 text-gray-500 dark:text-gray-400">
+                Start exploring and bookmark your favorite manga!
+              </p>
+              <Link href="/search">
+                <Button className="border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
+                  <Search className="mr-2 h-4 w-4" />
+                  Discover Manga
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
