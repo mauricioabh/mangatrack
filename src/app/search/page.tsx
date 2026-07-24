@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, Star, Eye } from "lucide-react";
+import { Search, BookOpen, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -473,100 +473,89 @@ export default function SearchPage() {
                   }}
                   className="group h-full"
                 >
-                  <Card className="h-full gap-3 border-2 border-transparent bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 py-3 dark:from-gray-800 dark:via-blue-900/20 dark:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-blue-400/20 transition-all duration-500 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:via-purple-50 group-hover:to-pink-50 dark:group-hover:from-blue-900/30 dark:group-hover:via-purple-900/30 dark:group-hover:to-pink-900/30">
-                    <CardHeader className="shrink-0 space-y-0 px-3 pb-0">
-                      <motion.div
-                        className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 shadow-lg dark:from-gray-700 dark:to-gray-600 group-hover:shadow-xl transition-all duration-300"
-                        whileHover={{ scale: 1.03 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {manga.coverImage && (
-                          <CatalogCover
-                            src={manga.coverImage}
-                            alt={manga.title}
-                            width={140}
-                            height={210}
-                            provider={manga.provider}
-                            referer={manga.coverReferer}
-                            className="h-full w-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        )}
-                      </motion.div>
-                      <motion.div
-                        className="mt-2"
-                        whileHover={{ x: 3 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CardTitle className="min-h-[2.5rem] text-sm line-clamp-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-300 dark:group-hover:via-purple-300 dark:group-hover:to-pink-300 transition-all duration-300">
-                          {manga.title}
-                        </CardTitle>
-                      </motion.div>
-                      {manga.author && (
-                        <motion.p
-                          className="mt-0.5 flex min-h-4 items-center text-xs text-gray-600 line-clamp-1 dark:text-gray-400"
-                          title={`by ${manga.author}`}
+                  <Link
+                    href={mangaPath(manga.provider, manga.id)}
+                    className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-xl"
+                  >
+                    <Card className="h-full cursor-pointer gap-3 border-2 border-transparent bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 py-3 dark:from-gray-800 dark:via-blue-900/20 dark:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-blue-400/20 transition-all duration-500 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:via-purple-50 group-hover:to-pink-50 dark:group-hover:from-blue-900/30 dark:group-hover:via-purple-900/30 dark:group-hover:to-pink-900/30">
+                      <CardHeader className="shrink-0 space-y-0 px-3 pb-0">
+                        <motion.div
+                          className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 shadow-lg dark:from-gray-700 dark:to-gray-600 group-hover:shadow-xl transition-all duration-300"
+                          whileHover={{ scale: 1.03 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {manga.coverImage && (
+                            <CatalogCover
+                              src={manga.coverImage}
+                              alt={manga.title}
+                              width={140}
+                              height={210}
+                              provider={manga.provider}
+                              referer={manga.coverReferer}
+                              className="h-full w-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                          )}
+                        </motion.div>
+                        <motion.div
+                          className="mt-2"
                           whileHover={{ x: 3 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <BookOpen className="mr-1 h-3 w-3 shrink-0 text-blue-500" />
-                          <span className="truncate">by {manga.author}</span>
-                        </motion.p>
-                      )}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                        <Badge
-                          variant="outline"
-                          className="border-amber-200 text-[10px] capitalize text-amber-800 dark:border-amber-700 dark:text-amber-300"
-                        >
-                          {manga.provider}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="border-green-200 bg-gradient-to-r from-green-100 to-emerald-100 text-[10px] text-green-800 dark:border-green-700 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300"
-                        >
-                          {manga.status}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-sky-600 text-[10px] font-semibold tabular-nums text-white hover:bg-sky-600 dark:bg-sky-500"
-                          title="Capítulos disponibles en este provider"
-                          data-testid="chapter-count-badge-row"
-                        >
-                          <ChapterCountLabel
-                            loading={manga.chapterCountLoading}
-                            count={manga.chapterCount}
-                          />
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-1 flex-col px-3 pt-0">
-                      <motion.div
-                        className="mb-3 min-h-[2.5rem]"
-                        initial={{ opacity: 0.8 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CardDescription className="line-clamp-2 text-xs text-gray-600 dark:text-gray-300">
-                          {manga.description ?? ""}
-                        </CardDescription>
-                      </motion.div>
-                      <motion.div
-                        className="mt-auto"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Link href={mangaPath(manga.provider, manga.id)}>
-                          <Button
-                            size="sm"
-                            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-1 active:scale-95"
+                          <CardTitle className="min-h-[2.5rem] text-sm line-clamp-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-300 dark:group-hover:via-purple-300 dark:group-hover:to-pink-300 transition-all duration-300">
+                            {manga.title}
+                          </CardTitle>
+                        </motion.div>
+                        {manga.author && (
+                          <motion.p
+                            className="mt-0.5 flex min-h-4 items-center text-xs text-gray-600 line-clamp-1 dark:text-gray-400"
+                            title={`by ${manga.author}`}
+                            whileHover={{ x: 3 }}
+                            transition={{ duration: 0.2 }}
                           >
-                            <Eye className="h-3.5 w-3.5 mr-1.5" />
-                            View Details
-                          </Button>
-                        </Link>
-                      </motion.div>
-                    </CardContent>
-                  </Card>
+                            <BookOpen className="mr-1 h-3 w-3 shrink-0 text-blue-500" />
+                            <span className="truncate">by {manga.author}</span>
+                          </motion.p>
+                        )}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                          <Badge
+                            variant="outline"
+                            className="border-amber-200 text-[10px] capitalize text-amber-800 dark:border-amber-700 dark:text-amber-300"
+                          >
+                            {manga.provider}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className="border-green-200 bg-gradient-to-r from-green-100 to-emerald-100 text-[10px] text-green-800 dark:border-green-700 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300"
+                          >
+                            {manga.status}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className="bg-sky-600 text-[10px] font-semibold tabular-nums text-white hover:bg-sky-600 dark:bg-sky-500"
+                            title="Capítulos disponibles en este provider"
+                            data-testid="chapter-count-badge-row"
+                          >
+                            <ChapterCountLabel
+                              loading={manga.chapterCountLoading}
+                              count={manga.chapterCount}
+                            />
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-3 pt-0 pb-1">
+                        <motion.div
+                          className="min-h-[2.5rem]"
+                          initial={{ opacity: 0.8 }}
+                          whileHover={{ opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <CardDescription className="line-clamp-2 text-xs text-gray-600 dark:text-gray-300">
+                            {manga.description ?? ""}
+                          </CardDescription>
+                        </motion.div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
