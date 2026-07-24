@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, Star } from "lucide-react";
+import { Search, BookOpen, Star, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,13 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaApiPath, mangaPath } from "@/lib/consumet/ids";
-import { cn } from "@/lib/utils";
+
+/** Fallback until API returns allowlist — keeps the filter visible on first paint */
+const DEFAULT_PROVIDERS = ["mangahere", "mangapill"];
 
 interface Manga {
   id: string;
@@ -187,22 +197,32 @@ export default function SearchPage() {
   const isProviderActive = (provider: string) =>
     selectedProviders.length === 0 || selectedProviders.includes(provider);
 
+  const providerOptions =
+    availableProviders.length > 0 ? availableProviders : DEFAULT_PROVIDERS;
+
+  const providerFilterLabel = () => {
+    if (selectedProviders.length === 0) return "All Providers";
+    if (selectedProviders.length === 1) {
+      return selectedProviders[0];
+    }
+    return `${selectedProviders.length} providers`;
+  };
+
   const toggleProvider = (provider: string) => {
     setSelectedProviders((prev) => {
       const base =
         prev.length === 0
-          ? availableProviders.length > 0
-            ? [...availableProviders]
+          ? providerOptions.length > 0
+            ? [...providerOptions]
             : [provider]
           : [...prev];
       if (base.includes(provider)) {
-        const next = base.filter((p) => p !== provider);
-        return next;
+        return base.filter((p) => p !== provider);
       }
       const next = [...base, provider];
       if (
-        availableProviders.length > 0 &&
-        availableProviders.every((p) => next.includes(p))
+        providerOptions.length > 0 &&
+        providerOptions.every((p) => next.includes(p))
       ) {
         return [];
       }
@@ -469,6 +489,53 @@ export default function SearchPage() {
                   </Select>
                 </motion.div>
 
+                <motion.div
+                  className="min-w-0 flex-1 sm:flex-none"
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 w-full justify-between border-2 border-amber-200 bg-white/80 px-3 text-left font-normal capitalize backdrop-blur-sm hover:border-amber-300 dark:border-amber-800 dark:bg-gray-800/80 dark:hover:border-amber-700 sm:h-12 sm:w-52"
+                        aria-label="Filter by provider"
+                      >
+                        <span className="truncate">{providerFilterLabel()}</span>
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[min(100vw-2rem,16rem)] border-amber-200 bg-white dark:border-amber-800 dark:bg-gray-800"
+                    >
+                      <DropdownMenuLabel>Providers</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuCheckboxItem
+                        checked={selectedProviders.length === 0}
+                        onCheckedChange={() => setSelectedProviders([])}
+                        onSelect={(e) => e.preventDefault()}
+                        className="min-h-11 capitalize"
+                      >
+                        All providers
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuSeparator />
+                      {providerOptions.map((provider) => (
+                        <DropdownMenuCheckboxItem
+                          key={provider}
+                          checked={isProviderActive(provider)}
+                          onCheckedChange={() => toggleProvider(provider)}
+                          onSelect={(e) => e.preventDefault()}
+                          className="min-h-11 capitalize"
+                        >
+                          {provider}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </motion.div>
+
                 <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border-2 border-teal-200 bg-white/80 px-3 py-2 backdrop-blur-sm dark:border-teal-800 dark:bg-gray-800/80 sm:min-h-12 sm:justify-start">
                   <Label
                     htmlFor="exact-match"
@@ -486,57 +553,10 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              {availableProviders.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Providers
-                  </p>
-                  <div
-                    className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 touch-pan-x sm:flex-wrap sm:overflow-visible"
-                    role="group"
-                    aria-label="Filter by provider"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedProviders([])}
-                      aria-pressed={selectedProviders.length === 0}
-                      className={cn(
-                        "min-h-11 shrink-0 rounded-md border-2 px-3 text-sm font-medium capitalize transition-colors",
-                        selectedProviders.length === 0
-                          ? "border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-500 dark:bg-amber-900/40 dark:text-amber-100"
-                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-amber-300 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200"
-                      )}
-                    >
-                      All
-                    </button>
-                    {availableProviders.map((provider) => {
-                      const active = isProviderActive(provider);
-                      return (
-                        <button
-                          key={provider}
-                          type="button"
-                          onClick={() => toggleProvider(provider)}
-                          aria-pressed={active && selectedProviders.length > 0}
-                          className={cn(
-                            "min-h-11 shrink-0 rounded-md border-2 px-3 text-sm font-medium capitalize transition-colors",
-                            active && selectedProviders.length > 0
-                              ? "border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-500 dark:bg-amber-900/40 dark:text-amber-100"
-                              : selectedProviders.length === 0
-                                ? "border-amber-200/80 bg-amber-50/80 text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200"
-                                : "border-gray-200 bg-white/80 text-gray-700 hover:border-amber-300 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200"
-                          )}
-                        >
-                          {provider}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Tip: wrap a query in quotes for exact match, e.g.{" "}
-                    <span className="font-mono">&quot;demon slayer&quot;</span>
-                  </p>
-                </div>
-              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Tip: wrap a query in quotes for exact match, e.g.{" "}
+                <span className="font-mono">&quot;demon slayer&quot;</span>
+              </p>
             </motion.div>
           </motion.div>
         </motion.div>
