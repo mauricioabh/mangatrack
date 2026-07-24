@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  BookOpen,
   ArrowLeft,
   Calendar,
   User,
@@ -44,9 +43,28 @@ interface Manga {
     title: string;
     pages: number;
     pagesData?: string[];
+    publishedAt?: string;
   }>;
   createdAt?: string;
   updatedAt?: string;
+}
+
+function chapterLabel(chapter: {
+  chapterNumber: number;
+  title: string;
+}): { heading: string; name: string | null } {
+  const heading =
+    chapter.chapterNumber > 0
+      ? `Chapter ${chapter.chapterNumber}`
+      : "Chapter";
+  const raw = chapter.title?.trim() ?? "";
+  const isGeneric =
+    !raw ||
+    raw === heading ||
+    raw === "Chapter" ||
+    /^Chapter\s+[\d.]+$/i.test(raw);
+
+  return { heading, name: isGeneric ? null : raw };
 }
 
 interface ApiResponse<T> {
@@ -222,10 +240,6 @@ export default function MangaDetailContent({
     if (target) {
       window.open(chapterHref(target.id), "_blank");
     }
-  };
-
-  const handleReadChapter = (chapterId: string) => {
-    window.open(chapterHref(chapterId), "_blank");
   };
 
   // Show skeleton loading while manga data is loading
@@ -466,33 +480,30 @@ export default function MangaDetailContent({
             Chapters ({manga.chapters.length})
           </h2>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {manga.chapters.map((chapter) => {
               const isRead = readChapterIds.has(chapter.id);
+              const { heading, name } = chapterLabel(chapter);
               return (
-              <Card
-                key={chapter.id}
-                className={`hover:shadow-lg transition-all duration-300 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 hover:from-blue-100/70 hover:to-purple-100/70 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 ${isRead ? "opacity-80" : ""}`}
-              >
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
-                      <div className="h-14 w-10 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-700 sm:h-16 sm:w-12">
-                        {manga.coverImage && (
-                          <CatalogCover
-                            src={manga.coverImage}
-                            alt={manga.title}
-                            width={48}
-                            height={64}
-                            provider={provider}
-                            referer={manga.coverReferer}
-                            className="h-full w-full rounded object-cover"
-                          />
-                        )}
-                      </div>
+                <a
+                  key={chapter.id}
+                  href={chapterHref(chapter.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                >
+                  <Card
+                    className={`cursor-pointer border-blue-200 bg-gradient-to-r from-blue-50/50 to-purple-50/50 transition-all duration-300 hover:shadow-lg hover:from-blue-100/70 hover:to-purple-100/70 dark:border-blue-800 dark:from-blue-900/10 dark:to-purple-900/10 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 ${isRead ? "opacity-80" : ""}`}
+                  >
+                    <CardContent className="p-3 sm:p-4">
                       <div className="min-w-0">
                         <h3 className="flex flex-wrap items-center gap-2 font-medium break-words text-gray-900 dark:text-white">
-                          Chapter {chapter.chapterNumber}: {chapter.title}
+                          {heading}
+                          {name ? (
+                            <span className="font-normal text-gray-700 dark:text-gray-300">
+                              — {name}
+                            </span>
+                          ) : null}
                           {isRead && (
                             <Badge
                               variant="secondary"
@@ -503,24 +514,15 @@ export default function MangaDetailContent({
                           )}
                         </h3>
                         {chapter.publishedAt ? (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                             {chapter.publishedAt}
                           </p>
                         ) : null}
                       </div>
-                    </div>
-                    <Button
-                      onClick={() => handleReadChapter(chapter.id)}
-                      size="sm"
-                      className="w-full shrink-0 border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl sm:w-auto sm:transform sm:hover:scale-105 sm:hover:-translate-y-1 active:scale-95"
-                    >
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      {isRead ? "Read again" : "Read"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
+                    </CardContent>
+                  </Card>
+                </a>
+              );
             })}
           </div>
         </div>
