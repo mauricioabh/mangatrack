@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getMangaInfo, getLatestChapterUpdate } from "@/lib/consumet";
+import { deriveLibraryProgress } from "@/lib/reading-progress";
+import type { Chapter } from "@/lib/consumet";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
     const hydrated = await Promise.all(
       bookmarks.map(async (bookmark) => {
         let manga = null;
+        let chapters: Chapter[] = [];
         let latestChapter: {
           id?: string;
           chapterNumber: number;
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest) {
             bookmark.externalMangaId
           );
           if (detail) {
+            chapters = detail.chapters;
             const latest = getLatestChapterUpdate(detail.chapters);
             latestUpdatedAtMs = latest.publishedAtMs;
             if (detail.chapters.length > 0) {
@@ -100,6 +104,7 @@ export async function GET(request: NextRequest) {
           latestChapter,
           latestUpdatedAtMs,
           manga,
+          _chapters: chapters,
         };
       })
     );
@@ -123,9 +128,9 @@ export async function GET(request: NextRequest) {
       ),
     ];
 
-    const readLatestRows =
+    const [readLatestRows, historyRows] = await Promise.all([
       latestChapterIds.length > 0
-        ? await db.readingHistory.findMany({
+        ? db.readingHistory.findMany({
             where: {
               userId: user.id,
               externalChapterId: { in: latestChapterIds },
@@ -135,7 +140,24 @@ export async function GET(request: NextRequest) {
               externalChapterId: true,
             },
           })
-        : [];
+        : Promise.resolve([]),
+      hydrated.length > 0
+        ? db.readingHistory.findMany({
+            where: {
+              userId: user.id,
+              OR: hydrated.map((item) => ({
+                provider: item.provider,
+                externalMangaId: item.externalMangaId,
+              })),
+            },
+            select: {
+              provider: true,
+              externalMangaId: true,
+              externalChapterId: true,
+            },
+          })
+        : Promise.resolve([]),
+    ]);
 
     const readLatestKeys = new Set(
       readLatestRows.map(
@@ -143,9 +165,20 @@ export async function GET(request: NextRequest) {
       )
     );
 
+    const historyBySeries = new Map<string, Set<string>>();
+    for (const row of historyRows) {
+      const key = `${row.provider.toLowerCase()}:${row.externalMangaId}`;
+      let set = historyBySeries.get(key);
+      if (!set) {
+        set = new Set();
+        historyBySeries.set(key, set);
+      }
+      set.add(row.externalChapterId);
+    }
+
     const start = (page - 1) * limit;
     const pageData = hydrated.slice(start, start + limit).map((item) => {
-      const { latestUpdatedAtMs: _sortKey, ...rest } = item;
+      const chapters = item._chapters;
       const latestId = item.latestChapter?.id;
       const hasUnreadLatest = Boolean(
         latestId &&
@@ -153,7 +186,34 @@ export async function GET(request: NextRequest) {
             `${item.provider.toLowerCase()}:${latestId}`
           )
       );
-      return { ...rest, hasUnreadLatest };
+      const seriesKey = `${item.provider.toLowerCase()}:${item.externalMangaId}`;
+      const readChapterIds = historyBySeries.get(seriesKey) ?? new Set<string>();
+      const progress = deriveLibraryProgress({
+        hasHistory: readChapterIds.size > 0,
+        readChapterIds,
+        chapters: chapters.map((c) => ({
+          id: c.id,
+          chapterNumber: c.chapterNumber,
+        })),
+        totalChapters: chapters.length > 0 ? chapters.length : null,
+      });
+
+      return {
+        id: item.id,
+        userId: item.userId,
+        provider: item.provider,
+        mangaId: item.mangaId,
+        externalMangaId: item.externalMangaId,
+        createdAt: item.createdAt,
+        latestChapter: item.latestChapter,
+        manga: item.manga,
+        hasUnreadLatest,
+        isReading: progress.isReading,
+        readChapterCount: progress.readChapterCount,
+        latestReadChapterNumber: progress.latestReadChapterNumber,
+        totalChapters: progress.totalChapters,
+        progressRatio: progress.progressRatio,
+      };
     });
 
     return NextResponse.json({

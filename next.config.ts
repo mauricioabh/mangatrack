@@ -77,6 +77,50 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      // ComicK covers / pages (Cloudflare — proxy + Referer; may still 403 by IP)
+      {
+        protocol: "https",
+        hostname: "meo.comick.pictures",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.comick.pictures",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.comicknew.pictures",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.comick.io",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.comick.dev",
+        port: "",
+        pathname: "/**",
+      },
+      // AniList covers (ComicK Cloudflare fallback)
+      {
+        protocol: "https",
+        hostname: "s4.anilist.co",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.anilist.co",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

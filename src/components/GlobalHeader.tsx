@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { BookOpen, Search, Settings, Crown } from "lucide-react";
+import { BookOpen, Search, Settings, Crown, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import SearchOverlay from "./SearchOverlay";
@@ -60,6 +60,19 @@ export default function GlobalHeader() {
 
           {/* Navigation and User Section */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
+            {/* Browse */}
+            <Link href="/browse">
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Browse"
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:text-white dark:hover:bg-gray-700/40 transition-all duration-300 sm:hover:scale-105 sm:hover:shadow-lg backdrop-blur-sm px-2 sm:px-3"
+              >
+                <Compass className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Browse</span>
+              </Button>
+            </Link>
+
             {/* Search Button */}
             <Button
               onClick={() => setIsSearchOpen(true)}

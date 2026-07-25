@@ -2,6 +2,7 @@
 export const PROVIDER_REFERERS: Record<string, string> = {
   mangahere: "https://mangahere.cc/",
   mangapill: "https://mangapill.com/",
+  mangadex: "https://mangadex.org/",
 };
 
 export function getProviderReferer(provider?: string | null): string | undefined {

@@ -367,6 +367,7 @@ export default function MangaDetailContent({
                   <CatalogCover
                     src={manga.coverImage}
                     alt={manga.title}
+                    title={manga.title}
                     width={256}
                     height={320}
                     provider={provider}

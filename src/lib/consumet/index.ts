@@ -4,6 +4,7 @@ export * from "./client";
 export * from "./mappers";
 export * from "./ids";
 export * from "./referers";
+export * from "./provider-routes";
 export * from "./service";
 export * from "./search-relevance";
 export { SAMPLE_CONSUMET_MANGA } from "./sample-ids";

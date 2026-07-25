@@ -5,7 +5,7 @@ import {
 } from "./errors";
 
 const DEFAULT_TIMEOUT_MS = 45_000;
-const DEFAULT_ALLOWLIST = ["mangahere", "mangapill"];
+const DEFAULT_ALLOWLIST = ["mangahere", "mangapill", "mangadex"];
 const MAX_RETRIES = 1;
 
 export function getConsumetBaseUrl(): string {

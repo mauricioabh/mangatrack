@@ -40,6 +40,11 @@ interface Bookmark {
     publishedAt?: string;
   } | null;
   hasUnreadLatest?: boolean;
+  isReading?: boolean;
+  readChapterCount?: number;
+  latestReadChapterNumber?: number | null;
+  totalChapters?: number | null;
+  progressRatio?: number | null;
 }
 
 interface User {
@@ -156,7 +161,7 @@ export default function DashboardContent() {
       <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
         <div className="mb-5 flex items-center gap-2.5 sm:mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-            Bookmarks
+            Library
           </h1>
           <Badge
             variant="secondary"
@@ -174,6 +179,10 @@ export default function DashboardContent() {
               const latestUpdate = formatLatestUpdate(
                 bookmark.latestChapter?.publishedAt
               );
+              const progressPct =
+                bookmark.progressRatio != null
+                  ? Math.round(bookmark.progressRatio * 100)
+                  : null;
               return (
                 <Link
                   key={bookmark.id}
@@ -185,6 +194,7 @@ export default function DashboardContent() {
                       <CatalogCover
                         src={manga.coverImage}
                         alt={manga.title}
+                        title={manga.title}
                         width={280}
                         height={420}
                         provider={bookmark.provider}
@@ -195,6 +205,14 @@ export default function DashboardContent() {
                         <BookOpen className="h-10 w-10 text-gray-400" />
                       </div>
                     )}
+                    {bookmark.isReading ? (
+                      <Badge
+                        className="absolute left-2 top-2 z-10 border-0 bg-emerald-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                        aria-label="Reading"
+                      >
+                        Reading
+                      </Badge>
+                    ) : null}
                     {bookmark.hasUnreadLatest ? (
                       <span
                         className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
@@ -220,6 +238,23 @@ export default function DashboardContent() {
                           Updated {latestUpdate}
                         </p>
                       ) : null}
+                      {progressPct != null ? (
+                        <div
+                          className="mt-1.5"
+                          role="progressbar"
+                          aria-valuenow={progressPct}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`Reading progress ${progressPct}%`}
+                        >
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-white/25">
+                            <div
+                              className="h-full rounded-full bg-emerald-400 transition-[width] duration-300"
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </Link>
@@ -231,10 +266,10 @@ export default function DashboardContent() {
             <CardContent className="p-8 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-                No bookmarks yet
+                No favorites yet
               </h3>
               <p className="mb-4 text-gray-500 dark:text-gray-400">
-                Start exploring and bookmark your favorite manga!
+                Start exploring and add manga to your Library!
               </p>
               <Link href="/search">
                 <Button className="border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">

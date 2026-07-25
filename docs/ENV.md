@@ -126,18 +126,21 @@ UI: Settings → **Push Notifications (FCM)**. API: `POST /api/user/push-token` 
 
 ## Consumet (catálogo)
 
-Catálogo vía instancia self-hosted Wayool — no usar `api.consumet.org` ni `api.mangadex.org`.
+Catálogo vía instancia self-hosted Wayool — no usar `api.consumet.org` para catálogo de lectura.
+Browse discovery (`/browse`) es la excepción documentada: metadata de feeds vía `api.mangadex.org` (ver `docs/MANGA_SOURCE.md`); la lectura sigue por Consumet.
 
 | Variable | Descripción | Requerida |
 | -------- | ----------- | --------- |
 | `CONSUMET_BASE_URL` | Origen Consumet (ej. `https://consumet.wayool.com`) | ✅ |
 | `CONSUMET_TIMEOUT_MS` | Timeout por request en ms (default `45000`) | Opcional |
-| `CONSUMET_PROVIDER_ALLOWLIST` | Providers CSV para búsqueda multi-fuente (default `mangahere,mangapill`) | Opcional |
+| `CONSUMET_PROVIDER_ALLOWLIST` | Providers CSV para búsqueda multi-fuente (default `mangahere,mangapill,mangadex`) | Opcional |
 | `CONSUMET_MANGA_PROVIDER` | Preferencia suave para scripts/debug o orden; **no** oculta otros providers en la UI | Opcional |
+
+**Ops:** en Vercel y `.env.local`, alinear `CONSUMET_PROVIDER_ALLOWLIST=mangahere,mangapill,mangadex`. No incluir `weebcentral` (search 500 CF) ni `comick` (CDN imágenes 403 CF) hasta que haya proxy/solución en Consumet VPS.
 
 Notificaciones de capítulo nuevo: cron diario Inngest (poll de favoritos), no webhook MangaDex.
 
-Variables `MANGADEX_*` están **deprecadas** y ya no se usan para catálogo.
+Variables `MANGADEX_*` están **deprecadas** y ya no se usan para catálogo de lectura.
 
 ## Testing / desarrollo
 

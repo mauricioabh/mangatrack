@@ -7,6 +7,7 @@ import {
   mapPages,
   mapSearchResult,
   mapStatus,
+  resolveLocalizedString,
   resolveTitle,
 } from "@/lib/consumet/mappers";
 import { inferMangaIdFromChapterId } from "@/lib/consumet/service";
@@ -29,9 +30,23 @@ describe("consumet mappers", () => {
     });
   });
 
+  describe("resolveLocalizedString", () => {
+    it("prefers en then other locales from a map", () => {
+      expect(
+        resolveLocalizedString({ ja: "ワンピース", en: "One Piece", "pt-br": "x" })
+      ).toBe("One Piece");
+      expect(resolveLocalizedString({ ja: "ワンピース" })).toBe("ワンピース");
+      expect(resolveLocalizedString("plain")).toBe("plain");
+      expect(resolveLocalizedString(null)).toBeUndefined();
+    });
+  });
+
   describe("resolveTitle", () => {
     it("prefers primary title then altTitles then fallback", () => {
       expect(resolveTitle("One Piece")).toBe("One Piece");
+      expect(resolveTitle({ en: "One Piece", ja: "ワンピース" })).toBe(
+        "One Piece"
+      );
       expect(resolveTitle(null, ["Alt Title"])).toBe("Alt Title");
       expect(resolveTitle(null, [{ en: "EN Alt" }])).toBe("EN Alt");
       expect(resolveTitle(null, [], "Fallback")).toBe("Fallback");
@@ -115,6 +130,25 @@ describe("consumet mappers", () => {
       expect(detail.genres).toEqual(["Action", "Adventure"]);
       expect(detail.chapters).toHaveLength(2);
       expect(detail.coverReferer).toBe("https://mangahere.cc");
+    });
+
+    it("flattens MangaDex localized description/title maps to strings", () => {
+      const detail = mapMangaDetail(
+        {
+          id: "md-uuid",
+          description: {
+            en: "Pirate king treasure.",
+            ja: "海賊王",
+            "pt-br": "tesouro",
+          },
+          altTitles: [{ en: "One Piece" }, { ja: "ワンピース" }],
+          chapters: [],
+        },
+        "mangadex"
+      );
+      expect(detail.title).toBe("One Piece");
+      expect(detail.description).toBe("Pirate king treasure.");
+      expect(typeof detail.description).toBe("string");
     });
   });
 

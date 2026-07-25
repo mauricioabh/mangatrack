@@ -50,24 +50,46 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     const referer =
       pageEntry.referer ||
       getProviderReferer(providerKey) ||
-      request.headers.get("referer") ||
       undefined;
 
-    const imageRes = await fetch(pageEntry.url, {
-      headers: {
-        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        ...(referer ? { Referer: referer } : {}),
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(30_000),
-    });
+    const refererTries: Array<string | undefined> = [referer, undefined];
 
-    if (!imageRes.ok) {
+    let imageRes: Response | null = null;
+    for (const ref of refererTries) {
+      imageRes = await fetch(pageEntry.url, {
+        headers: {
+          Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+          ...(ref ? { Referer: ref, Origin: new URL(ref).origin } : {}),
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(30_000),
+        redirect: "follow",
+      });
+      const ct = imageRes.headers.get("content-type") ?? "";
+      if (
+        imageRes.ok &&
+        (ct.startsWith("image/") || ct.includes("octet-stream"))
+      ) {
+        break;
+      }
+      if (imageRes.status !== 403 && !ct.includes("text/html")) {
+        break;
+      }
+    }
+
+    if (
+      !imageRes ||
+      !imageRes.ok ||
+      !(
+        (imageRes.headers.get("content-type") ?? "").startsWith("image/") ||
+        (imageRes.headers.get("content-type") ?? "").includes("octet-stream")
+      )
+    ) {
       return NextResponse.json(
         { success: false, error: "Failed to load page image" },
-        { status: imageRes.status === 404 ? 404 : 502 }
+        { status: imageRes?.status === 404 ? 404 : 502 }
       );
     }
 

@@ -1,0 +1,13 @@
+team:
+  id: "918d1d41-95ee-429a-976f-e380f65feb8b"
+  key: "WAY"
+  name: "Wayool"
+project:
+  id: "31fdd340-8ed8-4214-94d2-daf91b4305f5"
+  name: "mangatrack"
+issue_label_filter:
+  name: "MAN"
+archive_documents:
+  enabled: true
+  title_prefix: "OpenSpec:"
+  documents: {}

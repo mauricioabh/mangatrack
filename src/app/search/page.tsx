@@ -33,7 +33,7 @@ import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaApiPath, mangaPath } from "@/lib/consumet/ids";
 
 /** Fallback until API returns allowlist — keeps the filter visible on first paint */
-const DEFAULT_PROVIDERS = ["mangahere", "mangapill"];
+const DEFAULT_PROVIDERS = ["mangahere", "mangapill", "mangadex"];
 
 interface Manga {
   id: string;
@@ -618,6 +618,7 @@ export default function SearchPage() {
                             <CatalogCover
                               src={manga.coverImage}
                               alt={manga.title}
+                              title={manga.title}
                               width={140}
                               height={210}
                               provider={manga.provider}

@@ -45,10 +45,10 @@ export interface Page {
 
 export interface ConsumetSearchResult {
   id: string;
-  title?: string | null;
-  altTitles?: string[];
+  title?: string | Record<string, string> | null;
+  altTitles?: string[] | Array<Record<string, string>>;
   image?: string | null;
-  description?: string | null;
+  description?: string | Record<string, string> | null;
   status?: string | null;
   headerForImage?: Record<string, string>;
 }
@@ -69,9 +69,9 @@ export interface ConsumetChapterRaw {
 
 export interface ConsumetInfoResponse {
   id: string;
-  title?: string | null;
+  title?: string | Record<string, string> | null;
   altTitles?: string[] | Array<Record<string, string>>;
-  description?: string | null;
+  description?: string | Record<string, string> | null;
   image?: string | null;
   status?: string | null;
   genres?: string[];
