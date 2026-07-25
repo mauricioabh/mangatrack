@@ -4,6 +4,26 @@ export type ChapterRef = {
   chapterNumber: number;
 };
 
+export type LibraryProgressInput = {
+  /** True when the user has any reading_history row for this series */
+  hasHistory: boolean;
+  /** Chapter ids the user has read (may be empty even if hasHistory was derived elsewhere) */
+  readChapterIds: ReadonlySet<string>;
+  /** Consumet chapter list when available; used for max read number + total */
+  chapters: ReadonlyArray<ChapterRef>;
+  /** Override total when chapters list is empty but a count is known */
+  totalChapters?: number | null;
+};
+
+export type LibraryProgress = {
+  isReading: boolean;
+  readChapterCount: number;
+  latestReadChapterNumber: number | null;
+  totalChapters: number | null;
+  /** 0–1 when total is known and positive; otherwise null (omit bar) */
+  progressRatio: number | null;
+};
+
 export function sortChaptersByNumber<T extends { chapterNumber: number }>(
   chapters: T[]
 ): T[] {
@@ -50,4 +70,50 @@ export function getContinueReadingLabel(
     return `Continue Reading — Ch. ${next.chapterNumber}`;
   }
   return "Continue Reading";
+}
+
+/**
+ * Derive Library tile progress from history + Consumet chapter list.
+ * No Prisma fields — safe to call from bookmarks API enrichment.
+ */
+export function deriveLibraryProgress(
+  input: LibraryProgressInput
+): LibraryProgress {
+  const { hasHistory, readChapterIds, chapters } = input;
+  const isReading = hasHistory || readChapterIds.size > 0;
+
+  const readFromList = chapters.filter((c) => readChapterIds.has(c.id));
+  const latestReadChapterNumber =
+    readFromList.length > 0
+      ? Math.max(...readFromList.map((c) => c.chapterNumber))
+      : null;
+
+  const readChapterCount =
+    readFromList.length > 0 ? readFromList.length : readChapterIds.size;
+
+  const listTotal = chapters.length > 0 ? chapters.length : null;
+  const override =
+    input.totalChapters != null &&
+    Number.isFinite(input.totalChapters) &&
+    input.totalChapters > 0
+      ? Math.floor(input.totalChapters)
+      : null;
+  const totalChapters = listTotal ?? override;
+
+  let progressRatio: number | null = null;
+  if (totalChapters != null && totalChapters > 0) {
+    const numerator =
+      latestReadChapterNumber != null && latestReadChapterNumber > 0
+        ? latestReadChapterNumber
+        : readChapterCount;
+    progressRatio = Math.min(1, Math.max(0, numerator / totalChapters));
+  }
+
+  return {
+    isReading,
+    readChapterCount,
+    latestReadChapterNumber,
+    totalChapters,
+    progressRatio,
+  };
 }

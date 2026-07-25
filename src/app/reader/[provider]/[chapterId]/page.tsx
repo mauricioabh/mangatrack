@@ -402,6 +402,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                   }`}
                   loading="lazy"
                   decoding="async"
+                  referrerPolicy="no-referrer"
                 />
               </div>
             ))}
@@ -422,6 +423,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                         : "max-w-full max-h-full"
                   }`}
                   decoding="async"
+                  referrerPolicy="no-referrer"
                 />
               ) : null}
 

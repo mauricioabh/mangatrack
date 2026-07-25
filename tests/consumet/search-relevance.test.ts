@@ -91,7 +91,7 @@ describe("resolveMatchMode", () => {
 });
 
 describe("resolveSearchProviders", () => {
-  const allowlist = ["mangahere", "mangapill"];
+  const allowlist = ["mangahere", "mangapill", "mangadex"];
 
   it("returns allowlist when request is empty", () => {
     expect(resolveSearchProviders(allowlist, undefined)).toEqual(allowlist);
@@ -102,5 +102,11 @@ describe("resolveSearchProviders", () => {
     expect(
       resolveSearchProviders(allowlist, ["MangaPill", "unknown", "mangapill"])
     ).toEqual(["mangapill"]);
+  });
+
+  it("includes mangadex and excludes broken providers", () => {
+    expect(allowlist).toContain("mangadex");
+    expect(allowlist).not.toContain("comick");
+    expect(allowlist).not.toContain("weebcentral");
   });
 });

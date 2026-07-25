@@ -11,6 +11,12 @@ import {
   mapSearchResult,
 } from "./mappers";
 import {
+  consumetInfoPath,
+  consumetReadPath,
+  usesPathStyleInfo,
+  usesPathStyleRead,
+} from "./provider-routes";
+import {
   applySearchRelevance,
   parseSearchQuery,
   resolveMatchMode,
@@ -160,16 +166,16 @@ export async function getMangaInfo(
   id: string,
   fallbackTitle?: string
 ): Promise<MangaDetail | null> {
+  const providerKey = provider.toLowerCase();
   try {
-    const info = await consumetFetch<ConsumetInfoResponse>(
-      `/manga/${provider}/info`,
-      {
-        params: { id },
-        revalidate: 300,
-      }
-    );
+    const path = consumetInfoPath(providerKey, id);
+    const info = await consumetFetch<ConsumetInfoResponse>(path, {
+      params: usesPathStyleInfo(providerKey) ? undefined : { id },
+      revalidate: 300,
+    });
+    // MangaDex query-style mis-route returns a search payload (results, no id)
     if (!info?.id) return null;
-    return mapMangaDetail(info, provider, fallbackTitle);
+    return mapMangaDetail(info, providerKey, fallbackTitle);
   } catch (error) {
     if (error instanceof ConsumetError && error.status === 404) {
       return null;
@@ -182,16 +188,19 @@ export async function getChapterPages(
   provider: string,
   chapterId: string
 ): Promise<Page[]> {
-  const raw = await consumetFetch<ConsumetReadResponse>(
-    `/manga/${provider}/read`,
-    {
-      params: { chapterId },
-      cache: "no-store",
-    }
-  );
+  const providerKey = provider.toLowerCase();
+  const path = consumetReadPath(providerKey, chapterId);
+  const raw = await consumetFetch<ConsumetReadResponse>(path, {
+    params: usesPathStyleRead(providerKey) ? undefined : { chapterId },
+    cache: "no-store",
+  });
 
   if (!Array.isArray(raw)) {
-    throw new ConsumetError("Invalid chapter pages response", 502, true);
+    throw new ConsumetError(
+      "Invalid chapter pages response (provider may not host this chapter)",
+      502,
+      true
+    );
   }
 
   return mapPages(raw);

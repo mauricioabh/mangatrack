@@ -29,8 +29,9 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
       );
     }
 
+    const providerKey = provider.toLowerCase();
     const payload = await getChapterReaderPayload(
-      provider.toLowerCase(),
+      providerKey,
       chapterId,
       mangaId ?? undefined
     );
@@ -42,15 +43,15 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
       );
     }
 
-    const proxyPages = buildChapterPageProxyPaths(
-      provider.toLowerCase(),
+    const pages = buildChapterPageProxyPaths(
+      providerKey,
       chapterId,
       payload.chapter.pages.length
     );
 
     return NextResponse.json({
       success: true,
-      chapter: { ...payload.chapter, pages: proxyPages },
+      chapter: { ...payload.chapter, pages },
       manga: {
         id: payload.manga.id,
         title: payload.manga.title,

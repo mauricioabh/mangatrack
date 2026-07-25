@@ -75,9 +75,16 @@ export const paginationSchema = z.object({
   limit: z.number().int().positive().max(100).default(20),
 });
 
+export const browseFeedSchema = z.object({
+  mode: z.enum(["new", "latest", "trending"]).default("new"),
+  period: z.enum(["today", "week", "month"]).default("week"),
+  limit: z.number().int().positive().max(50).default(24),
+});
+
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type UserPreferencesInput = z.infer<typeof userPreferencesSchema>;
 export type MangaSearchInput = z.infer<typeof mangaSearchSchema>;
+export type BrowseFeedInput = z.infer<typeof browseFeedSchema>;
 export type MangaBookmarkInput = z.infer<typeof mangaBookmarkSchema>;
 export type ChapterReadInput = z.infer<typeof chapterReadSchema>;
 export type PushTokenInput = z.infer<typeof pushTokenSchema>;

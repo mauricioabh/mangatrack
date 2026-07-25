@@ -9,6 +9,8 @@ import type {
   MangaSummary,
   Page,
 } from "./types";
+import { normalizeCoverUrl } from "./provider-routes";
+import { getProviderReferer } from "./referers";
 
 export function mapStatus(raw?: string | null): AppMangaStatus {
   const s = (raw ?? "").toLowerCase();
@@ -26,20 +28,57 @@ function firstAltTitle(
   for (const entry of altTitles) {
     if (typeof entry === "string" && entry.trim()) return entry.trim();
     if (entry && typeof entry === "object") {
-      for (const value of Object.values(entry)) {
-        if (typeof value === "string" && value.trim()) return value.trim();
-      }
+      const localized = resolveLocalizedString(entry);
+      if (localized) return localized;
     }
   }
   return undefined;
 }
 
+/**
+ * MangaDex (and some Consumet payloads) return localized maps like
+ * `{ en: "...", ja: "..." }` instead of plain strings.
+ */
+export function resolveLocalizedString(
+  value: unknown,
+  preferredLocales: string[] = ["en", "en-us", "ja-ro", "ja"]
+): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const map = value as Record<string, unknown>;
+  for (const locale of preferredLocales) {
+    const hit = map[locale];
+    if (typeof hit === "string" && hit.trim()) return hit.trim();
+  }
+  // Case-insensitive locale match
+  const entries = Object.entries(map);
+  for (const locale of preferredLocales) {
+    const found = entries.find(
+      ([key, v]) =>
+        key.toLowerCase() === locale.toLowerCase() &&
+        typeof v === "string" &&
+        v.trim()
+    );
+    if (found && typeof found[1] === "string") return found[1].trim();
+  }
+  for (const v of Object.values(map)) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
 export function resolveTitle(
-  title: string | null | undefined,
+  title: unknown,
   altTitles?: string[] | Array<Record<string, string>>,
   fallbackTitle?: string
 ): string {
-  if (typeof title === "string" && title.trim()) return title.trim();
+  const fromTitle = resolveLocalizedString(title);
+  if (fromTitle) return fromTitle;
   const alt = firstAltTitle(altTitles);
   if (alt) return alt;
   if (fallbackTitle?.trim()) return fallbackTitle.trim();
@@ -52,7 +91,9 @@ export function resolveCoverImage(
   id: string,
   image?: string | null
 ): string | undefined {
-  if (typeof image === "string" && image.trim()) return image.trim();
+  if (typeof image === "string" && image.trim()) {
+    return normalizeCoverUrl(provider, image.trim());
+  }
   if (provider === "mangapill") {
     const numeric = id.split("/")[0];
     if (/^\d+$/.test(numeric)) {
@@ -70,10 +111,12 @@ export function mapSearchResult(
     id: item.id,
     provider,
     title: resolveTitle(item.title, item.altTitles),
-    description: item.description ?? undefined,
+    description: resolveLocalizedString(item.description),
     coverImage: resolveCoverImage(provider, item.id, item.image),
     coverReferer:
-      item.headerForImage?.Referer ?? item.headerForImage?.referer,
+      item.headerForImage?.Referer ??
+      item.headerForImage?.referer ??
+      getProviderReferer(provider),
     status: mapStatus(item.status),
     genres: [],
     author: undefined,
@@ -166,9 +209,12 @@ export function mapMangaDetail(
     id: info.id,
     provider,
     title: resolveTitle(info.title, info.altTitles, fallbackTitle),
-    description: info.description ?? undefined,
+    description: resolveLocalizedString(info.description),
     coverImage: resolveCoverImage(provider, info.id, info.image),
-    coverReferer: info.headers?.Referer ?? info.headers?.referer,
+    coverReferer:
+      info.headers?.Referer ??
+      info.headers?.referer ??
+      getProviderReferer(provider),
     status: mapStatus(info.status),
     genres: info.genres ?? [],
     author: authors[0],

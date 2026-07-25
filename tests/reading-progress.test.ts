@@ -1,5 +1,6 @@
 import {
   areAllChaptersRead,
+  deriveLibraryProgress,
   getChapterToRead,
   getContinueReadingLabel,
   sortChaptersByNumber,
@@ -52,5 +53,52 @@ describe("reading-progress", () => {
     expect(areAllChaptersRead(chapters, new Set(["c1", "c2", "c3"]))).toBe(
       true
     );
+  });
+});
+
+describe("deriveLibraryProgress", () => {
+  it("no history → not reading, no bar when total unknown", () => {
+    const p = deriveLibraryProgress({
+      hasHistory: false,
+      readChapterIds: new Set(),
+      chapters: [],
+    });
+    expect(p.isReading).toBe(false);
+    expect(p.progressRatio).toBeNull();
+    expect(p.totalChapters).toBeNull();
+  });
+
+  it("unknown total omits progress bar even with history", () => {
+    const p = deriveLibraryProgress({
+      hasHistory: true,
+      readChapterIds: new Set(["orphan-ch"]),
+      chapters: [],
+      totalChapters: null,
+    });
+    expect(p.isReading).toBe(true);
+    expect(p.progressRatio).toBeNull();
+    expect(p.readChapterCount).toBe(1);
+  });
+
+  it("partial progress uses latest read chapter / total", () => {
+    const p = deriveLibraryProgress({
+      hasHistory: true,
+      readChapterIds: new Set(["c1", "c2"]),
+      chapters,
+    });
+    expect(p.isReading).toBe(true);
+    expect(p.latestReadChapterNumber).toBe(2);
+    expect(p.totalChapters).toBe(3);
+    expect(p.progressRatio).toBeCloseTo(2 / 3);
+  });
+
+  it("completed series clamps to 100%", () => {
+    const p = deriveLibraryProgress({
+      hasHistory: true,
+      readChapterIds: new Set(["c1", "c2", "c3"]),
+      chapters,
+    });
+    expect(p.progressRatio).toBe(1);
+    expect(p.latestReadChapterNumber).toBe(3);
   });
 });
