@@ -17,10 +17,16 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    // Omit limit → return the full library (hydration already loads every favorite).
+    const limitParam = searchParams.get("limit");
+    const limit =
+      limitParam === null ? null : parseInt(limitParam, 10);
 
-    if (page < 1 || limit < 1 || limit > 100) {
+    if (
+      page < 1 ||
+      (limit !== null && (Number.isNaN(limit) || limit < 1 || limit > 100))
+    ) {
       return NextResponse.json(
         { success: false, error: "Invalid pagination parameters" },
         { status: 400 }
@@ -176,8 +182,10 @@ export async function GET(request: NextRequest) {
       set.add(row.externalChapterId);
     }
 
-    const start = (page - 1) * limit;
-    const pageData = hydrated.slice(start, start + limit).map((item) => {
+    const start = limit === null ? 0 : (page - 1) * limit;
+    const pageItems =
+      limit === null ? hydrated : hydrated.slice(start, start + limit);
+    const pageData = pageItems.map((item) => {
       const chapters = item._chapters;
       const latestId = item.latestChapter?.id;
       const hasUnreadLatest = Boolean(
@@ -216,14 +224,15 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const effectiveLimit = limit ?? total;
     return NextResponse.json({
       success: true,
       data: pageData,
       pagination: {
-        page,
-        limit,
+        page: limit === null ? 1 : page,
+        limit: effectiveLimit,
         total,
-        pages: Math.ceil(total / limit),
+        pages: limit === null ? 1 : Math.ceil(total / limit),
       },
     });
   } catch (error) {
