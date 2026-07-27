@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getChapterNeighbors } from "@/lib/consumet/mappers";
 import {
   chapterApiPath,
@@ -82,7 +83,21 @@ function readStoredBrightness(): number {
   }
 }
 
+/** Prefer history.back when a same-origin prior entry is likely; else false. */
+function canUseHistoryBack(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.history.length <= 1) return false;
+  const referrer = document.referrer;
+  if (!referrer) return true;
+  try {
+    return new URL(referrer).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export default function ReaderPage({ params }: ReaderPageProps) {
+  const router = useRouter();
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [manga, setManga] = useState<Manga | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -236,6 +251,18 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     }
   };
 
+  const handleReaderBack = () => {
+    const fallback =
+      manga?.id != null
+        ? mangaPath(provider, manga.id)
+        : "/dashboard";
+    if (canUseHistoryBack()) {
+      router.back();
+      return;
+    }
+    router.push(fallback);
+  };
+
   const handleChapterChange = (direction: "prev" | "next") => {
     if (!chapter) return;
 
@@ -247,7 +274,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       const { next, previous } = getChapterNeighbors(chapters, chapter.id);
       const target = direction === "next" ? next : previous;
       if (target) {
-        window.location.href = readerPath(provider, target.id, manga?.id);
+        window.location.replace(readerPath(provider, target.id, manga?.id));
       }
     };
 
@@ -366,16 +393,15 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
-              <Link href={mangaPath(provider, manga.id)} className="shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-white/30 bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 dark:border-gray-700/50 dark:bg-gray-800/30 dark:text-white dark:hover:bg-gray-700/40 sm:hover:scale-105 sm:hover:shadow-lg"
-                >
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Back</span>
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReaderBack}
+                className="shrink-0 border-white/30 bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 dark:border-gray-700/50 dark:bg-gray-800/30 dark:text-white dark:hover:bg-gray-700/40 sm:hover:scale-105 sm:hover:shadow-lg"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
               <div className="min-w-0">
                 <h1 className="truncate text-sm font-semibold text-white drop-shadow-lg sm:max-w-md sm:text-lg">
                   {manga.title}
