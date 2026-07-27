@@ -31,3 +31,7 @@ archive_documents:
       id: "bad97ed7-475e-4a68-97fe-5e7c3c23cb18"
       url: "https://linear.app/wayool/document/openspec-library-progress-ux-99334ef24982"
       title: "OpenSpec: library-progress-ux"
+    continue-reading:
+      id: "c3c57709-a698-4ccd-a8bf-dc22e20f9524"
+      url: "https://linear.app/wayool/document/openspec-continue-reading-7897b4bff028"
+      title: "OpenSpec: continue-reading"
