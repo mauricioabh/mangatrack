@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getMangaInfo, getLatestChapterUpdate } from "@/lib/consumet";
-import { deriveLibraryProgress } from "@/lib/reading-progress";
+import {
+  deriveLibraryProgress,
+  getChapterToContinue,
+} from "@/lib/reading-progress";
 import type { Chapter } from "@/lib/consumet";
 
 export async function GET(request: NextRequest) {
@@ -161,7 +164,9 @@ export async function GET(request: NextRequest) {
               provider: true,
               externalMangaId: true,
               externalChapterId: true,
+              readAt: true,
             },
+            orderBy: { readAt: "desc" },
           })
         : Promise.resolve([]),
     ]);
@@ -173,12 +178,15 @@ export async function GET(request: NextRequest) {
     );
 
     const historyBySeries = new Map<string, Set<string>>();
+    const lastReadBySeries = new Map<string, string>();
     for (const row of historyRows) {
       const key = `${row.provider.toLowerCase()}:${row.externalMangaId}`;
       let set = historyBySeries.get(key);
       if (!set) {
         set = new Set();
         historyBySeries.set(key, set);
+        // First row per series is the latest session (orderBy readAt desc)
+        lastReadBySeries.set(key, row.externalChapterId);
       }
       set.add(row.externalChapterId);
     }
@@ -198,15 +206,21 @@ export async function GET(request: NextRequest) {
       );
       const seriesKey = `${item.provider.toLowerCase()}:${item.externalMangaId}`;
       const readChapterIds = historyBySeries.get(seriesKey) ?? new Set<string>();
+      const chapterRefs = chapters.map((c) => ({
+        id: c.id,
+        chapterNumber: c.chapterNumber,
+      }));
       const progress = deriveLibraryProgress({
         hasHistory: readChapterIds.size > 0,
         readChapterIds,
-        chapters: chapters.map((c) => ({
-          id: c.id,
-          chapterNumber: c.chapterNumber,
-        })),
+        chapters: chapterRefs,
         totalChapters: chapters.length > 0 ? chapters.length : null,
       });
+      const continueTarget = getChapterToContinue(
+        chapterRefs,
+        readChapterIds,
+        lastReadBySeries.get(seriesKey) ?? null
+      );
 
       return {
         id: item.id,
@@ -224,6 +238,7 @@ export async function GET(request: NextRequest) {
         latestReadChapterNumber: progress.latestReadChapterNumber,
         totalChapters: progress.totalChapters,
         progressRatio: progress.progressRatio,
+        continueChapterId: continueTarget?.id ?? null,
       };
     });
 
