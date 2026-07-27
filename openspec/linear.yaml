@@ -51,3 +51,7 @@ archive_documents:
       id: "8a267640-2d91-4b5c-9741-313de451797c"
       url: "https://linear.app/wayool/document/openspec-reader-back-navigation-58dca1f58b13"
       title: "OpenSpec: reader-back-navigation"
+    reader-loading-performance:
+      id: "2493d254-d528-4d09-af4e-c2a3f51fb48b"
+      url: "https://linear.app/wayool/document/openspec-reader-loading-performance-3feae6c529b2"
+      title: "OpenSpec: reader-loading-performance"
