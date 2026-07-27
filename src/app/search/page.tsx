@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, Star, ChevronDown } from "lucide-react";
+import { Search, BookOpen, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +25,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -131,6 +139,7 @@ export default function SearchPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const enrichGeneration = useRef(0);
   const [filtersReady, setFiltersReady] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const applySearchResults = (results: Manga[]) => {
     const generation = ++enrichGeneration.current;
@@ -253,25 +262,23 @@ export default function SearchPage() {
     }
   };
 
-  const resetFiltersAndBrowse = async () => {
+  const activeFilterCount = () => {
+    let count = 0;
+    if (statusFilter !== "all") count += 1;
+    if (genreFilter !== "all") count += 1;
+    if (selectedProviders.length > 0) count += 1;
+    if (exactMatch) count += 1;
+    return count;
+  };
+
+  const clearFiltersAndQuery = () => {
     setSearchQuery("");
+    setDebouncedQuery("");
     setStatusFilter("all");
     setGenreFilter("all");
     setSelectedProviders([]);
     setExactMatch(false);
-    setLoading(true);
-    try {
-      const response = await fetch("/api/manga/search");
-      const data = await response.json();
-      if (data.success) {
-        applySearchResults(data.data);
-        ingestProviderMeta(data);
-      }
-    } catch (error) {
-      console.error("Error loading manga:", error);
-    } finally {
-      setLoading(false);
-    }
+    setFiltersOpen(false);
   };
 
   // Debounce search query
@@ -331,6 +338,8 @@ export default function SearchPage() {
     setFiltersReady(true);
   }, []);
 
+  const filterCount = activeFilterCount();
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch();
@@ -339,202 +348,146 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4 sm:py-6">
         {/* Search Section */}
         <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: -20 }}
+          className="mb-6"
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.4 }}
         >
-          <motion.h1
-            className="mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:text-4xl"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            Discover Amazing Manga
-          </motion.h1>
-          <motion.p
-            className="mb-6 text-base text-gray-600 dark:text-gray-300 sm:mb-8 sm:text-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            Find your next favorite series from our extensive collection
-          </motion.p>
-
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            {/* Search Input */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <motion.div
-                className="relative min-w-0 flex-1"
-                whileHover={{ scale: 1.01 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-blue-500" />
-                <Input
-                  placeholder="Search titles, authors, genres..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="h-11 border-2 border-blue-200 bg-white/80 pl-12 text-base backdrop-blur-sm transition-all duration-300 hover:border-blue-300 focus:border-blue-400 focus:shadow-xl focus:ring-4 focus:ring-blue-500/20 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 dark:focus:border-blue-600 sm:h-12 sm:text-lg"
-                />
-              </motion.div>
-              <div className="flex gap-2 sm:gap-4">
-                <motion.div
-                  className="flex-1 sm:flex-none"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Button
-                    onClick={handleSearch}
-                    disabled={loading}
-                    className="h-11 w-full border-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-4 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:px-8"
-                  >
-                    {loading ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      >
-                        <Search className="h-5 w-5" />
-                      </motion.div>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-5 w-5" />
-                        Search
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-                <motion.div
-                  className="flex-1 sm:flex-none"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Button
-                    onClick={() => {
-                      void resetFiltersAndBrowse();
-                    }}
-                    variant="outline"
-                    className="h-11 w-full border-2 border-emerald-200 px-3 text-emerald-600 transition-all duration-300 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 sm:h-12 sm:px-6"
-                  >
-                    <Star className="mr-1 h-5 w-5 sm:mr-2" />
-                    <span className="truncate">Browse All</span>
-                  </Button>
-                </motion.div>
-              </div>
-            </div>
-
-            {/* Filters — stacked on narrow PWA viewports */}
-            <motion.div
-              className="flex flex-col gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search titles, authors, genres..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="h-11 min-w-0 flex-1 border-2 border-blue-200 bg-white/80 text-base backdrop-blur-sm transition-all duration-300 hover:border-blue-300 focus:border-blue-400 focus:shadow-lg focus:ring-4 focus:ring-blue-500/20 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 dark:focus:border-blue-600 sm:h-12"
+              aria-label="Search manga"
+            />
+            <Button
+              onClick={handleSearch}
+              disabled={loading}
+              size="icon"
+              className="h-11 w-11 shrink-0 border-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:w-12"
+              aria-label="Search"
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+              {loading ? (
                 <motion.div
-                  className="min-w-0 flex-1 sm:flex-none"
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
                 >
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-blue-300 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 sm:h-12 sm:w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="ONGOING">Ongoing</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="HIATUS">Hiatus</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Search className="h-5 w-5" />
                 </motion.div>
+              ) : (
+                <Search className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setFiltersOpen(true)}
+              className="relative h-11 w-11 shrink-0 border-2 border-blue-200 bg-white/80 dark:border-blue-800 dark:bg-gray-800/80 sm:h-12 sm:w-12"
+              aria-label="Filters"
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+              {filterCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                  {filterCount}
+                </span>
+              )}
+            </Button>
+          </div>
 
-                <motion.div
-                  className="min-w-0 flex-1 sm:flex-none"
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Select value={genreFilter} onValueChange={setGenreFilter}>
-                    <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:border-purple-800 dark:bg-gray-800/80 dark:hover:border-purple-700 sm:h-12 sm:w-48">
-                      <SelectValue placeholder="Filter by genre" />
-                    </SelectTrigger>
-                    <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
-                      <SelectItem value="all">All Genres</SelectItem>
-                      <SelectItem value="Action">Action</SelectItem>
-                      <SelectItem value="Adventure">Adventure</SelectItem>
-                      <SelectItem value="Comedy">Comedy</SelectItem>
-                      <SelectItem value="Drama">Drama</SelectItem>
-                      <SelectItem value="Fantasy">Fantasy</SelectItem>
-                      <SelectItem value="Romance">Romance</SelectItem>
-                      <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
-                      <SelectItem value="Slice of Life">Slice of Life</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </motion.div>
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetContent side="bottom" className="gap-4 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filters</SheetTitle>
+                <SheetDescription>
+                  Narrow results by status, genre, provider, or exact phrase.
+                </SheetDescription>
+              </SheetHeader>
 
-                <motion.div
-                  className="min-w-0 flex-1 sm:flex-none"
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 w-full justify-between border-2 border-amber-200 bg-white/80 px-3 text-left font-normal capitalize backdrop-blur-sm hover:border-amber-300 dark:border-amber-800 dark:bg-gray-800/80 dark:hover:border-amber-700 sm:h-12 sm:w-52"
-                        aria-label="Filter by provider"
-                      >
-                        <span className="truncate">{providerFilterLabel()}</span>
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="w-[min(100vw-2rem,16rem)] border-amber-200 bg-white dark:border-amber-800 dark:bg-gray-800"
+              <div className="flex flex-col gap-3">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 dark:border-blue-800 dark:bg-gray-800/80 sm:h-12">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="ONGOING">Ongoing</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectItem value="HIATUS">Hiatus</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={genreFilter} onValueChange={setGenreFilter}>
+                  <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 dark:border-purple-800 dark:bg-gray-800/80 sm:h-12">
+                    <SelectValue placeholder="Filter by genre" />
+                  </SelectTrigger>
+                  <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
+                    <SelectItem value="all">All Genres</SelectItem>
+                    <SelectItem value="Action">Action</SelectItem>
+                    <SelectItem value="Adventure">Adventure</SelectItem>
+                    <SelectItem value="Comedy">Comedy</SelectItem>
+                    <SelectItem value="Drama">Drama</SelectItem>
+                    <SelectItem value="Fantasy">Fantasy</SelectItem>
+                    <SelectItem value="Romance">Romance</SelectItem>
+                    <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem value="Slice of Life">Slice of Life</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full justify-between border-2 border-amber-200 bg-white/80 px-3 text-left font-normal capitalize dark:border-amber-800 dark:bg-gray-800/80 sm:h-12"
+                      aria-label="Filter by provider"
                     >
-                      <DropdownMenuLabel>Providers</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
+                      <span className="truncate">{providerFilterLabel()}</span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-[min(100vw-2rem,16rem)] border-amber-200 bg-white dark:border-amber-800 dark:bg-gray-800"
+                  >
+                    <DropdownMenuLabel>Providers</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={selectedProviders.length === 0}
+                      onCheckedChange={() => setSelectedProviders([])}
+                      onSelect={(e) => e.preventDefault()}
+                      className="min-h-11 capitalize"
+                    >
+                      All providers
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    {providerOptions.map((provider) => (
                       <DropdownMenuCheckboxItem
-                        checked={selectedProviders.length === 0}
-                        onCheckedChange={() => setSelectedProviders([])}
+                        key={provider}
+                        checked={isProviderActive(provider)}
+                        onCheckedChange={() => toggleProvider(provider)}
                         onSelect={(e) => e.preventDefault()}
                         className="min-h-11 capitalize"
                       >
-                        All providers
+                        {provider}
                       </DropdownMenuCheckboxItem>
-                      <DropdownMenuSeparator />
-                      {providerOptions.map((provider) => (
-                        <DropdownMenuCheckboxItem
-                          key={provider}
-                          checked={isProviderActive(provider)}
-                          onCheckedChange={() => toggleProvider(provider)}
-                          onSelect={(e) => e.preventDefault()}
-                          className="min-h-11 capitalize"
-                        >
-                          {provider}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </motion.div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border-2 border-teal-200 bg-white/80 px-3 py-2 backdrop-blur-sm dark:border-teal-800 dark:bg-gray-800/80 sm:min-h-12 sm:justify-start">
+                <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border-2 border-teal-200 bg-white/80 px-3 py-2 dark:border-teal-800 dark:bg-gray-800/80 sm:min-h-12">
                   <Label
                     htmlFor="exact-match"
                     className="cursor-pointer text-sm text-teal-800 dark:text-teal-200"
@@ -549,14 +502,25 @@ export default function SearchPage() {
                     aria-label="Exact phrase match"
                   />
                 </div>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Tip: wrap a query in quotes for exact match, e.g.{" "}
+                  <span className="font-mono">&quot;demon slayer&quot;</span>
+                </p>
               </div>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Tip: wrap a query in quotes for exact match, e.g.{" "}
-                <span className="font-mono">&quot;demon slayer&quot;</span>
-              </p>
-            </motion.div>
-          </motion.div>
+              <SheetFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearFiltersAndQuery}
+                  className="w-full sm:w-auto"
+                >
+                  Clear
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </motion.div>
 
         {/* Results */}
