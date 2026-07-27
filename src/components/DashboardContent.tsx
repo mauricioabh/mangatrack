@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
-import { mangaPath } from "@/lib/consumet/ids";
+import { mangaPath, readerPath } from "@/lib/consumet/ids";
 import { cn } from "@/lib/utils";
 
 interface Manga {
@@ -47,6 +47,7 @@ interface Bookmark {
   latestReadChapterNumber?: number | null;
   totalChapters?: number | null;
   progressRatio?: number | null;
+  continueChapterId?: string | null;
 }
 
 interface User {
@@ -336,91 +337,106 @@ export default function DashboardContent() {
                 bookmark.progressRatio != null
                   ? Math.round(bookmark.progressRatio * 100)
                   : null;
+              const detailHref = mangaPath(bookmark.provider, manga.id);
+              const primaryHref = bookmark.continueChapterId
+                ? readerPath(
+                    bookmark.provider,
+                    bookmark.continueChapterId,
+                    manga.id
+                  )
+                : detailHref;
               return (
-                <Link
+                <div
                   key={bookmark.id}
-                  href={mangaPath(bookmark.provider, manga.id)}
-                  className="group block overflow-hidden rounded-lg border border-blue-200/80 bg-white/70 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-blue-800/60 dark:bg-slate-900/40 dark:hover:border-blue-700"
+                  className="group overflow-hidden rounded-lg border border-blue-200/80 bg-white/70 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-blue-800/60 dark:bg-slate-900/40 dark:hover:border-blue-700"
                 >
-                  <div className="relative aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
-                    {manga.coverImage ? (
-                      <CatalogCover
-                        src={manga.coverImage}
-                        alt={manga.title}
-                        title={manga.title}
-                        width={280}
-                        height={420}
-                        provider={bookmark.provider}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <BookOpen className="h-10 w-10 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
-                      {bookmark.isReading ? (
-                        <Badge
-                          className="border-0 bg-emerald-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
-                          aria-label="Reading"
-                        >
-                          Reading
-                        </Badge>
-                      ) : null}
-                      {bookmark.isFinished ? (
-                        <Badge
-                          className="border-0 bg-amber-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
-                          aria-label="Finished"
-                        >
-                          Finished
-                        </Badge>
-                      ) : null}
-                    </div>
-                    {bookmark.hasUnreadLatest && !bookmark.isFinished ? (
-                      <span
-                        className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
-                        title="New unread chapter"
-                        aria-label="New unread chapter"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
-                      </span>
-                    ) : null}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-8 sm:p-2.5">
-                      <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">
-                        {manga.title}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] capitalize text-white/80">
-                        {bookmark.latestChapter &&
-                        bookmark.latestChapter.chapterNumber > 0
-                          ? `Ch. ${bookmark.latestChapter.chapterNumber} · ${bookmark.provider}`
-                          : bookmark.provider}
-                      </p>
-                      {latestUpdate ? (
-                        <p className="mt-0.5 truncate text-[11px] text-white/70">
-                          Updated {latestUpdate}
-                        </p>
-                      ) : null}
-                      {progressPct != null ? (
-                        <div
-                          className="mt-1.5"
-                          role="progressbar"
-                          aria-valuenow={progressPct}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-label={`Reading progress ${progressPct}%`}
-                        >
-                          <div className="h-1 w-full overflow-hidden rounded-full bg-white/25">
-                            <div
-                              className="h-full rounded-full bg-emerald-400 transition-[width] duration-300"
-                              style={{ width: `${progressPct}%` }}
-                            />
-                          </div>
+                  <Link href={primaryHref} className="block">
+                    <div className="relative aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
+                      {manga.coverImage ? (
+                        <CatalogCover
+                          src={manga.coverImage}
+                          alt={manga.title}
+                          title={manga.title}
+                          width={280}
+                          height={420}
+                          provider={bookmark.provider}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <BookOpen className="h-10 w-10 text-gray-400" />
                         </div>
+                      )}
+                      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
+                        {bookmark.isReading ? (
+                          <Badge
+                            className="border-0 bg-emerald-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                            aria-label="Reading"
+                          >
+                            Reading
+                          </Badge>
+                        ) : null}
+                        {bookmark.isFinished ? (
+                          <Badge
+                            className="border-0 bg-amber-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                            aria-label="Finished"
+                          >
+                            Finished
+                          </Badge>
+                        ) : null}
+                      </div>
+                      {bookmark.hasUnreadLatest && !bookmark.isFinished ? (
+                        <span
+                          className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
+                          title="New unread chapter"
+                          aria-label="New unread chapter"
+                        >
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
+                        </span>
                       ) : null}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-8 sm:p-2.5">
+                        <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">
+                          {manga.title}
+                        </p>
+                        <p className="mt-0.5 truncate text-[11px] capitalize text-white/80">
+                          {bookmark.latestChapter &&
+                          bookmark.latestChapter.chapterNumber > 0
+                            ? `Ch. ${bookmark.latestChapter.chapterNumber} · ${bookmark.provider}`
+                            : bookmark.provider}
+                        </p>
+                        {latestUpdate ? (
+                          <p className="mt-0.5 truncate text-[11px] text-white/70">
+                            Updated {latestUpdate}
+                          </p>
+                        ) : null}
+                        {progressPct != null ? (
+                          <div
+                            className="mt-1.5"
+                            role="progressbar"
+                            aria-valuenow={progressPct}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Reading progress ${progressPct}%`}
+                          >
+                            <div className="h-1 w-full overflow-hidden rounded-full bg-white/25">
+                              <div
+                                className="h-full rounded-full bg-emerald-400 transition-[width] duration-300"
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <Link
+                    href={detailHref}
+                    className="flex min-h-10 w-full items-center justify-center border-t border-blue-200/80 bg-white/80 px-2 py-2.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-blue-800/60 dark:bg-slate-900/60 dark:text-blue-300 dark:hover:bg-slate-800/80 sm:min-h-9 sm:py-2"
+                  >
+                    Details
+                  </Link>
+                </div>
               );
             })}
           </div>
