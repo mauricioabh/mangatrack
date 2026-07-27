@@ -31,6 +31,10 @@ archive_documents:
       id: "bad97ed7-475e-4a68-97fe-5e7c3c23cb18"
       url: "https://linear.app/wayool/document/openspec-library-progress-ux-99334ef24982"
       title: "OpenSpec: library-progress-ux"
+    library-tile-navigation:
+      id: "39938696-0e74-455c-927a-8f696c595399"
+      url: "https://linear.app/wayool/document/openspec-library-tile-navigation-d77fae0e4e6e"
+      title: "OpenSpec: library-tile-navigation"
     continue-reading:
       id: "c3c57709-a698-4ccd-a8bf-dc22e20f9524"
       url: "https://linear.app/wayool/document/openspec-continue-reading-7897b4bff028"
