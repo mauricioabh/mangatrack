@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { userPreferencesSchema } from "@/lib/validations";
+
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -17,6 +18,8 @@ export async function GET() {
       success: true,
       preferences: {
         emailNotifications: user.emailNotifications,
+        libraryFilterNew: user.libraryFilterNew,
+        libraryFilterFinished: user.libraryFilterFinished,
       },
     });
   } catch (error) {
@@ -47,7 +50,15 @@ export async function PATCH(request: NextRequest) {
         id: user.id,
       },
       data: {
-        emailNotifications: validatedData.emailNotifications,
+        ...(validatedData.emailNotifications !== undefined
+          ? { emailNotifications: validatedData.emailNotifications }
+          : {}),
+        ...(validatedData.libraryFilterNew !== undefined
+          ? { libraryFilterNew: validatedData.libraryFilterNew }
+          : {}),
+        ...(validatedData.libraryFilterFinished !== undefined
+          ? { libraryFilterFinished: validatedData.libraryFilterFinished }
+          : {}),
       },
     });
 
@@ -55,6 +66,8 @@ export async function PATCH(request: NextRequest) {
       success: true,
       preferences: {
         emailNotifications: updatedUser.emailNotifications,
+        libraryFilterNew: updatedUser.libraryFilterNew,
+        libraryFilterFinished: updatedUser.libraryFilterFinished,
       },
     });
   } catch (error) {

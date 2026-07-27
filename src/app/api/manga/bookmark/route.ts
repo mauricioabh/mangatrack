@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { mangaBookmarkSchema } from "@/lib/validations";
+import { mangaBookmarkSchema, mangaFinishedSchema } from "@/lib/validations";
 
 const BASIC_BOOKMARK_LIMIT = 50;
 
@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       isBookmarked: !!bookmark,
+      isFinished: Boolean(bookmark?.finishedAt),
     });
   } catch (error) {
     console.error("Error checking bookmark status:", error);
@@ -154,6 +155,64 @@ export async function DELETE(request: NextRequest) {
     console.error("Error removing bookmark:", error);
     return NextResponse.json(
       { success: false, error: "Failed to remove bookmark" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = mangaFinishedSchema.parse(body);
+    const provider = validatedData.provider.toLowerCase();
+
+    const bookmark = await db.userFavorite.findUnique({
+      where: {
+        userId_provider_externalMangaId: {
+          userId: user.id,
+          provider,
+          externalMangaId: validatedData.mangaId,
+        },
+      },
+    });
+
+    if (!bookmark) {
+      return NextResponse.json(
+        { success: false, error: "Manga is not in your library" },
+        { status: 404 }
+      );
+    }
+
+    const updated = await db.userFavorite.update({
+      where: { id: bookmark.id },
+      data: {
+        finishedAt: validatedData.finished ? new Date() : null,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: validatedData.finished
+        ? "Marked as finished"
+        : "Removed finished status",
+      data: {
+        isFinished: Boolean(updated.finishedAt),
+        finishedAt: updated.finishedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating finished status:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update finished status" },
       { status: 500 }
     );
   }

@@ -23,6 +23,16 @@ export async function notifyFavoriteUsersInAppAndEmail(options: {
     return { inApp: 0, emailsAttempted: 0, errors: 0 };
   }
 
+  await db.userFavorite.updateMany({
+    where: {
+      provider,
+      externalMangaId,
+      userId: { in: userIds },
+      finishedAt: { not: null },
+    },
+    data: { finishedAt: null },
+  });
+
   const pushContent = await buildChapterPushContent({
     provider,
     externalMangaId,

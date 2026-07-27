@@ -115,6 +115,16 @@ export async function createNewChapterNotification(
     return { success: false, error: "Chapter not found" };
   }
 
+  await db.userFavorite.updateMany({
+    where: {
+      userId,
+      provider,
+      externalMangaId,
+      finishedAt: { not: null },
+    },
+    data: { finishedAt: null },
+  });
+
   return createNotificationWithEmail({
     userId,
     type: "NEW_CHAPTER",
