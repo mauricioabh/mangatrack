@@ -30,14 +30,33 @@ export function sortChaptersByNumber<T extends { chapterNumber: number }>(
   return [...chapters].sort((a, b) => a.chapterNumber - b.chapterNumber);
 }
 
-/** First unread chapter in order; if all read, returns the first chapter (re-read). */
-export function getChapterToRead<T extends ChapterRef>(
+/**
+ * Chapter for the detail CTA: last session (`lastReadChapterId`) when progress
+ * exists; first chapter when starting or when all chapters are read (re-read).
+ */
+export function getChapterToContinue<T extends ChapterRef>(
   chapters: T[],
-  readChapterIds: ReadonlySet<string>
+  readChapterIds: ReadonlySet<string>,
+  lastReadChapterId?: string | null
 ): T | undefined {
   const sorted = sortChaptersByNumber(chapters);
   if (sorted.length === 0) return undefined;
-  return sorted.find((c) => !readChapterIds.has(c.id)) ?? sorted[0];
+
+  if (!hasReadingProgress(readChapterIds)) {
+    return sorted[0];
+  }
+
+  if (areAllChaptersRead(chapters, readChapterIds)) {
+    return sorted[0];
+  }
+
+  if (lastReadChapterId) {
+    const last = sorted.find((c) => c.id === lastReadChapterId);
+    if (last) return last;
+  }
+
+  // Orphan / missing last-read id: safe resume point is first chapter
+  return sorted[0];
 }
 
 export function hasReadingProgress(
@@ -57,7 +76,8 @@ export function areAllChaptersRead(
 
 export function getContinueReadingLabel(
   chapters: ChapterRef[],
-  readChapterIds: ReadonlySet<string>
+  readChapterIds: ReadonlySet<string>,
+  lastReadChapterId?: string | null
 ): string {
   if (!hasReadingProgress(readChapterIds)) {
     return "Start Reading";
@@ -65,9 +85,13 @@ export function getContinueReadingLabel(
   if (areAllChaptersRead(chapters, readChapterIds)) {
     return "Re-read from start";
   }
-  const next = getChapterToRead(chapters, readChapterIds);
-  if (next) {
-    return `Continue Reading — Ch. ${next.chapterNumber}`;
+  const target = getChapterToContinue(
+    chapters,
+    readChapterIds,
+    lastReadChapterId
+  );
+  if (target) {
+    return `Continue Reading — Ch. ${target.chapterNumber}`;
   }
   return "Continue Reading";
 }
