@@ -1,9 +1,27 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, RotateCcw } from "lucide-react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  RotateCcw,
+  Settings2,
+  Sun,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -11,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 import { getChapterNeighbors } from "@/lib/consumet/mappers";
 import {
@@ -19,6 +38,12 @@ import {
   mangaPath,
   readerPath,
 } from "@/lib/consumet/ids";
+import { cn } from "@/lib/utils";
+
+const BRIGHTNESS_STORAGE_KEY = "mangatrack.reader.brightness";
+const BRIGHTNESS_MIN = 0.2;
+const BRIGHTNESS_MAX = 1;
+const TAP_MOVE_THRESHOLD_PX = 10;
 
 interface ReaderPageProps {
   params: Promise<{
@@ -40,6 +65,23 @@ interface Manga {
   provider?: string;
 }
 
+function clampBrightness(value: number): number {
+  return Math.min(BRIGHTNESS_MAX, Math.max(BRIGHTNESS_MIN, value));
+}
+
+function readStoredBrightness(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    const raw = window.localStorage.getItem(BRIGHTNESS_STORAGE_KEY);
+    if (raw == null) return 1;
+    const parsed = Number.parseFloat(raw);
+    if (Number.isNaN(parsed)) return 1;
+    return clampBrightness(parsed);
+  } catch {
+    return 1;
+  }
+}
+
 export default function ReaderPage({ params }: ReaderPageProps) {
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [manga, setManga] = useState<Manga | null>(null);
@@ -51,9 +93,28 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const [readingMode, setReadingMode] = useState("vertical"); // vertical, horizontal
   const [imageFit, setImageFit] = useState("width"); // width, height, original
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [brightness, setBrightness] = useState(1);
   const markedChapterIdRef = useRef<string | null>(null);
   const lastPageObserverRef = useRef<IntersectionObserver | null>(null);
   const userEngagedRef = useRef(false);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerMovedRef = useRef(false);
+
+  useEffect(() => {
+    setBrightness(readStoredBrightness());
+  }, []);
+
+  const persistBrightness = useCallback((value: number) => {
+    const next = clampBrightness(value);
+    setBrightness(next);
+    try {
+      window.localStorage.setItem(BRIGHTNESS_STORAGE_KEY, String(next));
+    } catch {
+      // ignore quota / private mode
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -99,6 +160,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
   useEffect(() => {
     setShowCompleteModal(false);
+    setChromeVisible(true);
+    setSettingsOpen(false);
     markedChapterIdRef.current = null;
     userEngagedRef.current = false;
   }, [chapter?.id]);
@@ -184,11 +247,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       const { next, previous } = getChapterNeighbors(chapters, chapter.id);
       const target = direction === "next" ? next : previous;
       if (target) {
-        window.location.href = readerPath(
-          provider,
-          target.id,
-          manga?.id
-        );
+        window.location.href = readerPath(provider, target.id, manga?.id);
       }
     };
 
@@ -199,11 +258,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     lastPageObserverRef.current?.disconnect();
     lastPageObserverRef.current = null;
 
-    if (
-      readingMode !== "vertical" ||
-      !chapter ||
-      chapter.pages.length === 0
-    ) {
+    if (readingMode !== "vertical" || !chapter || chapter.pages.length === 0) {
       return;
     }
 
@@ -226,6 +281,31 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
     return () => observer.disconnect();
   }, [readingMode, chapter, markChapterAsRead]);
+
+  const onReaderPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (settingsOpen || showCompleteModal) return;
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
+    pointerMovedRef.current = false;
+  };
+
+  const onReaderPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    const start = pointerStartRef.current;
+    if (!start) return;
+    const dx = Math.abs(event.clientX - start.x);
+    const dy = Math.abs(event.clientY - start.y);
+    if (dx > TAP_MOVE_THRESHOLD_PX || dy > TAP_MOVE_THRESHOLD_PX) {
+      pointerMovedRef.current = true;
+    }
+  };
+
+  const onReaderPointerUp = () => {
+    const wasTap =
+      pointerStartRef.current !== null && !pointerMovedRef.current;
+    pointerStartRef.current = null;
+    pointerMovedRef.current = false;
+    if (!wasTap || settingsOpen || showCompleteModal) return;
+    setChromeVisible((visible) => !visible);
+  };
 
   if (loading) {
     return (
@@ -272,16 +352,19 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     getChapterNeighbors(chapters, chapter.id);
   const hasNextChapter = nextChapter !== null;
   const hasPrevChapter = previousChapter !== null;
-
-  const chapterNavButtonClass =
-    "bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:hover:bg-gray-700/40 backdrop-blur-sm disabled:opacity-40 disabled:pointer-events-none";
+  const dimOpacity = 1 - brightness;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b-4 border-white/20 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl backdrop-blur-sm dark:border-gray-800/20 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700">
+    <div className="relative min-h-screen bg-black text-white">
+      <header
+        className={cn(
+          "fixed top-0 right-0 left-0 z-50 border-b-4 border-white/20 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl backdrop-blur-sm transition-transform duration-200 dark:border-gray-800/20 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700",
+          chromeVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        )}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
               <Link href={mangaPath(provider, manga.id)} className="shrink-0">
                 <Button
@@ -299,87 +382,159 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 </h1>
                 <p className="truncate text-xs text-white/80 drop-shadow-md sm:text-sm">
                   Ch. {chapter.chapterNumber}: {chapter.title}
+                  {readingMode === "horizontal"
+                    ? ` · ${currentPage + 1}/${chapter.pages.length}`
+                    : null}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className={chapterNavButtonClass}
-                onClick={() => handleChapterChange("prev")}
-                disabled={!hasPrevChapter}
+            <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 dark:border-gray-700/50 dark:bg-gray-800/30 dark:hover:bg-gray-700/40"
+                  aria-label="Reader settings"
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-72 space-y-4 border-gray-700 bg-gray-900 text-white"
+                onPointerDown={(event) => event.stopPropagation()}
               >
-                <ArrowLeft className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Previous</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={chapterNavButtonClass}
-                onClick={() => handleChapterChange("next")}
-                disabled={!hasNextChapter}
-              >
-                <span className="hidden sm:inline">Next</span>
-                <ArrowRight className="h-4 w-4 sm:ml-1" />
-              </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-gray-600 bg-black/40 text-white hover:bg-gray-800"
+                    onClick={() => handleChapterChange("prev")}
+                    disabled={!hasPrevChapter}
+                  >
+                    <ArrowLeft className="mr-1 h-4 w-4" />
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-gray-600 bg-black/40 text-white hover:bg-gray-800"
+                    onClick={() => handleChapterChange("next")}
+                    disabled={!hasNextChapter}
+                  >
+                    Next
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
 
-              <Select value={readingMode} onValueChange={setReadingMode}>
-                <SelectTrigger className="h-8 w-[7.5rem] border-gray-700 bg-black/50 text-xs text-white sm:h-9 sm:w-32 sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-gray-700 bg-gray-900">
-                  <SelectItem
-                    value="vertical"
-                    className="text-white hover:bg-gray-800 focus:bg-gray-800"
-                  >
-                    Vertical
-                  </SelectItem>
-                  <SelectItem
-                    value="horizontal"
-                    className="text-white hover:bg-gray-800 focus:bg-gray-800"
-                  >
-                    Horizontal
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400">Orientation</p>
+                  <Select value={readingMode} onValueChange={setReadingMode}>
+                    <SelectTrigger className="h-9 w-full border-gray-700 bg-black/50 text-sm text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border-gray-700 bg-gray-900">
+                      <SelectItem
+                        value="vertical"
+                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                      >
+                        Vertical
+                      </SelectItem>
+                      <SelectItem
+                        value="horizontal"
+                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                      >
+                        Horizontal
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Select value={imageFit} onValueChange={setImageFit}>
-                <SelectTrigger className="h-8 w-[7.5rem] border-gray-700 bg-black/50 text-xs text-white sm:h-9 sm:w-32 sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-gray-700 bg-gray-900">
-                  <SelectItem
-                    value="width"
-                    className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400">Fit</p>
+                  <Select value={imageFit} onValueChange={setImageFit}>
+                    <SelectTrigger className="h-9 w-full border-gray-700 bg-black/50 text-sm text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border-gray-700 bg-gray-900">
+                      <SelectItem
+                        value="width"
+                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                      >
+                        Fit Width
+                      </SelectItem>
+                      <SelectItem
+                        value="height"
+                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                      >
+                        Fit Height
+                      </SelectItem>
+                      <SelectItem
+                        value="original"
+                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                      >
+                        Original
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <Sun className="h-3.5 w-3.5" />
+                      Brightness
+                    </p>
+                    <span className="text-xs text-gray-300">
+                      {Math.round(brightness * 100)}%
+                    </span>
+                  </div>
+                  <Slider
+                    min={Math.round(BRIGHTNESS_MIN * 100)}
+                    max={Math.round(BRIGHTNESS_MAX * 100)}
+                    step={1}
+                    value={[Math.round(brightness * 100)]}
+                    onValueChange={(values) => {
+                      const pct = values[0] ?? 100;
+                      persistBrightness(pct / 100);
+                    }}
+                    className="w-full"
+                  />
+                </div>
+
+                {readingMode === "horizontal" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-gray-600 bg-black/40 text-white hover:bg-gray-800"
+                    onClick={() => setCurrentPage(0)}
                   >
-                    Fit Width
-                  </SelectItem>
-                  <SelectItem
-                    value="height"
-                    className="text-white hover:bg-gray-800 focus:bg-gray-800"
-                  >
-                    Fit Height
-                  </SelectItem>
-                  <SelectItem
-                    value="original"
-                    className="text-white hover:bg-gray-800 focus:bg-gray-800"
-                  >
-                    Original
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    First page
+                  </Button>
+                ) : null}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </header>
 
-      {/* Reader Content */}
-      <main className="pt-28 pb-20 sm:pt-20 sm:pb-16">
+      <main
+        className={cn(
+          "relative transition-[padding] duration-200",
+          chromeVisible ? "pt-16 sm:pt-20" : "pt-0"
+        )}
+        onPointerDown={onReaderPointerDown}
+        onPointerMove={onReaderPointerMove}
+        onPointerUp={onReaderPointerUp}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
+          pointerMovedRef.current = false;
+        }}
+      >
         {readingMode === "vertical" ? (
-          // Vertical Reading Mode
-          <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="mx-auto max-w-4xl px-4 py-8">
             {chapter.pages.map((page: string, index: number) => (
               <div
                 key={index}
@@ -403,119 +558,81 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                   loading="lazy"
                   decoding="async"
                   referrerPolicy="no-referrer"
+                  draggable={false}
                 />
               </div>
             ))}
           </div>
         ) : (
-          // Horizontal Reading Mode
-          <div className="h-screen flex items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center">
+          <div className="flex h-screen items-center justify-center">
+            <div className="relative flex h-full w-full items-center justify-center">
               {chapter.pages.length > 0 ? (
                 <img
                   src={chapter.pages[currentPage]}
                   alt={`Page ${currentPage + 1}`}
-                  className={`max-w-full max-h-full ${
+                  className={`max-h-full max-w-full ${
                     imageFit === "width"
-                      ? "w-full h-auto"
+                      ? "h-auto w-full"
                       : imageFit === "height"
                         ? "h-full w-auto"
-                        : "max-w-full max-h-full"
+                        : "max-h-full max-w-full"
                   }`}
                   decoding="async"
                   referrerPolicy="no-referrer"
+                  draggable={false}
                 />
               ) : null}
 
-              {/* Navigation Overlay */}
-              <div className="absolute inset-0 flex items-center justify-between px-2 sm:px-8">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
-                  onClick={() => handlePageChange("prev")}
-                  disabled={currentPage === 0}
-                >
-                  <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                </Button>
+              {chromeVisible ? (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 sm:px-8">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="pointer-events-auto border-gray-700 bg-black/50 text-white hover:bg-gray-800"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handlePageChange("prev");
+                    }}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    disabled={currentPage === 0}
+                  >
+                    <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
 
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
-                  onClick={() => handlePageChange("next")}
-                  disabled={currentPage === chapter.pages.length - 1}
-                >
-                  <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                </Button>
-              </div>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="pointer-events-auto border-gray-700 bg-black/50 text-white hover:bg-gray-800"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handlePageChange("next");
+                    }}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    disabled={currentPage === chapter.pages.length - 1}
+                  >
+                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         )}
+
+        {dimOpacity > 0 ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-10 bg-black"
+            style={{ opacity: dimOpacity }}
+          />
+        ) : null}
       </main>
 
-      {/* Bottom Navigation */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-black/80 backdrop-blur-sm">
-        <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
-                onClick={() => handleChapterChange("prev")}
-                disabled={!hasPrevChapter}
-              >
-                <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Previous Chapter</span>
-                <span className="sm:hidden">Prev</span>
-              </Button>
-
-              {readingMode === "horizontal" && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-400 sm:text-sm">
-                    {currentPage + 1} / {chapter.pages.length}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 sm:space-x-4">
-              {readingMode === "horizontal" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden border-gray-700 bg-black/50 text-white hover:bg-gray-800 sm:inline-flex"
-                  onClick={() => setCurrentPage(0)}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  First Page
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-700 bg-black/50 text-white hover:bg-gray-800"
-                onClick={() => handleChapterChange("next")}
-                disabled={!hasNextChapter}
-              >
-                <span className="hidden sm:inline">Next Chapter</span>
-                <span className="sm:hidden">Next</span>
-                <ArrowRight className="ml-1 h-4 w-4 sm:ml-2" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Chapter Complete Modal */}
       {showCompleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="bg-gray-900 border-gray-700 text-white max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="mx-4 max-w-md border-gray-700 bg-gray-900 text-white">
             <CardContent className="p-6 text-center">
-              <h3 className="text-xl font-semibold mb-4">Chapter Complete!</h3>
-              <p className="text-gray-300 mb-6">
+              <h3 className="mb-4 text-xl font-semibold">Chapter Complete!</h3>
+              <p className="mb-6 text-gray-300">
                 You&apos;ve finished reading this chapter. What would you like
                 to do next?
               </p>
@@ -523,16 +640,16 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 {hasNextChapter && (
                   <Button
                     onClick={() => handleChapterChange("next")}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                    className="w-full transform border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl hover:scale-[1.02] active:scale-95"
                   >
                     Read Next Chapter
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
                 <Link href={mangaPath(provider, manga.id)} className="w-full">
                   <Button
                     variant="outline"
-                    className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                    className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
                   >
                     Back to Manga
                   </Button>
@@ -540,7 +657,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 <Link href="/dashboard" className="w-full">
                   <Button
                     variant="outline"
-                    className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                    className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
                   >
                     Dashboard
                   </Button>
