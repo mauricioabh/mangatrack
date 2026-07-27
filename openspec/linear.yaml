@@ -47,3 +47,7 @@ archive_documents:
       id: "ced17abb-d42d-44d8-aab2-2693531fc68d"
       url: "https://linear.app/wayool/document/openspec-reader-immersive-chrome-95c1e7f1e599"
       title: "OpenSpec: reader-immersive-chrome"
+    reader-back-navigation:
+      id: "8a267640-2d91-4b5c-9741-313de451797c"
+      url: "https://linear.app/wayool/document/openspec-reader-back-navigation-58dca1f58b13"
+      title: "OpenSpec: reader-back-navigation"
