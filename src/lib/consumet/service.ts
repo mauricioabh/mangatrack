@@ -184,11 +184,23 @@ export async function getMangaInfo(
   }
 }
 
-export async function getChapterPages(
-  provider: string,
+/** Short TTL so chapter JSON + page proxies share one Consumet scrape per instance. */
+const PAGE_LIST_TTL_MS = 5 * 60 * 1000;
+
+const pageListCache = new Map<
+  string,
+  { pages: Page[]; expires: number }
+>();
+const pageListInflight = new Map<string, Promise<Page[]>>();
+
+function pageListCacheKey(provider: string, chapterId: string): string {
+  return `${provider.toLowerCase()}::${chapterId}`;
+}
+
+async function fetchChapterPagesUncached(
+  providerKey: string,
   chapterId: string
 ): Promise<Page[]> {
-  const providerKey = provider.toLowerCase();
   const path = consumetReadPath(providerKey, chapterId);
   const raw = await consumetFetch<ConsumetReadResponse>(path, {
     params: usesPathStyleRead(providerKey) ? undefined : { chapterId },
@@ -204,6 +216,37 @@ export async function getChapterPages(
   }
 
   return mapPages(raw);
+}
+
+export async function getChapterPages(
+  provider: string,
+  chapterId: string
+): Promise<Page[]> {
+  const providerKey = provider.toLowerCase();
+  const key = pageListCacheKey(providerKey, chapterId);
+
+  const cached = pageListCache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return cached.pages;
+  }
+
+  const inflight = pageListInflight.get(key);
+  if (inflight) return inflight;
+
+  const promise = fetchChapterPagesUncached(providerKey, chapterId)
+    .then((pages) => {
+      pageListCache.set(key, {
+        pages,
+        expires: Date.now() + PAGE_LIST_TTL_MS,
+      });
+      return pages;
+    })
+    .finally(() => {
+      pageListInflight.delete(key);
+    });
+
+  pageListInflight.set(key, promise);
+  return promise;
 }
 
 /**
