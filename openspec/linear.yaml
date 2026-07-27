@@ -10,4 +10,24 @@ issue_label_filter:
 archive_documents:
   enabled: true
   title_prefix: "OpenSpec:"
-  documents: {}
+  documents:
+    same-tab-reader:
+      id: "3cf0b93c-1286-4437-839b-0021685793da"
+      url: "https://linear.app/wayool/document/openspec-same-tab-reader-450898f9954a"
+      title: "OpenSpec: same-tab-reader"
+    library-filters:
+      id: "aa2f806e-bc2e-4f2a-90e7-52456e459c8a"
+      url: "https://linear.app/wayool/document/openspec-library-filters-351f9186c445"
+      title: "OpenSpec: library-filters"
+    manga-finished-status:
+      id: "badd72f8-3329-4cf9-b056-7c81cf9d01ed"
+      url: "https://linear.app/wayool/document/openspec-manga-finished-status-6e08173fe4e4"
+      title: "OpenSpec: manga-finished-status"
+    chapter-read-clears-notifications:
+      id: "04c5a7cd-90e8-491d-b3de-135a9a2f12db"
+      url: "https://linear.app/wayool/document/openspec-chapter-read-clears-notifications-045def9600ab"
+      title: "OpenSpec: chapter-read-clears-notifications"
+    library-progress-ux:
+      id: "bad97ed7-475e-4a68-97fe-5e7c3c23cb18"
+      url: "https://linear.app/wayool/document/openspec-library-progress-ux-99334ef24982"
+      title: "OpenSpec: library-progress-ux"
