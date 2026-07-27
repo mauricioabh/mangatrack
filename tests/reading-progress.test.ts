@@ -1,7 +1,7 @@
 import {
   areAllChaptersRead,
   deriveLibraryProgress,
-  getChapterToRead,
+  getChapterToContinue,
   getContinueReadingLabel,
   sortChaptersByNumber,
 } from "@/lib/reading-progress";
@@ -19,32 +19,37 @@ describe("reading-progress", () => {
     ]);
   });
 
-  it("getChapterToRead returns first unread", () => {
-    const read = new Set(["c1"]);
-    expect(getChapterToRead(chapters, read)?.id).toBe("c2");
+  it("getChapterToContinue resumes lastReadChapterId mid-series", () => {
+    const read = new Set(["c3"]);
+    expect(getChapterToContinue(chapters, read, "c3")?.id).toBe("c3");
   });
 
-  it("getChapterToRead skips gaps in chapter numbers", () => {
-    const withGap = [
-      { id: "a", chapterNumber: 1 },
-      { id: "b", chapterNumber: 5 },
-    ];
-    const read = new Set(["a"]);
-    expect(getChapterToRead(withGap, read)?.id).toBe("b");
+  it("getChapterToContinue prefers more recent lastRead over earlier reads", () => {
+    const read = new Set(["c1", "c2"]);
+    expect(getChapterToContinue(chapters, read, "c2")?.id).toBe("c2");
   });
 
-  it("getChapterToRead returns first when all read", () => {
+  it("getChapterToContinue returns first when all read", () => {
     const read = new Set(["c1", "c2", "c3"]);
-    expect(getChapterToRead(chapters, read)?.id).toBe("c1");
+    expect(getChapterToContinue(chapters, read, "c3")?.id).toBe("c1");
   });
 
-  it("getContinueReadingLabel reflects progress", () => {
+  it("getChapterToContinue returns first when no history", () => {
+    expect(getChapterToContinue(chapters, new Set())?.id).toBe("c1");
+  });
+
+  it("getChapterToContinue falls back to first when lastRead is orphan", () => {
+    const read = new Set(["ghost"]);
+    expect(getChapterToContinue(chapters, read, "ghost")?.id).toBe("c1");
+  });
+
+  it("getContinueReadingLabel reflects last session chapter", () => {
     expect(getContinueReadingLabel(chapters, new Set())).toBe("Start Reading");
-    expect(getContinueReadingLabel(chapters, new Set(["c1"]))).toBe(
-      "Continue Reading — Ch. 2"
+    expect(getContinueReadingLabel(chapters, new Set(["c3"]), "c3")).toBe(
+      "Continue Reading — Ch. 3"
     );
     expect(
-      getContinueReadingLabel(chapters, new Set(["c1", "c2", "c3"]))
+      getContinueReadingLabel(chapters, new Set(["c1", "c2", "c3"]), "c3")
     ).toBe("Re-read from start");
   });
 

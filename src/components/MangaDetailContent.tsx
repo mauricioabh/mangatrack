@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import {
-  getChapterToRead,
+  getChapterToContinue,
   getContinueReadingLabel,
 } from "@/lib/reading-progress";
 import {
@@ -96,6 +96,9 @@ export default function MangaDetailContent({
   const [readChapterIds, setReadChapterIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [lastReadChapterId, setLastReadChapterId] = useState<string | null>(
+    null
+  );
   const [mangaLoading, setMangaLoading] = useState(true);
   const [metadataLoading, setMetadataLoading] = useState(true);
 
@@ -144,9 +147,9 @@ export default function MangaDetailContent({
           Array<{ externalChapterId: string }>
         >;
         if (historyApiResponse.success && historyApiResponse.data) {
-          setReadChapterIds(
-            new Set(historyApiResponse.data.map((h) => h.externalChapterId))
-          );
+          const rows = historyApiResponse.data;
+          setReadChapterIds(new Set(rows.map((h) => h.externalChapterId)));
+          setLastReadChapterId(rows[0]?.externalChapterId ?? null);
         }
 
         setMetadataLoading(false);
@@ -179,9 +182,9 @@ export default function MangaDetailContent({
           Array<{ externalChapterId: string }>
         >;
         if (historyData.success && historyData.data) {
-          setReadChapterIds(
-            new Set(historyData.data.map((h) => h.externalChapterId))
-          );
+          const rows = historyData.data;
+          setReadChapterIds(new Set(rows.map((h) => h.externalChapterId)));
+          setLastReadChapterId(rows[0]?.externalChapterId ?? null);
         }
       } catch (err) {
         console.error("Error refreshing reading history:", err);
@@ -249,7 +252,11 @@ export default function MangaDetailContent({
   const handleStartReading = () => {
     if (!manga) return;
 
-    const target = getChapterToRead(manga.chapters, readChapterIds);
+    const target = getChapterToContinue(
+      manga.chapters,
+      readChapterIds,
+      lastReadChapterId
+    );
     if (target) {
       router.push(chapterHref(target.id));
     }
@@ -483,7 +490,11 @@ export default function MangaDetailContent({
                   ) : (
                     <>
                       <Play className="h-4 w-4 mr-2" />
-                      {getContinueReadingLabel(manga.chapters, readChapterIds)}
+                      {getContinueReadingLabel(
+                        manga.chapters,
+                        readChapterIds,
+                        lastReadChapterId
+                      )}
                     </>
                   )}
                 </Button>
