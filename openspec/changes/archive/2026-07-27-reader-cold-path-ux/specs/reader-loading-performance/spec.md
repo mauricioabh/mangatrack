@@ -1,20 +1,4 @@
-# reader-loading-performance Specification
-
-## Purpose
-Faster chapter page resolution via a short-TTL shared page-list cache, plus immediate skeleton/placeholder UX in the reader while the page list and first scans load.
-
-## Requirements
-
-### Requirement: Chapter page list is cached for short TTL
-The system SHALL cache the resolved chapter page list (image URLs and referers) per provider and chapter id for a short TTL so that chapter metadata responses and page-image proxy requests reuse the same Consumet scrape within that window.
-
-#### Scenario: Chapter JSON and first page proxy share one scrape
-- **WHEN** an authenticated user loads a chapter and the browser immediately requests the first proxied page image
-- **THEN** the server resolves the chapter page list from Consumet at most once within the cache TTL for that provider and chapter id (subsequent page-list lookups hit the cache)
-
-#### Scenario: Cache expires and refreshes
-- **WHEN** the cache TTL for a chapter page list has elapsed
-- **THEN** the next request SHALL fetch a fresh page list from Consumet and replace the cached entry
+## MODIFIED Requirements
 
 ### Requirement: Reader shows page skeletons while loading
 The reader SHALL show page-shaped loading placeholders (skeletons) and a minimal reader chrome as soon as the reader route mounts, without waiting for the chapter **page list** to finish loading. Manga info / chapter catalog MAY load in parallel and MUST NOT gate the initial skeleton.
