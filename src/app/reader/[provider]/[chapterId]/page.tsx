@@ -45,6 +45,7 @@ const BRIGHTNESS_STORAGE_KEY = "mangatrack.reader.brightness";
 const BRIGHTNESS_MIN = 0.2;
 const BRIGHTNESS_MAX = 1;
 const TAP_MOVE_THRESHOLD_PX = 10;
+const LOADING_SKELETON_COUNT = 3;
 
 interface ReaderPageProps {
   params: Promise<{
@@ -94,6 +95,55 @@ function canUseHistoryBack(): boolean {
   } catch {
     return false;
   }
+}
+
+function PageSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "w-full animate-pulse rounded-sm bg-zinc-800",
+        className ?? "mb-4 h-[min(70vh,900px)]"
+      )}
+      aria-hidden
+    />
+  );
+}
+
+function ReaderScanImage({
+  src,
+  alt,
+  className,
+  eager = false,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  eager?: boolean;
+}) {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [src]);
+
+  return (
+    <div className="relative w-full">
+      {!loaded ? <PageSkeleton className="h-[min(70vh,900px)]" /> : null}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          className,
+          !loaded && "pointer-events-none absolute inset-x-0 top-0 opacity-0"
+        )}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        referrerPolicy="no-referrer"
+        draggable={false}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
 }
 
 export default function ReaderPage({ params }: ReaderPageProps) {
@@ -336,11 +386,31 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
-          <p>Loading chapter...</p>
-        </div>
+      <div className="relative min-h-screen bg-black text-white">
+        <header className="fixed top-0 right-0 left-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+          <div className="container mx-auto flex items-center gap-3 px-2 py-3 sm:px-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReaderBack}
+              className="shrink-0 border-white/20 bg-white/10 text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
+            <div className="min-w-0 space-y-2">
+              <div className="h-4 w-40 max-w-full animate-pulse rounded bg-zinc-700 sm:w-56" />
+              <div className="h-3 w-28 max-w-full animate-pulse rounded bg-zinc-800 sm:w-36" />
+            </div>
+          </div>
+        </header>
+        <main className="pt-16 sm:pt-20" aria-busy="true" aria-label="Loading chapter">
+          <div className="mx-auto max-w-4xl px-4 py-8">
+            {Array.from({ length: LOADING_SKELETON_COUNT }, (_, index) => (
+              <PageSkeleton key={index} />
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -571,9 +641,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 }
                 className="mb-4"
               >
-                <img
+                <ReaderScanImage
                   src={page}
                   alt={`Page ${index + 1}`}
+                  eager={index === 0}
                   className={`w-full ${
                     imageFit === "width"
                       ? "h-auto"
@@ -581,10 +652,6 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                         ? "h-screen object-contain"
                         : "h-auto"
                   }`}
-                  loading="lazy"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  draggable={false}
                 />
               </div>
             ))}
@@ -593,9 +660,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           <div className="flex h-screen items-center justify-center">
             <div className="relative flex h-full w-full items-center justify-center">
               {chapter.pages.length > 0 ? (
-                <img
+                <ReaderScanImage
                   src={chapter.pages[currentPage]}
                   alt={`Page ${currentPage + 1}`}
+                  eager
                   className={`max-h-full max-w-full ${
                     imageFit === "width"
                       ? "h-auto w-full"
@@ -603,9 +671,6 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                         ? "h-full w-auto"
                         : "max-h-full max-w-full"
                   }`}
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  draggable={false}
                 />
               ) : null}
 
