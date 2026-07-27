@@ -149,6 +149,36 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Reader cold-load: floating book */
+@keyframes reader-book-float {
+  0%, 100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(4deg);
+  }
+}
+
+@keyframes reader-book-glow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+.animate-reader-book {
+  animation: reader-book-float 2.4s ease-in-out infinite;
+}
+
+.animate-reader-book-glow {
+  animation: reader-book-glow 2.4s ease-in-out infinite;
+}
+
+
 
 
 

@@ -47,6 +47,19 @@ const BRIGHTNESS_MIN = 0.2;
 const BRIGHTNESS_MAX = 1;
 const TAP_MOVE_THRESHOLD_PX = 10;
 const LOADING_SKELETON_COUNT = 3;
+/** Warm/cache usually finishes before this — then we never show the book. */
+const COLD_BOOK_MS = 1600;
+/** After entertaining with the book, return focus to page skeletons. */
+const COLD_SKELETON_MS = 3400;
+const COLD_STATUS_ROTATE_MS = 2800;
+
+type LoadingStage = "skeleton" | "cold-book" | "cold-skeleton";
+
+const COLD_STATUS_LINES = [
+  "Resolviendo páginas del proveedor…",
+  "Todavía cargando — esto puede tardar un poco",
+  "Preparando los scans…",
+] as const;
 
 interface ReaderPageProps {
   params: Promise<{
@@ -156,6 +169,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>("skeleton");
+  const [coldStatusIndex, setColdStatusIndex] = useState(0);
   const [readingMode, setReadingMode] = useState("vertical"); // vertical, horizontal
   const [imageFit, setImageFit] = useState("width"); // width, height, original
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -171,6 +186,41 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   useEffect(() => {
     setBrightness(readStoredBrightness());
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStage("skeleton");
+      setColdStatusIndex(0);
+      return;
+    }
+
+    setLoadingStage("skeleton");
+    setColdStatusIndex(0);
+    const bookTimer = window.setTimeout(() => {
+      setLoadingStage("cold-book");
+    }, COLD_BOOK_MS);
+    const skeletonTimer = window.setTimeout(() => {
+      setLoadingStage("cold-skeleton");
+    }, COLD_SKELETON_MS);
+
+    return () => {
+      window.clearTimeout(bookTimer);
+      window.clearTimeout(skeletonTimer);
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (
+      !loading ||
+      (loadingStage !== "cold-book" && loadingStage !== "cold-skeleton")
+    ) {
+      return;
+    }
+    const rotate = window.setInterval(() => {
+      setColdStatusIndex((i) => (i + 1) % COLD_STATUS_LINES.length);
+    }, COLD_STATUS_ROTATE_MS);
+    return () => window.clearInterval(rotate);
+  }, [loading, loadingStage]);
 
   const persistBrightness = useCallback((value: number) => {
     const next = clampBrightness(value);
@@ -426,6 +476,11 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   };
 
   if (loading) {
+    const showBook =
+      loadingStage === "cold-book" || loadingStage === "cold-skeleton";
+    const bookHero = loadingStage === "cold-book";
+    const showSkeletons = loadingStage !== "cold-book";
+
     return (
       <div className="relative min-h-screen bg-black text-white">
         <header className="fixed top-0 right-0 left-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
@@ -445,12 +500,59 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             </div>
           </div>
         </header>
-        <main className="pt-16 sm:pt-20" aria-busy="true" aria-label="Loading chapter">
-          <div className="mx-auto max-w-4xl px-4 py-8">
-            {Array.from({ length: LOADING_SKELETON_COUNT }, (_, index) => (
-              <PageSkeleton key={index} />
-            ))}
-          </div>
+        <main
+          className="pt-16 sm:pt-20"
+          aria-busy="true"
+          aria-label="Loading chapter"
+        >
+          {showBook ? (
+            <div
+              className={cn(
+                "mx-auto flex max-w-4xl flex-col items-center px-4 text-center transition-all duration-500",
+                bookHero ? "pb-6 pt-16 sm:pt-24" : "pb-2 pt-8"
+              )}
+            >
+              <div
+                className={cn(
+                  "relative mb-5 flex items-center justify-center",
+                  bookHero ? "h-28 w-28" : "h-20 w-20"
+                )}
+              >
+                <div
+                  className="animate-reader-book-glow absolute inset-0 rounded-full bg-indigo-500/30 blur-xl"
+                  aria-hidden
+                />
+                <BookOpen
+                  className={cn(
+                    "animate-reader-book relative text-white drop-shadow-lg",
+                    bookHero ? "h-20 w-20" : "h-14 w-14"
+                  )}
+                  aria-hidden
+                />
+              </div>
+              <p className="text-base font-medium text-white/95 transition-opacity duration-500 sm:text-lg">
+                {COLD_STATUS_LINES[coldStatusIndex]}
+              </p>
+              <p className="mt-2 text-sm text-zinc-500">
+                {bookHero
+                  ? "Abriendo el capítulo…"
+                  : "En un momento verás los scans"}
+              </p>
+            </div>
+          ) : null}
+
+          {showSkeletons ? (
+            <div
+              className={cn(
+                "mx-auto max-w-4xl px-4 py-8 transition-opacity duration-500",
+                loadingStage === "cold-skeleton" ? "opacity-80" : "opacity-100"
+              )}
+            >
+              {Array.from({ length: LOADING_SKELETON_COUNT }, (_, index) => (
+                <PageSkeleton key={index} />
+              ))}
+            </div>
+          ) : null}
         </main>
       </div>
     );
