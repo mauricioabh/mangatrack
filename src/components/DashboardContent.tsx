@@ -163,7 +163,8 @@ export default function DashboardContent() {
   const filteredBookmarks = useMemo(() => {
     if (!filterNew && !filterFinished) return bookmarks;
     return bookmarks.filter((b) => {
-      const matchNew = filterNew && Boolean(b.hasUnreadLatest);
+      const matchNew =
+        filterNew && Boolean(b.hasUnreadLatest) && !b.isFinished;
       const matchFinished = filterFinished && Boolean(b.isFinished);
       return matchNew || matchFinished;
     });
@@ -375,7 +376,7 @@ export default function DashboardContent() {
                         </Badge>
                       ) : null}
                     </div>
-                    {bookmark.hasUnreadLatest ? (
+                    {bookmark.hasUnreadLatest && !bookmark.isFinished ? (
                       <span
                         className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
                         title="New unread chapter"

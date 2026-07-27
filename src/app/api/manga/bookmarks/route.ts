@@ -190,7 +190,8 @@ export async function GET(request: NextRequest) {
       const chapters = item._chapters;
       const latestId = item.latestChapter?.id;
       const hasUnreadLatest = Boolean(
-        latestId &&
+        !item.finishedAt &&
+          latestId &&
           !readLatestKeys.has(
             `${item.provider.toLowerCase()}:${latestId}`
           )
