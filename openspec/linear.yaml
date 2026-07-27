@@ -39,3 +39,7 @@ archive_documents:
       id: "c3c57709-a698-4ccd-a8bf-dc22e20f9524"
       url: "https://linear.app/wayool/document/openspec-continue-reading-7897b4bff028"
       title: "OpenSpec: continue-reading"
+    search-toolbar:
+      id: "b63f89d2-6d85-4e63-a670-5c8cd7914310"
+      url: "https://linear.app/wayool/document/openspec-search-toolbar-4d20a444e369"
+      title: "OpenSpec: search-toolbar"
