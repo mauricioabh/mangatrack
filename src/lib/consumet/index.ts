@@ -8,3 +8,4 @@ export * from "./provider-routes";
 export * from "./service";
 export * from "./search-relevance";
 export { SAMPLE_CONSUMET_MANGA } from "./sample-ids";
+export { warmChapterPages } from "./reader-warm";

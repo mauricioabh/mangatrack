@@ -39,6 +39,7 @@ import {
   mangaPath,
   readerPath,
 } from "@/lib/consumet/ids";
+import { warmChapterPages } from "@/lib/consumet/reader-warm";
 import { cn } from "@/lib/utils";
 
 const BRIGHTNESS_STORAGE_KEY = "mangatrack.reader.brightness";
@@ -194,26 +195,65 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             undefined
           : undefined;
       setProvider(p);
-      const response = await fetch(
-        chapterApiPath(p, chapterId, mangaIdParam ?? undefined)
-      );
-      const data = await response.json();
 
-      if (data.success) {
-        setChapter(data.chapter);
-        setManga(data.manga);
-        setChapters(data.chapters);
-      } else {
-        console.error("Chapter fetch failed:", data.error);
-        setLoadError(data.error ?? "Failed to load chapter");
+      // Kick off meta in parallel; only wait on pages to show scans
+      const pagesPromise = fetch(
+        chapterApiPath(p, chapterId, mangaIdParam, "pages")
+      );
+      const metaPromise = fetch(
+        chapterApiPath(p, chapterId, mangaIdParam, "meta")
+      );
+
+      const pagesRes = await pagesPromise;
+      const pagesData = await pagesRes.json();
+
+      if (!pagesData.success || !pagesData.chapter?.pages?.length) {
+        console.error("Chapter pages fetch failed:", pagesData.error);
+        setLoadError(pagesData.error ?? "Failed to load chapter");
         setChapter(null);
         setManga(null);
+        setChapters([]);
+        return;
+      }
+
+      setChapter({
+        id: pagesData.chapter.id ?? chapterId,
+        title: pagesData.chapter.title ?? "",
+        chapterNumber: pagesData.chapter.chapterNumber ?? 0,
+        pages: pagesData.chapter.pages,
+      });
+      if (mangaIdParam) {
+        setManga((prev) => prev ?? { id: mangaIdParam, title: "", provider: p });
+      }
+      setLoading(false);
+
+      try {
+        const metaRes = await metaPromise;
+        const metaData = await metaRes.json();
+        if (!metaData.success) return;
+        if (metaData.manga) setManga(metaData.manga);
+        if (Array.isArray(metaData.chapters)) setChapters(metaData.chapters);
+        if (metaData.chapter) {
+          setChapter((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  title: metaData.chapter.title || prev.title,
+                  chapterNumber:
+                    metaData.chapter.chapterNumber || prev.chapterNumber,
+                }
+              : prev
+          );
+        }
+      } catch (metaError) {
+        console.error("Chapter meta fetch failed:", metaError);
       }
     } catch (error) {
       console.error("Error fetching chapter:", error);
       setLoadError("Failed to load chapter");
       setChapter(null);
       setManga(null);
+      setChapters([]);
     } finally {
       setLoading(false);
     }
@@ -324,6 +364,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       const { next, previous } = getChapterNeighbors(chapters, chapter.id);
       const target = direction === "next" ? next : previous;
       if (target) {
+        warmChapterPages(provider, target.id, manga?.id);
         window.location.replace(readerPath(provider, target.id, manga?.id));
       }
     };
@@ -415,7 +456,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     );
   }
 
-  if (!chapter || !manga) {
+  if (!chapter) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-center">
@@ -450,6 +491,11 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const hasNextChapter = nextChapter !== null;
   const hasPrevChapter = previousChapter !== null;
   const dimOpacity = 1 - brightness;
+  const mangaTitle = manga?.title?.trim() ? manga.title : "Loading…";
+  const chapterLabel =
+    chapter.chapterNumber > 0
+      ? `Ch. ${chapter.chapterNumber}${chapter.title ? `: ${chapter.title}` : ""}`
+      : chapter.title || "Loading chapter…";
 
   return (
     <div className="relative min-h-screen bg-black text-white">
@@ -474,10 +520,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
               </Button>
               <div className="min-w-0">
                 <h1 className="truncate text-sm font-semibold text-white drop-shadow-lg sm:max-w-md sm:text-lg">
-                  {manga.title}
+                  {mangaTitle}
                 </h1>
                 <p className="truncate text-xs text-white/80 drop-shadow-md sm:text-sm">
-                  Ch. {chapter.chapterNumber}: {chapter.title}
+                  {chapterLabel}
                   {readingMode === "horizontal"
                     ? ` · ${currentPage + 1}/${chapter.pages.length}`
                     : null}
@@ -737,14 +783,16 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
-                <Link href={mangaPath(provider, manga.id)} className="w-full">
-                  <Button
-                    variant="outline"
-                    className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
-                  >
-                    Back to Manga
-                  </Button>
-                </Link>
+                {manga?.id ? (
+                  <Link href={mangaPath(provider, manga.id)} className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
+                    >
+                      Back to Manga
+                    </Button>
+                  </Link>
+                ) : null}
                 <Link href="/dashboard" className="w-full">
                   <Button
                     variant="outline"

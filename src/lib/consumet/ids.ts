@@ -33,11 +33,15 @@ export function readerPath(
 export function chapterApiPath(
   provider: string,
   chapterId: string,
-  mangaId?: string
+  mangaId?: string,
+  fields?: "pages" | "meta"
 ): string {
   const base = `/api/chapters/${encodeURIComponent(provider)}/${encodeExternalId(chapterId)}`;
-  if (!mangaId) return base;
-  return `${base}?mangaId=${encodeURIComponent(mangaId)}`;
+  const params = new URLSearchParams();
+  if (mangaId) params.set("mangaId", mangaId);
+  if (fields) params.set("fields", fields);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 export function chapterPageProxyPath(
