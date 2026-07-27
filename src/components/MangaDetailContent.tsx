@@ -28,6 +28,7 @@ import {
   mangaApiPath,
   readerPath,
 } from "@/lib/consumet/ids";
+import { warmChapterPages } from "@/lib/consumet/reader-warm";
 
 interface Manga {
   id: string;
@@ -258,6 +259,7 @@ export default function MangaDetailContent({
       lastReadChapterId
     );
     if (target) {
+      warmChapterPages(provider, target.id, manga.id);
       router.push(chapterHref(target.id));
     }
   };
@@ -568,6 +570,9 @@ export default function MangaDetailContent({
                 <Link
                   key={chapter.id}
                   href={chapterHref(chapter.id)}
+                  onPointerDown={() => {
+                    warmChapterPages(provider, chapter.id, manga.id);
+                  }}
                   className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <Card

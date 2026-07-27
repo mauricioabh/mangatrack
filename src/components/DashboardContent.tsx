@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaPath, readerPath } from "@/lib/consumet/ids";
+import { warmChapterPages } from "@/lib/consumet/reader-warm";
 import { cn } from "@/lib/utils";
 
 interface Manga {
@@ -350,7 +351,19 @@ export default function DashboardContent() {
                   key={bookmark.id}
                   className="group overflow-hidden rounded-lg border border-blue-200/80 bg-white/70 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-blue-800/60 dark:bg-slate-900/40 dark:hover:border-blue-700"
                 >
-                  <Link href={primaryHref} className="block">
+                  <Link
+                    href={primaryHref}
+                    className="block"
+                    onPointerDown={() => {
+                      if (bookmark.continueChapterId) {
+                        warmChapterPages(
+                          bookmark.provider,
+                          bookmark.continueChapterId,
+                          manga.id
+                        );
+                      }
+                    }}
+                  >
                     <div className="relative aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
                       {manga.coverImage ? (
                         <CatalogCover
