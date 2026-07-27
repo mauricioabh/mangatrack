@@ -10,9 +10,19 @@ export const userUpdateSchema = z.object({
   emailNotifications: z.boolean().optional(),
 });
 
-export const userPreferencesSchema = z.object({
-  emailNotifications: z.boolean(),
-});
+export const userPreferencesSchema = z
+  .object({
+    emailNotifications: z.boolean().optional(),
+    libraryFilterNew: z.boolean().optional(),
+    libraryFilterFinished: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.emailNotifications !== undefined ||
+      data.libraryFilterNew !== undefined ||
+      data.libraryFilterFinished !== undefined,
+    { message: "At least one preference field is required" }
+  );
 
 const providerSchema = z
   .string()
@@ -37,6 +47,12 @@ const externalIdSchema = z.string().min(1, "External id is required").max(512);
 export const mangaBookmarkSchema = z.object({
   provider: providerSchema,
   mangaId: externalIdSchema,
+});
+
+export const mangaFinishedSchema = z.object({
+  provider: providerSchema,
+  mangaId: externalIdSchema,
+  finished: z.boolean(),
 });
 
 export const pushTokenPlatformSchema = z.enum(["WEB", "ANDROID"]);
@@ -86,5 +102,6 @@ export type UserPreferencesInput = z.infer<typeof userPreferencesSchema>;
 export type MangaSearchInput = z.infer<typeof mangaSearchSchema>;
 export type BrowseFeedInput = z.infer<typeof browseFeedSchema>;
 export type MangaBookmarkInput = z.infer<typeof mangaBookmarkSchema>;
+export type MangaFinishedInput = z.infer<typeof mangaFinishedSchema>;
 export type ChapterReadInput = z.infer<typeof chapterReadSchema>;
 export type PushTokenInput = z.infer<typeof pushTokenSchema>;

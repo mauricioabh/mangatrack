@@ -9,12 +9,14 @@ import {
   Play,
   Plus,
   Check,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import {
@@ -71,6 +73,7 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   isBookmarked?: boolean;
+  isFinished?: boolean;
   error?: string;
 }
 
@@ -83,10 +86,13 @@ export default function MangaDetailContent({
   provider,
   mangaId,
 }: MangaDetailContentProps) {
+  const router = useRouter();
   const [manga, setManga] = useState<Manga | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [finishedLoading, setFinishedLoading] = useState(false);
   const [readChapterIds, setReadChapterIds] = useState<Set<string>>(
     () => new Set()
   );
@@ -125,9 +131,13 @@ export default function MangaDetailContent({
 
         const bookmarkApiResponse = bookmarkData as unknown as ApiResponse<{
           isBookmarked: boolean;
+          isFinished?: boolean;
         }>;
-        setIsBookmarked(
-          bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked
+        const bookmarked =
+          bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked;
+        setIsBookmarked(bookmarked);
+        setIsFinished(
+          bookmarked && !!bookmarkApiResponse.isFinished
         );
 
         const historyApiResponse = historyData as unknown as ApiResponse<
@@ -213,6 +223,9 @@ export default function MangaDetailContent({
 
       if (data.success) {
         setIsBookmarked(!isBookmarked);
+        if (isBookmarked) {
+          setIsFinished(false);
+        }
 
         toast.success(
           isBookmarked ? "Removed from library" : "Added to library"
@@ -238,7 +251,42 @@ export default function MangaDetailContent({
 
     const target = getChapterToRead(manga.chapters, readChapterIds);
     if (target) {
-      window.open(chapterHref(target.id), "_blank");
+      router.push(chapterHref(target.id));
+    }
+  };
+
+  const handleFinishedToggle = async () => {
+    if (!manga || !isBookmarked) return;
+
+    setFinishedLoading(true);
+    try {
+      const response = await fetch("/api/manga/bookmark", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider,
+          mangaId: manga.id,
+          finished: !isFinished,
+        }),
+      });
+      const data = (await response.json()) as ApiResponse<{
+        isFinished: boolean;
+      }>;
+
+      if (data.success) {
+        const next = data.data?.isFinished ?? !isFinished;
+        setIsFinished(next);
+        toast.success(next ? "Marked as finished" : "Removed finished status");
+      } else {
+        toast.error(data.error || "Failed to update finished status");
+      }
+    } catch (error) {
+      console.error("Error toggling finished:", error);
+      toast.error("Failed to update finished status");
+    } finally {
+      setFinishedLoading(false);
     }
   };
 
@@ -468,6 +516,26 @@ export default function MangaDetailContent({
                       ? "In Library"
                       : "Add to Library"}
                 </Button>
+                {isBookmarked ? (
+                  <Button
+                    onClick={handleFinishedToggle}
+                    disabled={finishedLoading || metadataLoading}
+                    variant="outline"
+                    size="lg"
+                    className={`w-full border-2 transition-all duration-300 sm:w-auto sm:transform sm:hover:scale-105 sm:hover:shadow-lg ${
+                      isFinished
+                        ? "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800/40"
+                    } ${metadataLoading ? "opacity-50" : ""}`}
+                  >
+                    {finishedLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    {isFinished ? "Finished" : "Mark Finished"}
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
@@ -486,11 +554,9 @@ export default function MangaDetailContent({
               const isRead = readChapterIds.has(chapter.id);
               const { heading, name } = chapterLabel(chapter);
               return (
-                <a
+                <Link
                   key={chapter.id}
                   href={chapterHref(chapter.id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <Card
@@ -522,7 +588,7 @@ export default function MangaDetailContent({
                       </div>
                     </CardContent>
                   </Card>
-                </a>
+                </Link>
               );
             })}
           </div>

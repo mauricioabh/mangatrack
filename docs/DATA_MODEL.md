@@ -17,8 +17,10 @@ Cuenta sincronizada con Clerk.
 | `clerkId`            | String     | ID Clerk (único)                     |
 | `email`              | String     | Email (único)                        |
 | `name`, `avatar`     | String?    | Perfil                               |
-| `tier`               | UserTier   | `BASIC` \| `PREMIUM`                 |
-| `emailNotifications` | Boolean    | Preferencia de emails                |
+| `tier`                   | UserTier   | `BASIC` \| `PREMIUM`                 |
+| `emailNotifications`     | Boolean    | Preferencia de emails                |
+| `libraryFilterNew`       | Boolean    | Chip Library “New” (persistido)      |
+| `libraryFilterFinished`  | Boolean    | Chip Library “Finished” (persistido) |
 
 **Relaciones:** favorites (`UserFavorite`), `UserPushToken`, `ReadingHistory`, `Notification`
 
@@ -31,7 +33,8 @@ Manga en favoritos (bookmark) por usuario; identidad = provider + id externo Con
 | `userId`                | FK      | → User                                           |
 | `provider`              | String  | ej. `mangahere`, `mangapill`                     |
 | `externalMangaId`       | String  | ID manga en ese provider                         |
-| `lastNotifiedChapterId` | String? | Watermark para poll diario de capítulos nuevos   |
+| `lastNotifiedChapterId` | String?  | Watermark para poll diario de capítulos nuevos   |
+| `finishedAt`            | DateTime? | Usuario marcó la serie como Terminado (null = no) |
 
 **Unique:** `(userId, provider, externalMangaId)` — índice `(provider, externalMangaId)` para jobs.
 

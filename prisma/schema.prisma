@@ -13,10 +13,12 @@ model User {
   email              String           @unique
   name               String?
   avatar             String?
-  tier               UserTier         @default(BASIC)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  emailNotifications Boolean          @default(true)
+  tier                   UserTier         @default(BASIC)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  emailNotifications     Boolean          @default(true)
+  libraryFilterNew       Boolean          @default(false)
+  libraryFilterFinished  Boolean          @default(false)
   notifications      Notification[]
   readingHistory     ReadingHistory[]
   favorites          UserFavorite[]
@@ -26,13 +28,14 @@ model User {
 }
 
 model UserFavorite {
-  id                    String   @id @default(cuid())
+  id                    String    @id @default(cuid())
   userId                String
   provider              String
   externalMangaId       String
   lastNotifiedChapterId String?
-  createdAt             DateTime @default(now())
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  finishedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider, externalMangaId])
   @@index([provider, externalMangaId])

@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    await db.notification.updateMany({
+      where: {
+        userId: user.id,
+        type: "NEW_CHAPTER",
+        read: false,
+        provider,
+        externalChapterId: validatedData.chapterId,
+      },
+      data: { read: true },
+    });
+
     return NextResponse.json({
       success: true,
       message: "Chapter marked as read",
