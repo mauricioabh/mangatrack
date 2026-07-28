@@ -59,3 +59,7 @@ archive_documents:
       id: "1379780c-5f63-4890-b8fe-0a31f3efcb4b"
       url: "https://linear.app/wayool/document/openspec-reader-cold-path-ux-4abd06af433b"
       title: "OpenSpec: reader-cold-path-ux"
+    search-pagination:
+      id: "d766bd0c-1724-4c7b-a090-d04b3edf5ec5"
+      url: "https://linear.app/wayool/document/openspec-search-pagination-792cc6b921a4"
+      title: "OpenSpec: search-pagination"
