@@ -40,6 +40,7 @@ import {
   readerPath,
 } from "@/lib/consumet/ids";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
+import { BookLoadingMark } from "@/components/loading/book-loading-mark";
 import { cn } from "@/lib/utils";
 
 const BRIGHTNESS_STORAGE_KEY = "mangatrack.reader.brightness";
@@ -51,15 +52,8 @@ const LOADING_SKELETON_COUNT = 3;
 const COLD_BOOK_MS = 1600;
 /** After entertaining with the book, return focus to page skeletons. */
 const COLD_SKELETON_MS = 3400;
-const COLD_STATUS_ROTATE_MS = 2800;
 
 type LoadingStage = "skeleton" | "cold-book" | "cold-skeleton";
-
-const COLD_STATUS_LINES = [
-  "Resolviendo páginas del proveedor…",
-  "Todavía cargando — esto puede tardar un poco",
-  "Preparando los scans…",
-] as const;
 
 interface ReaderPageProps {
   params: Promise<{
@@ -170,7 +164,6 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("skeleton");
-  const [coldStatusIndex, setColdStatusIndex] = useState(0);
   const [readingMode, setReadingMode] = useState("vertical"); // vertical, horizontal
   const [imageFit, setImageFit] = useState("width"); // width, height, original
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -190,12 +183,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
   useEffect(() => {
     if (!loading) {
       setLoadingStage("skeleton");
-      setColdStatusIndex(0);
       return;
     }
 
     setLoadingStage("skeleton");
-    setColdStatusIndex(0);
     const bookTimer = window.setTimeout(() => {
       setLoadingStage("cold-book");
     }, COLD_BOOK_MS);
@@ -208,19 +199,6 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       window.clearTimeout(skeletonTimer);
     };
   }, [loading]);
-
-  useEffect(() => {
-    if (
-      !loading ||
-      (loadingStage !== "cold-book" && loadingStage !== "cold-skeleton")
-    ) {
-      return;
-    }
-    const rotate = window.setInterval(() => {
-      setColdStatusIndex((i) => (i + 1) % COLD_STATUS_LINES.length);
-    }, COLD_STATUS_ROTATE_MS);
-    return () => window.clearInterval(rotate);
-  }, [loading, loadingStage]);
 
   const persistBrightness = useCallback((value: number) => {
     const next = clampBrightness(value);
@@ -511,33 +489,10 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 "mx-auto flex max-w-4xl flex-col items-center px-4 text-center transition-all duration-500",
                 bookHero ? "pb-6 pt-16 sm:pt-24" : "pb-2 pt-8"
               )}
+              aria-busy="true"
+              aria-label="Loading chapter"
             >
-              <div
-                className={cn(
-                  "relative mb-5 flex items-center justify-center",
-                  bookHero ? "h-28 w-28" : "h-20 w-20"
-                )}
-              >
-                <div
-                  className="animate-reader-book-glow absolute inset-0 rounded-full bg-indigo-500/30 blur-xl"
-                  aria-hidden
-                />
-                <BookOpen
-                  className={cn(
-                    "animate-reader-book relative text-white drop-shadow-lg",
-                    bookHero ? "h-20 w-20" : "h-14 w-14"
-                  )}
-                  aria-hidden
-                />
-              </div>
-              <p className="text-base font-medium text-white/95 transition-opacity duration-500 sm:text-lg">
-                {COLD_STATUS_LINES[coldStatusIndex]}
-              </p>
-              <p className="mt-2 text-sm text-zinc-500">
-                {bookHero
-                  ? "Abriendo el capítulo…"
-                  : "En un momento verás los scans"}
-              </p>
+              <BookLoadingMark size={bookHero ? "lg" : "md"} tone="light" />
             </div>
           ) : null}
 
