@@ -19,6 +19,10 @@ archive_documents:
       id: "aa2f806e-bc2e-4f2a-90e7-52456e459c8a"
       url: "https://linear.app/wayool/document/openspec-library-filters-351f9186c445"
       title: "OpenSpec: library-filters"
+    library-load-cache:
+      id: "67a41dea-9688-4fa6-a4b2-e3c24f0259b2"
+      url: "https://linear.app/wayool/document/openspec-library-load-cache-bc0f4c8d5a58"
+      title: "OpenSpec: library-load-cache"
     manga-finished-status:
       id: "badd72f8-3329-4cf9-b056-7c81cf9d01ed"
       url: "https://linear.app/wayool/document/openspec-manga-finished-status-6e08173fe4e4"
