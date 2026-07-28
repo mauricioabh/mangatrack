@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { invalidateLibraryCache } from "@/lib/library-cache";
 import { toast } from "sonner";
 
 interface BookmarkButtonProps {
@@ -45,6 +46,7 @@ export function BookmarkButton({
         const newBookmarkState = !bookmarked;
         setBookmarked(newBookmarkState);
         onBookmarkChange?.(newBookmarkState);
+        invalidateLibraryCache();
 
         toast.success(
           newBookmarkState

@@ -28,6 +28,7 @@ import {
   mangaApiPath,
   readerPath,
 } from "@/lib/consumet/ids";
+import { invalidateLibraryCache } from "@/lib/library-cache";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
 
 interface Manga {
@@ -230,6 +231,7 @@ export default function MangaDetailContent({
         if (isBookmarked) {
           setIsFinished(false);
         }
+        invalidateLibraryCache();
 
         toast.success(
           isBookmarked ? "Removed from library" : "Added to library"
@@ -287,6 +289,7 @@ export default function MangaDetailContent({
       if (data.success) {
         const next = data.data?.isFinished ?? !isFinished;
         setIsFinished(next);
+        invalidateLibraryCache();
         toast.success(next ? "Marked as finished" : "Removed finished status");
       } else {
         toast.error(data.error || "Failed to update finished status");
