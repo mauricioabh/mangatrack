@@ -459,7 +459,7 @@ export default function DashboardContent() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
               My Library
             </h1>
@@ -469,6 +469,7 @@ export default function DashboardContent() {
             >
               {totalCount}
             </Badge>
+            {sortControl}
           </div>
           <Input
             type="search"
@@ -481,9 +482,8 @@ export default function DashboardContent() {
           />
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-5">
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mb-5">
           {filterChips}
-          {sortControl}
         </div>
 
         {listConstrained && totalCount > 0 ? (
