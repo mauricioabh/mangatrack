@@ -1,9 +1,4 @@
-# library-filters Specification
-
-## Purpose
-Library filter chips (All / New / Reading / Finished) with server-persisted preferences, My Library header layout (search on title row; chips + Sort below), client quick search, client sort, and clear empty/count states.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Library filter chips All / New / Finished
 The Library view MUST expose four chips: **All**, **New**, **Reading**, and **Finished**. All is active when New, Reading, and Finished are all off. Activating New and/or Reading and/or Finished MUST deactivate All. Activating All MUST clear New, Reading, and Finished. When one or more of New / Reading / Finished are on, the visible set MUST be the union (OR) of matches (no duplicate tiles). A favorite matches **New** when `hasUnreadLatest === true` and the favorite is not Finished. A favorite matches **Reading** when `isReading === true` and the favorite is not Finished. A favorite matches **Finished** when it is marked Finished. Finished favorites MUST NOT match the Reading chip.
@@ -91,6 +86,8 @@ The Library heading MUST keep a badge with the total favorite count (Y). When ch
 #### Scenario: Empty library
 - **WHEN** the user has zero favorites
 - **THEN** the existing empty-library messaging/CTA remains appropriate
+
+## ADDED Requirements
 
 ### Requirement: Library client sort control
 The Library view MUST expose a Sort control on the chips row (trailing edge) with at least: Updated newest first (default), Updated oldest first, Title A–Z, and Title Z–A. Sort MUST reorder the list after chip and quick-search filters. Updated sort MUST use each favorite’s latest chapter published date when available. Title sort MUST use the manga title with case-insensitive locale-aware comparison. The selected sort mode MUST be persisted on the user record and restored when opening Library.

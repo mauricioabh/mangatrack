@@ -19,8 +19,10 @@ Cuenta sincronizada con Clerk.
 | `name`, `avatar`     | String?    | Perfil                               |
 | `tier`                   | UserTier   | `BASIC` \| `PREMIUM`                 |
 | `emailNotifications`     | Boolean    | Preferencia de emails                |
-| `libraryFilterNew`       | Boolean    | Chip Library “New” (persistido)      |
-| `libraryFilterFinished`  | Boolean    | Chip Library “Finished” (persistido) |
+| `libraryFilterNew`       | Boolean    | Chip My Library “New” (persistido)      |
+| `libraryFilterReading`   | Boolean    | Chip My Library “Reading” (persistido)  |
+| `libraryFilterFinished`  | Boolean    | Chip My Library “Finished” (persistido) |
+| `librarySort`            | String     | Orden My Library (`updated_desc` \| `updated_asc` \| `title_asc` \| `title_desc`) |
 
 **Relaciones:** favorites (`UserFavorite`), `UserPushToken`, `ReadingHistory`, `Notification`
 

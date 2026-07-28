@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { BookOpen, Search } from "lucide-react";
+import { ArrowUpDown, BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaPath, readerPath } from "@/lib/consumet/ids";
@@ -18,6 +25,7 @@ import {
   writeLibraryCache,
 } from "@/lib/library-cache";
 import { cn } from "@/lib/utils";
+import type { LibrarySort } from "@/lib/validations";
 
 interface Manga {
   id: string;
@@ -68,6 +76,13 @@ interface User {
   tier: string;
 }
 
+const LIBRARY_SORT_OPTIONS: { value: LibrarySort; label: string }[] = [
+  { value: "updated_desc", label: "Updated ↓" },
+  { value: "updated_asc", label: "Updated ↑" },
+  { value: "title_asc", label: "Title A–Z" },
+  { value: "title_desc", label: "Title Z–A" },
+];
+
 function formatLatestUpdate(publishedAt?: string): string | null {
   if (!publishedAt?.trim()) return null;
   const ms = Date.parse(publishedAt);
@@ -91,12 +106,69 @@ function matchesQuickSearch(bookmark: Bookmark, query: string): boolean {
   return title.includes(q) || author.includes(q);
 }
 
+function updatedMs(bookmark: Bookmark): number {
+  const published = bookmark.latestChapter?.publishedAt;
+  if (published?.trim()) {
+    const ms = Date.parse(published);
+    if (!Number.isNaN(ms)) return ms;
+  }
+  const created = Date.parse(bookmark.createdAt);
+  return Number.isNaN(created) ? 0 : created;
+}
+
+function parseLibrarySort(value: unknown): LibrarySort {
+  if (
+    value === "updated_desc" ||
+    value === "updated_asc" ||
+    value === "title_asc" ||
+    value === "title_desc"
+  ) {
+    return value;
+  }
+  return "updated_desc";
+}
+
+function sortBookmarks(list: Bookmark[], sort: LibrarySort): Bookmark[] {
+  const sorted = [...list];
+  sorted.sort((a, b) => {
+    switch (sort) {
+      case "updated_desc": {
+        const byUpdated = updatedMs(b) - updatedMs(a);
+        if (byUpdated !== 0) return byUpdated;
+        return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+      }
+      case "updated_asc": {
+        const byUpdated = updatedMs(a) - updatedMs(b);
+        if (byUpdated !== 0) return byUpdated;
+        return Date.parse(a.createdAt) - Date.parse(b.createdAt);
+      }
+      case "title_asc": {
+        const titleA = a.manga?.title ?? "";
+        const titleB = b.manga?.title ?? "";
+        return titleA.localeCompare(titleB, undefined, { sensitivity: "base" });
+      }
+      case "title_desc": {
+        const titleA = a.manga?.title ?? "";
+        const titleB = b.manga?.title ?? "";
+        return titleB.localeCompare(titleA, undefined, { sensitivity: "base" });
+      }
+      default: {
+        const _exhaustive: never = sort;
+        return _exhaustive;
+      }
+    }
+  });
+  return sorted;
+}
+
 export default function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterNew, setFilterNew] = useState(false);
+  const [filterReading, setFilterReading] = useState(false);
   const [filterFinished, setFilterFinished] = useState(false);
+  const [librarySort, setLibrarySort] = useState<LibrarySort>("updated_desc");
   const [quickSearch, setQuickSearch] = useState("");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const skipNextFilterPersist = useRef(true);
@@ -147,9 +219,13 @@ export default function DashboardContent() {
 
       if (preferencesData?.success && preferencesData.preferences) {
         setFilterNew(Boolean(preferencesData.preferences.libraryFilterNew));
+        setFilterReading(
+          Boolean(preferencesData.preferences.libraryFilterReading)
+        );
         setFilterFinished(
           Boolean(preferencesData.preferences.libraryFilterFinished)
         );
+        setLibrarySort(parseLibrarySort(preferencesData.preferences.librarySort));
       }
       setFiltersHydrated(true);
     } catch (error) {
@@ -195,7 +271,9 @@ export default function DashboardContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             libraryFilterNew: filterNew,
+            libraryFilterReading: filterReading,
             libraryFilterFinished: filterFinished,
+            librarySort,
           }),
         });
       } catch (error) {
@@ -204,43 +282,55 @@ export default function DashboardContent() {
     };
 
     void persist();
-  }, [filterNew, filterFinished, filtersHydrated, loading]);
+  }, [
+    filterNew,
+    filterReading,
+    filterFinished,
+    librarySort,
+    filtersHydrated,
+    loading,
+  ]);
 
   const filteredBookmarks = useMemo(() => {
-    const chipFiltered =
-      !filterNew && !filterFinished
-        ? bookmarks
-        : bookmarks.filter((b) => {
-            const matchNew =
-              filterNew && Boolean(b.hasUnreadLatest) && !b.isFinished;
-            const matchFinished = filterFinished && Boolean(b.isFinished);
-            return matchNew || matchFinished;
-          });
-    return chipFiltered.filter((b) => matchesQuickSearch(b, quickSearch));
-  }, [bookmarks, filterNew, filterFinished, quickSearch]);
+    const chipsActive = filterNew || filterReading || filterFinished;
+    const chipFiltered = !chipsActive
+      ? bookmarks
+      : bookmarks.filter((b) => {
+          const matchNew =
+            filterNew && Boolean(b.hasUnreadLatest) && !b.isFinished;
+          const matchReading =
+            filterReading && Boolean(b.isReading) && !b.isFinished;
+          const matchFinished = filterFinished && Boolean(b.isFinished);
+          return matchNew || matchReading || matchFinished;
+        });
+    const searched = chipFiltered.filter((b) =>
+      matchesQuickSearch(b, quickSearch)
+    );
+    return sortBookmarks(searched, librarySort);
+  }, [
+    bookmarks,
+    filterNew,
+    filterReading,
+    filterFinished,
+    quickSearch,
+    librarySort,
+  ]);
 
   const totalCount = bookmarks.length;
   const showingCount = filteredBookmarks.length;
-  const filtersActive = filterNew || filterFinished;
+  const filtersActive = filterNew || filterReading || filterFinished;
   const searchActive = quickSearch.trim().length > 0;
   const listConstrained = filtersActive || searchActive;
 
   const setAllFilters = () => {
     setFilterNew(false);
+    setFilterReading(false);
     setFilterFinished(false);
   };
 
   const clearSearchAndFilters = () => {
     setAllFilters();
     setQuickSearch("");
-  };
-
-  const toggleNew = () => {
-    setFilterNew((prev) => !prev);
-  };
-
-  const toggleFinished = () => {
-    setFilterFinished((prev) => !prev);
   };
 
   const filterChips = (
@@ -267,10 +357,24 @@ export default function DashboardContent() {
           "rounded-full",
           filterNew && "bg-red-600 text-white hover:bg-red-700 border-0"
         )}
-        onClick={toggleNew}
+        onClick={() => setFilterNew((prev) => !prev)}
         aria-pressed={filterNew}
       >
         New
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={filterReading ? "default" : "outline"}
+        className={cn(
+          "rounded-full",
+          filterReading &&
+            "bg-emerald-600 text-white hover:bg-emerald-700 border-0"
+        )}
+        onClick={() => setFilterReading((prev) => !prev)}
+        aria-pressed={filterReading}
+      >
+        Reading
       </Button>
       <Button
         type="button"
@@ -281,12 +385,35 @@ export default function DashboardContent() {
           filterFinished &&
             "bg-amber-600 text-white hover:bg-amber-700 border-0"
         )}
-        onClick={toggleFinished}
+        onClick={() => setFilterFinished((prev) => !prev)}
         aria-pressed={filterFinished}
       >
         Finished
       </Button>
     </div>
+  );
+
+  const sortControl = (
+    <Select
+      value={librarySort}
+      onValueChange={(value) => setLibrarySort(parseLibrarySort(value))}
+    >
+      <SelectTrigger
+        size="sm"
+        aria-label="Sort library"
+        className="min-w-[8.5rem] rounded-full bg-white/80 dark:bg-slate-900/50"
+      >
+        <ArrowUpDown className="size-3.5 opacity-70" aria-hidden />
+        <SelectValue placeholder="Sort" />
+      </SelectTrigger>
+      <SelectContent align="end">
+        {LIBRARY_SORT_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 
   if (loading) {
@@ -331,10 +458,10 @@ export default function DashboardContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-              Library
+              My Library
             </h1>
             <Badge
               variant="secondary"
@@ -343,10 +470,6 @@ export default function DashboardContent() {
               {totalCount}
             </Badge>
           </div>
-          {filterChips}
-        </div>
-
-        <div className="mb-4 sm:mb-5">
           <Input
             type="search"
             value={quickSearch}
@@ -354,8 +477,13 @@ export default function DashboardContent() {
             placeholder="Find in library…"
             aria-label="Find manga in your library"
             autoComplete="off"
-            className="bg-white/80 dark:bg-slate-900/50"
+            className="w-full max-w-xs bg-white/80 dark:bg-slate-900/50 sm:max-w-sm"
           />
+        </div>
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-5">
+          {filterChips}
+          {sortControl}
         </div>
 
         {listConstrained && totalCount > 0 ? (
@@ -390,8 +518,8 @@ export default function DashboardContent() {
                 No manga match these filters
               </h3>
               <p className="mb-4 text-gray-500 dark:text-gray-400">
-                Try All, clear your search, or switch New / Finished to see more
-                of your library.
+                Try All, clear your search, or switch New / Reading / Finished to
+                see more of your library.
               </p>
               <Button variant="outline" onClick={clearSearchAndFilters}>
                 Show all

@@ -6,15 +6,15 @@ Library surface naming, reading progress affordances, and filter-aware heading c
 ## Requirements
 
 ### Requirement: Library surface naming
-The authenticated library view MUST present the heading **Library** (not Bookmarks) for the user’s favorited series. The heading area MUST include the total favorite count badge; when filters are active it MUST also surface the filtered “Showing X of Y” affordance defined by `library-filters`.
+The authenticated library view MUST present the heading **My Library** (not Bookmarks or Library alone) for the user’s favorited series. The heading area MUST include the total favorite count badge; when filters are active it MUST also surface the filtered “Showing X of Y” affordance defined by `library-filters`.
 
-#### Scenario: Dashboard heading
-- **WHEN** a signed-in user opens `/dashboard`
-- **THEN** the primary heading reads Library and shows the favorite count
+#### Scenario: Heading copy
+- **WHEN** a signed-in user opens the library dashboard
+- **THEN** the primary heading reads My Library and shows the favorite count
 
-#### Scenario: Heading with active filters
-- **WHEN** New and/or Finished filters are active
-- **THEN** Library heading still shows total count Y and the showing X of Y line
+#### Scenario: Filtered count under My Library
+- **WHEN** filters or quick search reduce the visible list to X of Y favorites
+- **THEN** My Library heading still shows total count Y and the showing X of Y line
 
 ### Requirement: Reading badge on library tiles
 The system MUST show a **Reading** badge on a library tile when the user has at least one `reading_history` row for that favorite’s `(provider, externalMangaId)`.
