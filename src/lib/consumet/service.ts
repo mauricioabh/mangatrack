@@ -83,6 +83,8 @@ export async function searchMangaMultiProvider(
   match: SearchMatchMode;
   total: number;
   page: number;
+  /** True if any successful provider reported a next page */
+  hasMore: boolean;
 }> {
   const options: MultiSearchOptions =
     typeof pageOrOptions === "number"
@@ -105,6 +107,7 @@ export async function searchMangaMultiProvider(
       match,
       total: 0,
       page,
+      hasMore: false,
     };
   }
 
@@ -119,6 +122,7 @@ export async function searchMangaMultiProvider(
 
   const providerResults: MultiSearchProviderResult[] = [];
   let all: MangaSummary[] = [];
+  let hasMore = false;
 
   for (let i = 0; i < settled.length; i++) {
     const provider = providers[i];
@@ -129,6 +133,9 @@ export async function searchMangaMultiProvider(
         data: outcome.value.data,
       });
       all.push(...outcome.value.data);
+      if (outcome.value.hasNextPage) {
+        hasMore = true;
+      }
     } else {
       const message =
         outcome.reason instanceof Error
@@ -158,6 +165,7 @@ export async function searchMangaMultiProvider(
     match,
     total: all.length,
     page,
+    hasMore,
   };
 }
 

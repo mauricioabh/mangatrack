@@ -26,6 +26,8 @@ Search UI enriquece conteos en background (concurrency limitada) y muestra badge
 
 La búsqueda reordena resultados por relevancia de título (frase exacta arriba; ruido tipo OR abajo). `match=exact` o comillas `"demon slayer"` filtran a frase completa. En `/search`, el filtro **Providers** es un dropdown multi-select (checkboxes) junto a status/genre; solo consulta el subset del allowlist (`providers=`). Trigger táctil `min-h-11` para PWA.
 
+**Search UX:** la búsqueda es explícita (botón Search / Enter / deep link `?q=`). Tippear o cambiar filtros no llama a Consumet hasta confirmar. `GET /api/manga/search` acepta `page` y responde `pagination.hasMore` (OR de `hasNextPage` por provider). La UI hace infinite scroll con sentinel; sin total global de catálogo. Misma obra en distintos providers permanece como filas separadas (caps pueden diferir).
+
 IDs con `/` (p. ej. MangaPill `3069/naruto`) se codifican con `~` en rutas App Router (`3069~naruto`); `%2F` no es fiable. El info de MangaPill a menudo viene sin `image` — el BFF sintetiza cover desde el id numérico. Páginas de lectura usan Referer por provider (sin eso el CDN de MangaPill responde 403).
 
 **MangaDex (Consumet):** info/read van en path-style (`/manga/mangadex/info/{id}`, `/manga/mangadex/read/{chapterId}`). El estilo query `?id=` se desvía a search en este provider. Covers se reescriben a `uploads.mangadex.org/.../*.256.jpg` (más fiable que `mangadex.org/covers`).

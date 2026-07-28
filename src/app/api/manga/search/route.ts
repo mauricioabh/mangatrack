@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
           limit: validatedData.limit,
           total: 0,
           pages: 0,
+          hasMore: false,
         },
       });
     }
@@ -73,8 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Soft client-side page slice if providers return large pages
-    const start = 0;
-    const sliced = data.slice(start, start + validatedData.limit);
+    const sliced = data.slice(0, validatedData.limit);
 
     return NextResponse.json({
       success: true,
@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
         limit: validatedData.limit,
         total: data.length,
         pages: Math.max(1, Math.ceil(data.length / validatedData.limit)),
+        hasMore: result.hasMore,
       },
     });
   } catch (error) {

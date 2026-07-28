@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, BookOpen, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CatalogCover } from "@/components/manga/catalog-cover";
+import { BookLoadingMark } from "@/components/loading/book-loading-mark";
 import { mangaApiPath, mangaPath } from "@/lib/consumet/ids";
 
 /** Fallback until API returns allowlist — keeps the filter visible on first paint */
@@ -59,12 +60,27 @@ interface Manga {
 
 const CHAPTER_COUNT_CONCURRENCY = 3;
 
+function mangaKey(m: { provider: string; id: string }) {
+  return `${m.provider}:${m.id}`;
+}
+
+function appendUnique(prev: Manga[], next: Manga[]): Manga[] {
+  const seen = new Set(prev.map(mangaKey));
+  const added: Manga[] = [];
+  for (const item of next) {
+    const key = mangaKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    added.push(item);
+  }
+  return added.length === 0 ? prev : [...prev, ...added];
+}
+
 async function fetchChapterCount(
   provider: string,
   id: string
 ): Promise<number | null> {
   try {
-    // Prefer dedicated count endpoint; fall back to manga detail (same Consumet info).
     const countUrl = `/api/manga/chapter-count?provider=${encodeURIComponent(provider)}&id=${encodeURIComponent(id)}`;
     const res = await fetch(countUrl);
     if (res.ok) {
@@ -133,28 +149,52 @@ export default function SearchPage() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [exactMatch, setExactMatch] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasSearched, setHasSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const enrichGeneration = useRef(0);
-  const [filtersReady, setFiltersReady] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const enrichGeneration = useRef(0);
+  const searchGeneration = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const bootstrappedRef = useRef(false);
+  const filtersRef = useRef({
+    statusFilter,
+    genreFilter,
+    exactMatch,
+    selectedProviders,
+    availableProviders,
+  });
+  filtersRef.current = {
+    statusFilter,
+    genreFilter,
+    exactMatch,
+    selectedProviders,
+    availableProviders,
+  };
 
-  const applySearchResults = (results: Manga[]) => {
+  const applySearchResults = (results: Manga[], mode: "replace" | "append") => {
     const generation = ++enrichGeneration.current;
     const withLoading = results.map((m) => ({
       ...m,
-      chapterCount: null,
+      chapterCount: null as number | null,
       chapterCountLoading: true,
     }));
-    setMangas(withLoading);
+    if (mode === "replace") {
+      setMangas(withLoading);
+    } else {
+      setMangas((prev) => appendUnique(prev, withLoading));
+    }
 
     void enrichChapterCounts(withLoading, (updates) => {
       if (generation !== enrichGeneration.current) return;
       setMangas((prev) =>
         prev.map((m) => {
-          const key = `${m.provider}:${m.id}`;
+          const key = mangaKey(m);
           if (!updates.has(key)) return m;
           return {
             ...m,
@@ -166,25 +206,27 @@ export default function SearchPage() {
     });
   };
 
-  const providersParam = (): string | undefined => {
-    if (selectedProviders.length === 0) return undefined;
-    if (
-      availableProviders.length > 0 &&
-      availableProviders.every((p) => selectedProviders.includes(p))
-    ) {
-      return undefined;
-    }
-    return selectedProviders.join(",");
-  };
-
-  const buildSearchParams = (query: string) => {
+  const buildSearchParams = (query: string, pageNum: number) => {
+    const {
+      statusFilter: status,
+      genreFilter: genre,
+      exactMatch: exact,
+      selectedProviders: selected,
+      availableProviders: available,
+    } = filtersRef.current;
     const params = new URLSearchParams();
     if (query.trim()) params.append("query", query);
-    if (statusFilter !== "all") params.append("status", statusFilter);
-    if (genreFilter !== "all") params.append("genre", genreFilter);
-    if (exactMatch) params.append("match", "exact");
-    const providers = providersParam();
-    if (providers) params.append("providers", providers);
+    if (status !== "all") params.append("status", status);
+    if (genre !== "all") params.append("genre", genre);
+    if (exact) params.append("match", "exact");
+    if (selected.length > 0) {
+      const allSelected =
+        available.length > 0 && available.every((p) => selected.includes(p));
+      if (!allSelected) {
+        params.append("providers", selected.join(","));
+      }
+    }
+    if (pageNum > 1) params.append("page", String(pageNum));
     return params;
   };
 
@@ -237,29 +279,75 @@ export default function SearchPage() {
     });
   };
 
-  const handleSearch = async () => {
-    setLoading(true);
-    setSearchError(null);
-    try {
-      const params = buildSearchParams(searchQuery);
-      const response = await fetch(`/api/manga/search?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        applySearchResults(data.data);
-        ingestProviderMeta(data);
-      } else {
-        setMangas([]);
-        setSearchError(data.error ?? "Search failed");
-        setProviderNotices([]);
+  const runSearch = useCallback(
+    async (query: string, pageNum: number, mode: "replace" | "append") => {
+      if (mode === "replace") {
+        abortRef.current?.abort();
       }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSearchError("Search failed");
-      setMangas([]);
-    } finally {
-      setLoading(false);
-    }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const generation =
+        mode === "replace"
+          ? ++searchGeneration.current
+          : searchGeneration.current;
+
+      if (mode === "replace") {
+        setLoading(true);
+        setLoadingMore(false);
+        setSearchError(null);
+        setHasSearched(true);
+        setPage(1);
+        setHasMore(false);
+      } else {
+        setLoadingMore(true);
+      }
+
+      try {
+        const params = buildSearchParams(query, pageNum);
+        const response = await fetch(`/api/manga/search?${params}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+
+        if (generation !== searchGeneration.current) return;
+
+        if (data.success) {
+          applySearchResults(data.data ?? [], mode);
+          ingestProviderMeta(data);
+          setPage(pageNum);
+          setHasMore(Boolean(data.pagination?.hasMore));
+          if (mode === "replace" && (!data.data || data.data.length === 0)) {
+            setHasMore(false);
+          }
+        } else if (mode === "replace") {
+          setMangas([]);
+          setSearchError(data.error ?? "Search failed");
+          setProviderNotices([]);
+          setHasMore(false);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        if (generation !== searchGeneration.current) return;
+        console.error("Search error:", error);
+        if (mode === "replace") {
+          setSearchError("Search failed");
+          setMangas([]);
+          setHasMore(false);
+        }
+      } finally {
+        if (generation === searchGeneration.current) {
+          if (mode === "replace") setLoading(false);
+          else setLoadingMore(false);
+        }
+      }
+    },
+    []
+  );
+
+  const handleSearch = () => {
+    void runSearch(searchQuery, 1, "replace");
   };
 
   const activeFilterCount = () => {
@@ -272,76 +360,68 @@ export default function SearchPage() {
   };
 
   const clearFiltersAndQuery = () => {
+    abortRef.current?.abort();
+    searchGeneration.current += 1;
     setSearchQuery("");
-    setDebouncedQuery("");
     setStatusFilter("all");
     setGenreFilter("all");
     setSelectedProviders([]);
     setExactMatch(false);
     setFiltersOpen(false);
+    setMangas([]);
+    setHasSearched(false);
+    setHasMore(false);
+    setPage(1);
+    setSearchError(null);
+    setProviderNotices([]);
+    setLoading(false);
+    setLoadingMore(false);
   };
 
-  // Debounce search query
+  // Initial ?q= deep link — one search on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Perform search when debounced query or filters change
-  useEffect(() => {
-    if (!filtersReady) return;
-
-    const performSearch = async () => {
-      setLoading(true);
-      setSearchError(null);
-      try {
-        const params = buildSearchParams(debouncedQuery);
-        const response = await fetch(`/api/manga/search?${params}`);
-        const data = await response.json();
-
-        if (data.success) {
-          applySearchResults(data.data);
-          ingestProviderMeta(data);
-        } else {
-          setMangas([]);
-          setSearchError(data.error ?? "Search failed");
-        }
-      } catch (error) {
-        console.error("Search error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    performSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    filtersReady,
-    debouncedQuery,
-    statusFilter,
-    genreFilter,
-    exactMatch,
-    selectedProviders,
-  ]);
-
-  // Handle URL ?q= before enabling search effect
-  useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get("q");
     if (queryParam) {
       setSearchQuery(queryParam);
-      setDebouncedQuery(queryParam);
+      void runSearch(queryParam, 1, "replace");
     }
-    setFiltersReady(true);
-  }, []);
+  }, [runSearch]);
+
+  // Infinite scroll sentinel
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasSearched || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        if (loading || loadingMore) return;
+        if (!hasMore) return;
+        void runSearch(searchQuery, page + 1, "append");
+      },
+      { rootMargin: "240px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [
+    hasSearched,
+    hasMore,
+    loading,
+    loadingMore,
+    page,
+    searchQuery,
+    runSearch,
+  ]);
 
   const filterCount = activeFilterCount();
+  const chromeLocked = loading;
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !chromeLocked) {
       handleSearch();
     }
   };
@@ -349,7 +429,6 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-4 py-4 sm:py-6">
-        {/* Search Section */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: -12 }}
@@ -362,12 +441,13 @@ export default function SearchPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
+              disabled={chromeLocked}
               className="h-11 min-w-0 flex-1 border-2 border-blue-200 bg-white/80 text-base backdrop-blur-sm transition-all duration-300 hover:border-blue-300 focus:border-blue-400 focus:shadow-lg focus:ring-4 focus:ring-blue-500/20 dark:border-blue-800 dark:bg-gray-800/80 dark:hover:border-blue-700 dark:focus:border-blue-600 sm:h-12"
               aria-label="Search manga"
             />
             <Button
               onClick={handleSearch}
-              disabled={loading}
+              disabled={chromeLocked}
               size="icon"
               className="h-11 w-11 shrink-0 border-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:w-12"
               aria-label="Search"
@@ -392,6 +472,7 @@ export default function SearchPage() {
               variant="outline"
               size="icon"
               onClick={() => setFiltersOpen(true)}
+              disabled={chromeLocked}
               className="relative h-11 w-11 shrink-0 border-2 border-blue-200 bg-white/80 dark:border-blue-800 dark:bg-gray-800/80 sm:h-12 sm:w-12"
               aria-label="Filters"
               aria-expanded={filtersOpen}
@@ -399,7 +480,7 @@ export default function SearchPage() {
             >
               <SlidersHorizontal className="h-5 w-5" />
               {filterCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
                   {filterCount}
                 </span>
               )}
@@ -407,97 +488,111 @@ export default function SearchPage() {
           </div>
 
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetContent side="bottom" className="gap-4 overflow-y-auto">
+            <SheetContent
+              side="bottom"
+              className="max-h-[85vh] overflow-y-auto rounded-t-2xl"
+            >
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
                 <SheetDescription>
-                  Narrow results by status, genre, provider, or exact phrase.
+                  Adjust filters, then press Search to apply.
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="flex flex-col gap-3">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-11 w-full border-2 border-blue-200 bg-white/80 dark:border-blue-800 dark:bg-gray-800/80 sm:h-12">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent className="border-blue-200 bg-white dark:border-blue-800 dark:bg-gray-800">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="ONGOING">Ongoing</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="HIATUS">Hiatus</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={genreFilter} onValueChange={setGenreFilter}>
-                  <SelectTrigger className="h-11 w-full border-2 border-purple-200 bg-white/80 dark:border-purple-800 dark:bg-gray-800/80 sm:h-12">
-                    <SelectValue placeholder="Filter by genre" />
-                  </SelectTrigger>
-                  <SelectContent className="border-purple-200 bg-white dark:border-purple-800 dark:bg-gray-800">
-                    <SelectItem value="all">All Genres</SelectItem>
-                    <SelectItem value="Action">Action</SelectItem>
-                    <SelectItem value="Adventure">Adventure</SelectItem>
-                    <SelectItem value="Comedy">Comedy</SelectItem>
-                    <SelectItem value="Drama">Drama</SelectItem>
-                    <SelectItem value="Fantasy">Fantasy</SelectItem>
-                    <SelectItem value="Romance">Romance</SelectItem>
-                    <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
-                    <SelectItem value="Slice of Life">Slice of Life</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11 w-full justify-between border-2 border-amber-200 bg-white/80 px-3 text-left font-normal capitalize dark:border-amber-800 dark:bg-gray-800/80 sm:h-12"
-                      aria-label="Filter by provider"
-                    >
-                      <span className="truncate">{providerFilterLabel()}</span>
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="w-[min(100vw-2rem,16rem)] border-amber-200 bg-white dark:border-amber-800 dark:bg-gray-800"
+              <div className="mt-4 space-y-4 pb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="status-filter">Status</Label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={setStatusFilter}
+                    disabled={chromeLocked}
                   >
-                    <DropdownMenuLabel>Providers</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={selectedProviders.length === 0}
-                      onCheckedChange={() => setSelectedProviders([])}
-                      onSelect={(e) => e.preventDefault()}
-                      className="min-h-11 capitalize"
-                    >
-                      All providers
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuSeparator />
-                    {providerOptions.map((provider) => (
-                      <DropdownMenuCheckboxItem
-                        key={provider}
-                        checked={isProviderActive(provider)}
-                        onCheckedChange={() => toggleProvider(provider)}
-                        onSelect={(e) => e.preventDefault()}
-                        className="min-h-11 capitalize"
+                    <SelectTrigger id="status-filter" className="w-full">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="ONGOING">Ongoing</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="HIATUS">Hiatus</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="genre-filter">Genre</Label>
+                  <Select
+                    value={genreFilter}
+                    onValueChange={setGenreFilter}
+                    disabled={chromeLocked}
+                  >
+                    <SelectTrigger id="genre-filter" className="w-full">
+                      <SelectValue placeholder="Genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Genres</SelectItem>
+                      <SelectItem value="Action">Action</SelectItem>
+                      <SelectItem value="Adventure">Adventure</SelectItem>
+                      <SelectItem value="Comedy">Comedy</SelectItem>
+                      <SelectItem value="Drama">Drama</SelectItem>
+                      <SelectItem value="Fantasy">Fantasy</SelectItem>
+                      <SelectItem value="Horror">Horror</SelectItem>
+                      <SelectItem value="Romance">Romance</SelectItem>
+                      <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
+                      <SelectItem value="Slice of Life">Slice of Life</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="Supernatural">Supernatural</SelectItem>
+                      <SelectItem value="Thriller">Thriller</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Providers</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={chromeLocked}
+                        className="h-11 w-full justify-between"
                       >
-                        {provider}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <span className="truncate">{providerFilterLabel()}</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuLabel>Providers</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {providerOptions.map((provider) => (
+                        <DropdownMenuCheckboxItem
+                          key={provider}
+                          checked={isProviderActive(provider)}
+                          onCheckedChange={() => toggleProvider(provider)}
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          {provider}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
 
-                <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border-2 border-teal-200 bg-white/80 px-3 py-2 dark:border-teal-800 dark:bg-gray-800/80 sm:min-h-12">
-                  <Label
-                    htmlFor="exact-match"
-                    className="cursor-pointer text-sm text-teal-800 dark:text-teal-200"
-                  >
-                    Exact phrase
-                  </Label>
+                <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+                  <div className="min-w-0">
+                    <Label htmlFor="exact-match" className="text-sm font-medium">
+                      Exact phrase
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Match the full query in the title
+                    </p>
+                  </div>
                   <Switch
                     id="exact-match"
                     checked={exactMatch}
                     onCheckedChange={setExactMatch}
+                    disabled={chromeLocked}
                     className="h-6 w-11 data-[state=checked]:bg-teal-600"
                     aria-label="Exact phrase match"
                   />
@@ -514,6 +609,7 @@ export default function SearchPage() {
                   type="button"
                   variant="outline"
                   onClick={clearFiltersAndQuery}
+                  disabled={chromeLocked}
                   className="w-full sm:w-auto"
                 >
                   Clear
@@ -523,7 +619,6 @@ export default function SearchPage() {
           </Sheet>
         </motion.div>
 
-        {/* Results */}
         {(providerNotices.length > 0 || searchError) && (
           <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             {searchError && <p>{searchError}</p>}
@@ -535,22 +630,33 @@ export default function SearchPage() {
             )}
           </div>
         )}
-        {mangas.length > 0 && (
+
+        {loading && (
+          <div
+            className="mb-8 flex flex-col items-center justify-center py-16"
+            aria-busy="true"
+            aria-label="Searching"
+          >
+            <BookLoadingMark size="lg" tone="dark" />
+          </div>
+        )}
+
+        {mangas.length > 0 && !loading && (
           <motion.div
             className="mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-          <motion.h2
+            <motion.h2
               className="mb-4 break-words bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-xl font-bold text-transparent dark:from-white dark:via-blue-200 dark:to-purple-200 sm:mb-6 sm:text-2xl"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               {searchQuery.trim()
-                ? `Search Results for "${searchQuery}" (${mangas.length})`
-                : `Popular Manga (${mangas.length})`}
+                ? `Search Results for "${searchQuery}"`
+                : "Search Results"}
             </motion.h2>
             <motion.div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {mangas.map((manga, index) => (
@@ -558,7 +664,10 @@ export default function SearchPage() {
                   key={`${manga.provider}:${manga.id}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: Math.min(index, 12) * 0.05,
+                  }}
                   whileHover={{
                     scale: 1.05,
                     y: -8,
@@ -569,34 +678,31 @@ export default function SearchPage() {
                 >
                   <Link
                     href={mangaPath(manga.provider, manga.id)}
-                    className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-xl"
+                    className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   >
-                    <Card className="h-full cursor-pointer gap-0 border-2 border-transparent bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 py-3 dark:from-gray-800 dark:via-blue-900/20 dark:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-blue-400/20 transition-all duration-500 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:via-purple-50 group-hover:to-pink-50 dark:group-hover:from-blue-900/30 dark:group-hover:via-purple-900/30 dark:group-hover:to-pink-900/30">
+                    <Card className="h-full cursor-pointer gap-0 border-2 border-transparent bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 py-3 transition-all duration-500 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/20 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:via-purple-50 group-hover:to-pink-50 dark:from-gray-800 dark:via-blue-900/20 dark:to-purple-900/20 dark:hover:border-blue-600 dark:hover:shadow-blue-400/20 dark:group-hover:from-blue-900/30 dark:group-hover:via-purple-900/30 dark:group-hover:to-pink-900/30">
                       <CardHeader className="shrink-0 space-y-0 gap-0 px-3 pb-0">
                         <motion.div
-                          className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 shadow-lg dark:from-gray-700 dark:to-gray-600 group-hover:shadow-xl transition-all duration-300"
+                          className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 shadow-lg transition-all duration-300 group-hover:shadow-xl dark:from-gray-700 dark:to-gray-600"
                           whileHover={{ scale: 1.03 }}
                           transition={{ duration: 0.3 }}
                         >
-                          {manga.coverImage && (
-                            <CatalogCover
-                              src={manga.coverImage}
-                              alt={manga.title}
-                              title={manga.title}
-                              width={140}
-                              height={210}
-                              provider={manga.provider}
-                              referer={manga.coverReferer}
-                              className="h-full w-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                          )}
+                          <CatalogCover
+                            src={manga.coverImage}
+                            alt={manga.title}
+                            title={manga.title}
+                            width={140}
+                            height={210}
+                            provider={manga.provider}
+                            referer={manga.coverReferer}
+                            className="h-full w-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
                         </motion.div>
-                        <motion.div
-                          className="mt-2"
-                          whileHover={{ x: 3 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <CardTitle className="min-h-[2.5rem] text-sm line-clamp-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-300 dark:group-hover:via-purple-300 dark:group-hover:to-pink-300 transition-all duration-300">
+                        <motion.div className="mt-2 min-h-0">
+                          <CardTitle
+                            className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900 dark:text-white"
+                            title={manga.title}
+                          >
                             {manga.title}
                           </CardTitle>
                         </motion.div>
@@ -642,20 +748,39 @@ export default function SearchPage() {
                 </motion.div>
               ))}
             </motion.div>
+
+            <div
+              ref={sentinelRef}
+              className="flex min-h-16 flex-col items-center justify-center py-8"
+            >
+              {loadingMore && <BookLoadingMark size="md" tone="dark" />}
+              {!loading && !loadingMore && hasSearched && !hasMore && (
+                <p className="text-sm text-muted-foreground">No more results</p>
+              )}
+            </div>
           </motion.div>
         )}
 
-        {/* No Results */}
-        {mangas.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchQuery ? "No manga found" : "No manga available"}
+        {hasSearched && mangas.length === 0 && !loading && (
+          <div className="py-12 text-center">
+            <Search className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+              No manga found
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {searchQuery
-                ? "Try adjusting your search terms or filters"
-                : "Try adjusting your filters to see more results"}
+              Try adjusting your search terms or filters, then press Search
+            </p>
+          </div>
+        )}
+
+        {!hasSearched && !loading && (
+          <div className="py-12 text-center">
+            <Search className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+              Search manga
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Enter a title and press Search
             </p>
           </div>
         )}
