@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { userPreferencesSchema } from "@/lib/validations";
+import { librarySortSchema, userPreferencesSchema } from "@/lib/validations";
+
+function resolveLibrarySort(value: string | null | undefined) {
+  const parsed = librarySortSchema.safeParse(value);
+  return parsed.success ? parsed.data : "updated_desc";
+}
 
 export async function GET() {
   try {
@@ -19,7 +24,9 @@ export async function GET() {
       preferences: {
         emailNotifications: user.emailNotifications,
         libraryFilterNew: user.libraryFilterNew,
+        libraryFilterReading: user.libraryFilterReading,
         libraryFilterFinished: user.libraryFilterFinished,
+        librarySort: resolveLibrarySort(user.librarySort),
       },
     });
   } catch (error) {
@@ -56,8 +63,14 @@ export async function PATCH(request: NextRequest) {
         ...(validatedData.libraryFilterNew !== undefined
           ? { libraryFilterNew: validatedData.libraryFilterNew }
           : {}),
+        ...(validatedData.libraryFilterReading !== undefined
+          ? { libraryFilterReading: validatedData.libraryFilterReading }
+          : {}),
         ...(validatedData.libraryFilterFinished !== undefined
           ? { libraryFilterFinished: validatedData.libraryFilterFinished }
+          : {}),
+        ...(validatedData.librarySort !== undefined
+          ? { librarySort: validatedData.librarySort }
           : {}),
       },
     });
@@ -67,7 +80,9 @@ export async function PATCH(request: NextRequest) {
       preferences: {
         emailNotifications: updatedUser.emailNotifications,
         libraryFilterNew: updatedUser.libraryFilterNew,
+        libraryFilterReading: updatedUser.libraryFilterReading,
         libraryFilterFinished: updatedUser.libraryFilterFinished,
+        librarySort: resolveLibrarySort(updatedUser.librarySort),
       },
     });
   } catch (error) {

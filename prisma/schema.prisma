@@ -18,7 +18,9 @@ model User {
   updatedAt              DateTime         @updatedAt
   emailNotifications     Boolean          @default(true)
   libraryFilterNew       Boolean          @default(false)
+  libraryFilterReading   Boolean          @default(false)
   libraryFilterFinished  Boolean          @default(false)
+  librarySort            String           @default("updated_desc")
   notifications      Notification[]
   readingHistory     ReadingHistory[]
   favorites          UserFavorite[]

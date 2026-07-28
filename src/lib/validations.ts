@@ -10,17 +10,30 @@ export const userUpdateSchema = z.object({
   emailNotifications: z.boolean().optional(),
 });
 
+export const librarySortSchema = z.enum([
+  "updated_desc",
+  "updated_asc",
+  "title_asc",
+  "title_desc",
+]);
+
+export type LibrarySort = z.infer<typeof librarySortSchema>;
+
 export const userPreferencesSchema = z
   .object({
     emailNotifications: z.boolean().optional(),
     libraryFilterNew: z.boolean().optional(),
+    libraryFilterReading: z.boolean().optional(),
     libraryFilterFinished: z.boolean().optional(),
+    librarySort: librarySortSchema.optional(),
   })
   .refine(
     (data) =>
       data.emailNotifications !== undefined ||
       data.libraryFilterNew !== undefined ||
-      data.libraryFilterFinished !== undefined,
+      data.libraryFilterReading !== undefined ||
+      data.libraryFilterFinished !== undefined ||
+      data.librarySort !== undefined,
     { message: "At least one preference field is required" }
   );
 
