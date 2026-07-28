@@ -1,14 +1,22 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaPath, readerPath } from "@/lib/consumet/ids";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
+import {
+  getLastLibraryCacheUserId,
+  isLibraryCacheFresh,
+  readLibraryCache,
+  shouldRefreshLibraryOnFocus,
+  writeLibraryCache,
+} from "@/lib/library-cache";
 import { cn } from "@/lib/utils";
 
 interface Manga {
@@ -75,16 +83,42 @@ function formatLatestUpdate(publishedAt?: string): string | null {
   });
 }
 
+function matchesQuickSearch(bookmark: Bookmark, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const title = bookmark.manga?.title?.toLowerCase() ?? "";
+  const author = bookmark.manga?.author?.toLowerCase() ?? "";
+  return title.includes(q) || author.includes(q);
+}
+
 export default function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterNew, setFilterNew] = useState(false);
   const [filterFinished, setFilterFinished] = useState(false);
+  const [quickSearch, setQuickSearch] = useState("");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const skipNextFilterPersist = useRef(true);
+  const lastBookmarksFetchAt = useRef<number | null>(null);
+  const fetchInFlight = useRef(false);
 
-  const fetchData = async () => {
+  const applyCachedLibrary = useCallback(() => {
+    const userId = getLastLibraryCacheUserId();
+    if (!userId) return false;
+    const cached = readLibraryCache<Bookmark>(userId);
+    if (!cached || !isLibraryCacheFresh(cached.fetchedAt)) return false;
+    setUser(cached.user);
+    setBookmarks(cached.bookmarks);
+    lastBookmarksFetchAt.current = cached.fetchedAt;
+    setLoading(false);
+    return true;
+  }, []);
+
+  const fetchData = useCallback(async (options?: { background?: boolean }) => {
+    if (fetchInFlight.current) return;
+    fetchInFlight.current = true;
+    const background = Boolean(options?.background);
     try {
       const [userResponse, bookmarksResponse, preferencesResponse] =
         await Promise.all([
@@ -105,6 +139,10 @@ export default function DashboardContent() {
 
       if (bookmarksData?.success) {
         setBookmarks(bookmarksData.data);
+        lastBookmarksFetchAt.current = Date.now();
+        if (userData?.success && userData.user) {
+          writeLibraryCache(userData.user, bookmarksData.data);
+        }
       }
 
       if (preferencesData?.success && preferencesData.preferences) {
@@ -118,24 +156,30 @@ export default function DashboardContent() {
       console.error("Error fetching dashboard data:", error);
       setFiltersHydrated(true);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+      fetchInFlight.current = false;
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
   useEffect(() => {
+    const hadCache = applyCachedLibrary();
+    void fetchData({ background: hadCache });
+  }, [applyCachedLibrary, fetchData]);
+
+  useEffect(() => {
     const handleFocus = () => {
-      if (!loading) {
-        fetchData();
-      }
+      if (loading || fetchInFlight.current) return;
+      if (!shouldRefreshLibraryOnFocus(lastBookmarksFetchAt.current)) return;
+      void fetchData({ background: true });
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [loading]);
+  }, [loading, fetchData]);
 
   useEffect(() => {
     if (!filtersHydrated || loading) return;
@@ -163,22 +207,32 @@ export default function DashboardContent() {
   }, [filterNew, filterFinished, filtersHydrated, loading]);
 
   const filteredBookmarks = useMemo(() => {
-    if (!filterNew && !filterFinished) return bookmarks;
-    return bookmarks.filter((b) => {
-      const matchNew =
-        filterNew && Boolean(b.hasUnreadLatest) && !b.isFinished;
-      const matchFinished = filterFinished && Boolean(b.isFinished);
-      return matchNew || matchFinished;
-    });
-  }, [bookmarks, filterNew, filterFinished]);
+    const chipFiltered =
+      !filterNew && !filterFinished
+        ? bookmarks
+        : bookmarks.filter((b) => {
+            const matchNew =
+              filterNew && Boolean(b.hasUnreadLatest) && !b.isFinished;
+            const matchFinished = filterFinished && Boolean(b.isFinished);
+            return matchNew || matchFinished;
+          });
+    return chipFiltered.filter((b) => matchesQuickSearch(b, quickSearch));
+  }, [bookmarks, filterNew, filterFinished, quickSearch]);
 
   const totalCount = bookmarks.length;
   const showingCount = filteredBookmarks.length;
   const filtersActive = filterNew || filterFinished;
+  const searchActive = quickSearch.trim().length > 0;
+  const listConstrained = filtersActive || searchActive;
 
   const setAllFilters = () => {
     setFilterNew(false);
     setFilterFinished(false);
+  };
+
+  const clearSearchAndFilters = () => {
+    setAllFilters();
+    setQuickSearch("");
   };
 
   const toggleNew = () => {
@@ -188,6 +242,52 @@ export default function DashboardContent() {
   const toggleFinished = () => {
     setFilterFinished((prev) => !prev);
   };
+
+  const filterChips = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        type="button"
+        size="sm"
+        variant={!filtersActive ? "default" : "outline"}
+        className={cn(
+          "rounded-full",
+          !filtersActive &&
+            "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0"
+        )}
+        onClick={setAllFilters}
+        aria-pressed={!filtersActive}
+      >
+        All
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={filterNew ? "default" : "outline"}
+        className={cn(
+          "rounded-full",
+          filterNew && "bg-red-600 text-white hover:bg-red-700 border-0"
+        )}
+        onClick={toggleNew}
+        aria-pressed={filterNew}
+      >
+        New
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={filterFinished ? "default" : "outline"}
+        className={cn(
+          "rounded-full",
+          filterFinished &&
+            "bg-amber-600 text-white hover:bg-amber-700 border-0"
+        )}
+        onClick={toggleFinished}
+        aria-pressed={filterFinished}
+      >
+        Finished
+      </Button>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -231,63 +331,34 @@ export default function DashboardContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
       <main className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
-        <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-5">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-            Library
-          </h1>
-          <Badge
-            variant="secondary"
-            className="rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums"
-          >
-            {totalCount}
-          </Badge>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+              Library
+            </h1>
+            <Badge
+              variant="secondary"
+              className="rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums"
+            >
+              {totalCount}
+            </Badge>
+          </div>
+          {filterChips}
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2 sm:mb-5">
-          <Button
-            type="button"
-            size="sm"
-            variant={!filtersActive ? "default" : "outline"}
-            className={cn(
-              "rounded-full",
-              !filtersActive &&
-                "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0"
-            )}
-            onClick={setAllFilters}
-            aria-pressed={!filtersActive}
-          >
-            All
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={filterNew ? "default" : "outline"}
-            className={cn(
-              "rounded-full",
-              filterNew && "bg-red-600 text-white hover:bg-red-700 border-0"
-            )}
-            onClick={toggleNew}
-            aria-pressed={filterNew}
-          >
-            New
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={filterFinished ? "default" : "outline"}
-            className={cn(
-              "rounded-full",
-              filterFinished &&
-                "bg-amber-600 text-white hover:bg-amber-700 border-0"
-            )}
-            onClick={toggleFinished}
-            aria-pressed={filterFinished}
-          >
-            Finished
-          </Button>
+        <div className="mb-4 sm:mb-5">
+          <Input
+            type="search"
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+            placeholder="Find in library…"
+            aria-label="Find manga in your library"
+            autoComplete="off"
+            className="bg-white/80 dark:bg-slate-900/50"
+          />
         </div>
 
-        {filtersActive && totalCount > 0 ? (
+        {listConstrained && totalCount > 0 ? (
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
             Showing {showingCount} of {totalCount}
           </p>
@@ -319,9 +390,10 @@ export default function DashboardContent() {
                 No manga match these filters
               </h3>
               <p className="mb-4 text-gray-500 dark:text-gray-400">
-                Try All, or switch New / Finished to see more of your library.
+                Try All, clear your search, or switch New / Finished to see more
+                of your library.
               </p>
-              <Button variant="outline" onClick={setAllFilters}>
+              <Button variant="outline" onClick={clearSearchAndFilters}>
                 Show all
               </Button>
             </CardContent>

@@ -40,6 +40,7 @@ import {
   readerPath,
 } from "@/lib/consumet/ids";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
+import { invalidateLibraryCache } from "@/lib/library-cache";
 import { BookLoadingMark } from "@/components/loading/book-loading-mark";
 import { cn } from "@/lib/utils";
 
@@ -341,6 +342,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
           markedChapterIdRef.current = null;
           return false;
         }
+        invalidateLibraryCache();
         if (options?.showCompletionModal) {
           setShowCompleteModal(true);
         }
