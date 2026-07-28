@@ -1,7 +1,7 @@
 # library-filters Specification
 
 ## Purpose
-Library filter chips (All / New / Reading / Finished) with server-persisted preferences, My Library header layout (search on title row; chips + Sort below), client quick search, client sort, and clear empty/count states.
+Library filter chips (All / New / Reading / Finished) with server-persisted preferences, My Library header layout (Sort beside title; search on title row; chips below), client quick search, client sort, and clear empty/count states.
 
 ## Requirements
 
@@ -44,15 +44,15 @@ The user’s New, Reading, and Finished filter flags MUST be stored on the user 
 - **THEN** the app persists the new flags via the preferences API (or equivalent) without requiring a full page reload to keep UI in sync
 
 ### Requirement: Compact Library header with chips on the title row
-The Library view MUST place the quick-search input on the same horizontal row as the **My Library** heading, aligned toward the trailing edge. The total favorite count badge MUST remain adjacent to the heading. The All / New / Reading / Finished chips MUST appear on a row below the title row, aligned toward the leading edge, with the Sort control on that same row toward the trailing edge. On narrow viewports title/search and chips/Sort MAY wrap without introducing empty dedicated chrome bands beyond normal flex wrap.
+The Library view MUST place the Sort control immediately to the right of the **My Library** heading and total favorite count badge on the title row. The quick-search input MUST remain on the same title row toward the trailing edge. The All / New / Reading / Finished chips MUST appear on a row below the title row, aligned toward the leading edge, without the Sort control on that chips row. On narrow viewports title/search/Sort and chips MAY wrap without introducing empty dedicated chrome bands beyond normal flex wrap.
 
 #### Scenario: Desktop title row
 - **WHEN** a signed-in user opens `/dashboard` at a typical desktop width
-- **THEN** My Library, the count badge, and the quick-search input appear on one row with search on the right
+- **THEN** My Library, the count badge, and the Sort control appear together on the leading side of the title row, and the quick-search input appears on the trailing side
 
 #### Scenario: Desktop chips row
 - **WHEN** a signed-in user opens `/dashboard` at a typical desktop width
-- **THEN** All / New / Reading / Finished chips appear on the leading edge of the next row and the Sort control appears on the trailing edge of that row
+- **THEN** All / New / Reading / Finished chips appear on the leading edge of the next row and Sort is not on that chips row
 
 #### Scenario: Narrow wrap
 - **WHEN** the viewport is too narrow for a single unbroken title or chips row
@@ -93,7 +93,7 @@ The Library heading MUST keep a badge with the total favorite count (Y). When ch
 - **THEN** the existing empty-library messaging/CTA remains appropriate
 
 ### Requirement: Library client sort control
-The Library view MUST expose a Sort control on the chips row (trailing edge) with at least: Updated newest first (default), Updated oldest first, Title A–Z, and Title Z–A. Sort MUST reorder the list after chip and quick-search filters. Updated sort MUST use each favorite’s latest chapter published date when available. Title sort MUST use the manga title with case-insensitive locale-aware comparison. The selected sort mode MUST be persisted on the user record and restored when opening Library.
+The Library view MUST expose a Sort control on the title row (immediately after the My Library heading and count badge) with at least: Updated newest first (default), Updated oldest first, Title A–Z, and Title Z–A. Sort MUST reorder the list after chip and quick-search filters. Updated sort MUST use each favorite’s latest chapter published date when available. Title sort MUST use the manga title with case-insensitive locale-aware comparison. The selected sort mode MUST be persisted on the user record and restored when opening Library.
 
 #### Scenario: Default Updated desc
 - **WHEN** the user has not chosen another sort (or stored preference is Updated newest first)
