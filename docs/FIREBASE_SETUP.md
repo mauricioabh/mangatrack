@@ -53,21 +53,38 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 
 This calls `POST /api/user/push-token` and stores the token in `user_push_tokens`.
 
-## 5. Test end-to-end
+## 5. Payload strategy (data-only)
 
-With `npm run dev`, `npx inngest-cli@latest dev`, Firebase env set, and a manga in favorites:
+Chapter pushes are **data-only** (`data.title` / `data.body` / `data.url`, no FCM `notification` block). Android Chrome often drops notification payloads for installed PWAs; the service worker must call `showNotification`.
 
-1. Open http://localhost:8288 → **Functions** → *Poll Consumet for new chapters on favorites* → **Invoke**.
-2. First run on a favorite without watermark → `seeded` (no flood). To force a push, set `lastNotifiedChapterId` in Neon to an older chapter id and Invoke again.
-3. Check Inngest run → FCM steps; device should receive notification (foreground: toast; background: system notification via service worker).
+| Context | Behavior |
+|---------|----------|
+| Background / closed PWA | SW `push` + `onBackgroundMessage` (deduped) → system shade |
+| Foreground (tab visible) | Client `onMessage` → toast; SW skips system UI |
+| Notification click | Opens `data.url` (reader) |
+
+Shared builder: `src/lib/push/fcm-multicast.ts`.
+
+## 6. Test end-to-end
+
+### Production / preview (recommended for Android PWA)
+
+Dev unregisters service workers when `NODE_ENV !== "production"`, so local `npm run dev` is a poor FCM testbed. Prefer a Vercel preview or production URL.
+
+1. Sign in → **Settings** → enable push on the device/browser under test.
+2. Install as PWA on Android Chrome (Add to Home screen) for the background case.
+3. Force a send:
+   - Inngest: invoke *Poll Consumet for new chapters on favorites* (set `lastNotifiedChapterId` older if needed), **or**
+   - Manual: `npx dotenv -e .env.local -- npx tsx scripts/test-fcm-send.ts` (uses DB tokens + first favorite).
+4. Expect: background → system notification; foreground → toast; tap → reader URL.
 
 `POST /api/webhook/mangadex` returns **410 Gone** and is no longer used for chapter notifications.
 
-## 6. Vercel production
+## 7. Vercel production
 
 Add all `NEXT_PUBLIC_FIREBASE_*`, `FIREBASE_*`, and existing Inngest vars to the Vercel project (Production + Preview if needed).
 
-Service worker is served from `/firebase-messaging-sw.js` (static file in `public/`).
+Service worker is served from `/sw.js` (static file in `public/`). Firebase config for the SW is loaded synchronously from `/api/firebase/sw-config` (required for reliable Android PWA background push). Legacy `/firebase-messaging-sw.js` remains for old registrations.
 
 ## Troubleshooting
 
@@ -77,3 +94,5 @@ Service worker is served from `/firebase-messaging-sw.js` (static file in `publi
 | No token / permission denied | Browser site settings → allow notifications |
 | Inngest run fails on FCM step | Check `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` |
 | `tokensSent: 0` | Enable push in Settings on that browser first |
+| Background push works on desktop but not Android PWA | Confirm SW is `/sw.js` v5+, `/api/firebase/sw-config` returns JS, and send path is data-only |
+| No foreground toast | Token stored + app open; title/body come from `data.*` |

@@ -89,19 +89,25 @@ export async function registerFcmPushToken(): Promise<{
   if (!isFirebaseWebConfigured()) {
     return {
       success: false,
-      error: "Firebase web push is not configured (missing NEXT_PUBLIC_FIREBASE_* env).",
+      error: "Push notifications aren't available right now.",
     };
   }
 
   const vapidKey = getFirebaseVapidKey();
   if (!vapidKey) {
-    return { success: false, error: "Missing NEXT_PUBLIC_FIREBASE_VAPID_KEY." };
+    return {
+      success: false,
+      error: "Push notifications aren't available right now.",
+    };
   }
 
   if (Notification.permission !== "granted") {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
-      return { success: false, error: "Notification permission denied." };
+      return {
+        success: false,
+        error: "Notification permission was denied. Enable it in site settings.",
+      };
     }
   }
 
@@ -115,18 +121,31 @@ export async function registerFcmPushToken(): Promise<{
 
   const registration = await registerServiceWorker();
   if (!registration) {
-    return { success: false, error: "Service worker registration failed." };
+    return {
+      success: false,
+      error: "Could not set up background notifications on this device.",
+    };
   }
 
   await navigator.serviceWorker.ready;
 
-  const token = await getToken(messagingInstance, {
-    vapidKey,
-    serviceWorkerRegistration: registration,
-  });
+  let token: string;
+  try {
+    token = await getToken(messagingInstance, {
+      vapidKey,
+      serviceWorkerRegistration: registration,
+    });
+  } catch (error) {
+    console.error("FCM getToken failed:", error);
+    return {
+      success: false,
+      error:
+        "Could not enable notifications on this device. Check browser permission and try again.",
+    };
+  }
 
   if (!token) {
-    return { success: false, error: "Could not obtain FCM token." };
+    return { success: false, error: "Could not obtain a push registration." };
   }
 
   const response = await fetch("/api/user/push-token", {
@@ -177,11 +196,12 @@ export function subscribeToForegroundMessages(
     }
 
     unsubscribe = onMessage(messagingInstance, (payload) => {
-      const notification = payload.notification;
+      // Server sends data-only FCM (Android PWA); notification block is optional.
+      const data = (payload.data ?? {}) as Record<string, string>;
       handler({
-        title: notification?.title,
-        body: notification?.body,
-        data: payload.data as Record<string, string> | undefined,
+        title: payload.notification?.title || data.title,
+        body: payload.notification?.body || data.body,
+        data,
       });
     });
   })();

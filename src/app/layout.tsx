@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthThemeProvider } from "@/components/auth-theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { ForegroundPushListener } from "@/components/pwa/foreground-push-listener";
 import { webApplicationJsonLd } from "@/lib/seo/json-ld";
 import { rootLayoutMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
@@ -53,6 +54,7 @@ export default function RootLayout({
           <AuthThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
             <ServiceWorkerRegister />
+            <ForegroundPushListener />
             <Toaster />
           </AuthThemeProvider>
         </body>

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getFirebaseMessaging } from "@/lib/firebase-admin";
 import { buildChapterPushContent } from "@/lib/push/chapter-notification";
 import { chunkTokens } from "@/lib/push/chunk-tokens";
+import { buildChapterMulticastMessage } from "@/lib/push/fcm-multicast";
 import {
   getFavoriteUserIdsForManga,
   notifyFavoriteUsersInAppAndEmail,
@@ -102,19 +103,17 @@ export const chapterPublishedPush = inngest.createFunction(
       const batch = batches[i];
       const result = await step.run(`fcm-send-batch-${i}`, async () => {
         const messaging = getFirebaseMessaging();
-        return messaging.sendEachForMulticast({
-          tokens: batch,
-          notification: {
+        return messaging.sendEachForMulticast(
+          buildChapterMulticastMessage({
+            tokens: batch,
             title: pushContent.title,
             body: pushContent.body,
-          },
-          data: {
+            url: readerUrl,
             provider,
             externalMangaId: pushContent.externalMangaId,
             externalChapterId: pushContent.externalChapterId,
-            url: readerUrl,
-          },
-        });
+          })
+        );
       });
 
       successCount += result.successCount;

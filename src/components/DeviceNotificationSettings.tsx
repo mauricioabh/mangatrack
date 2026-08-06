@@ -56,6 +56,10 @@ export function DeviceNotificationSettings() {
       } else {
         toast.error(result.error ?? "Could not enable notifications.");
       }
+    } catch {
+      toast.error(
+        "Could not enable notifications on this device. Check browser permission and try again."
+      );
     } finally {
       setBusy(false);
     }
