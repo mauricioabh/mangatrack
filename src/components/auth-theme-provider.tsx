@@ -4,8 +4,9 @@ import { useUser } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 
 /**
- * Public pages (logged out) always use light theme.
- * Signed-in app areas use the theme from Settings (localStorage).
+ * Public pages (logged out) always use light theme once Clerk has loaded.
+ * While Clerk loads, respect stored theme so signed-in dark users (and PWA
+ * relaunches) do not flash a white shell after the dark splash.
  */
 export function AuthThemeProvider({
   children,
@@ -13,8 +14,7 @@ export function AuthThemeProvider({
   children: React.ReactNode;
 }) {
   const { isSignedIn, isLoaded } = useUser();
-  // Light while Clerk loads and on all public (logged-out) pages — avoids dark flash from localStorage.
-  const forceLight = !isLoaded || !isSignedIn;
+  const forceLight = isLoaded && !isSignedIn;
 
   return (
     <ThemeProvider forcedTheme={forceLight ? "light" : undefined}>

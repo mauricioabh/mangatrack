@@ -29,6 +29,11 @@ App Android en `android/` dentro del mismo repo que la web. Comparte API, Clerk,
 
 En la app: **Settings → Enable on this device** registra el token FCM.
 
+## Splash y orientación
+
+- Splash / window background: `#0F172A` (`res/values/colors.xml`, `Theme.MangaTrack`)
+- Rotación: `android:screenOrientation="fullUser"` en `MainActivity` (portrait y landscape)
+
 ## Auth móvil
 
 Las rutas API aceptan sesión web (cookies) o **`Authorization: Bearer <Clerk JWT>`** desde Android (`src/lib/auth-request.ts`).

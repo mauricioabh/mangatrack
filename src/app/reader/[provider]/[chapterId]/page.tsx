@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Settings2,
   Sun,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -462,7 +463,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     const showSkeletons = loadingStage !== "cold-book";
 
     return (
-      <div className="relative min-h-screen bg-black text-white">
+      <div className="relative min-h-dvh bg-black text-white">
         <header className="fixed top-0 right-0 left-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
           <div className="container mx-auto flex items-center gap-3 px-2 py-3 sm:px-4">
             <Button
@@ -517,7 +518,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
   if (!chapter) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center bg-black">
         <div className="text-white text-center">
           <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <h1 className="text-2xl font-bold mb-4">Could not load chapter</h1>
@@ -557,7 +558,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       : chapter.title || "Loading chapter…";
 
   return (
-    <div className="relative min-h-screen bg-black text-white">
+    <div className="relative min-h-dvh bg-black text-white">
       <header
         className={cn(
           "fixed top-0 right-0 left-0 z-50 border-b-4 border-white/20 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl backdrop-blur-sm transition-transform duration-200 dark:border-gray-800/20 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700",
@@ -565,7 +566,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         )}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
+        <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3 landscape:py-1.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:space-x-4">
               <Button
@@ -724,7 +725,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       <main
         className={cn(
           "relative transition-[padding] duration-200",
-          chromeVisible ? "pt-16 sm:pt-20" : "pt-0"
+          chromeVisible ? "pt-14 sm:pt-20 landscape:pt-12" : "pt-0"
         )}
         onPointerDown={onReaderPointerDown}
         onPointerMove={onReaderPointerMove}
@@ -735,7 +736,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
         }}
       >
         {readingMode === "vertical" ? (
-          <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="mx-auto max-w-4xl px-4 py-8 landscape:max-w-5xl landscape:py-4">
             {chapter.pages.map((page: string, index: number) => (
               <div
                 key={index}
@@ -754,7 +755,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                     imageFit === "width"
                       ? "h-auto"
                       : imageFit === "height"
-                        ? "h-screen object-contain"
+                        ? "h-dvh object-contain"
                         : "h-auto"
                   }`}
                 />
@@ -762,7 +763,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
             ))}
           </div>
         ) : (
-          <div className="flex h-screen items-center justify-center">
+          <div className="flex h-dvh items-center justify-center">
             <div className="relative flex h-full w-full items-center justify-center">
               {chapter.pages.length > 0 ? (
                 <ReaderScanImage
@@ -780,7 +781,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
               ) : null}
 
               {chromeVisible ? (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 sm:px-8">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 sm:px-8 landscape:px-6">
                   <Button
                     variant="outline"
                     size="lg"
@@ -824,43 +825,45 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       </main>
 
       {showCompleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="mx-4 max-w-md border-gray-700 bg-gray-900 text-white">
-            <CardContent className="p-6 text-center">
-              <h3 className="mb-4 text-xl font-semibold">Chapter Complete!</h3>
-              <p className="mb-6 text-gray-300">
-                You&apos;ve finished reading this chapter. What would you like
-                to do next?
-              </p>
-              <div className="flex flex-col space-y-3">
-                {hasNextChapter && (
-                  <Button
-                    onClick={() => handleChapterChange("next")}
-                    className="w-full transform border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl hover:scale-[1.02] active:scale-95"
-                  >
-                    Read Next Chapter
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-                {manga?.id ? (
-                  <Link href={mangaPath(provider, manga.id)} className="w-full">
-                    <Button
-                      variant="outline"
-                      className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
-                    >
-                      Back to Manga
-                    </Button>
-                  </Link>
-                ) : null}
-                <Link href="/dashboard" className="w-full">
-                  <Button
-                    variant="outline"
-                    className="w-full transform border-gray-600 bg-gray-800 text-white transition-all duration-300 hover:scale-[1.02] hover:border-gray-500 hover:bg-gray-700 active:scale-95"
-                  >
-                    Dashboard
-                  </Button>
-                </Link>
-              </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="presentation"
+          onClick={() => setShowCompleteModal(false)}
+        >
+          <Card
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chapter-complete-title"
+            className="relative w-full max-w-xs border-gray-700 bg-gray-900 text-white shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCompleteModal(false)}
+              className="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <CardContent className="space-y-3 p-4 pt-5 text-center">
+              <h3
+                id="chapter-complete-title"
+                className="text-sm font-medium text-gray-200"
+              >
+                Chapter complete
+              </h3>
+              {hasNextChapter ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleChapterChange("next")}
+                  className="w-full border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-700 hover:to-purple-700"
+                >
+                  Next chapter
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <p className="text-xs text-gray-400">No next chapter available.</p>
+              )}
             </CardContent>
           </Card>
         </div>

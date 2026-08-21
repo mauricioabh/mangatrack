@@ -424,7 +424,7 @@ export default function DashboardContent() {
             <div className="h-7 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700 sm:h-8 sm:w-36" />
             <div className="h-5 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 landscape:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="overflow-hidden rounded-lg">
                 <div className="aspect-[2/3] animate-pulse bg-gray-200 dark:bg-gray-700" />
@@ -527,7 +527,7 @@ export default function DashboardContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 landscape:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredBookmarks.map((bookmark) => {
               if (!bookmark.manga) return null;
               const manga = bookmark.manga;
