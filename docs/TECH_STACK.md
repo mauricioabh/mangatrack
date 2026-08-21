@@ -7,7 +7,7 @@
 - **Tailwind CSS v4** + **shadcn/ui** (Radix)
 - **Framer Motion** — animaciones
 - **next-themes** — dark/light
-- **PWA** — `src/app/manifest.ts`, `public/sw.js`, iconos en `/icons/[size]`, registro en `ServiceWorkerRegister`
+- **PWA** — `src/app/manifest.ts` (`background_color` / `theme_color` oscuros para splash), `public/sw.js`, iconos en `/icons/[size]`, registro en `ServiceWorkerRegister`, CTA de instalar en `PwaInstallPrompt` (`beforeinstallprompt`)
 
 ## Backend
 

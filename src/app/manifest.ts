@@ -13,8 +13,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#ffffff",
-    theme_color: "#2563EB",
+    // Used as PWA splash / launch background on Android Chrome — keep dark to match app theme.
+    background_color: "#0f172a",
+    theme_color: "#0f172a",
     lang: "en",
     dir: "ltr",
     categories: ["books", "entertainment", "lifestyle"],

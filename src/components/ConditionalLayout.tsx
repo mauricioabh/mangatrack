@@ -19,7 +19,9 @@ export default function ConditionalLayout({
   return (
     <>
       {showHeader ? <GlobalHeader /> : null}
-      <div className={showHeader ? "pt-14 sm:pt-16" : "pt-0"}>{children}</div>
+      <div className={showHeader ? "pt-14 sm:pt-16 landscape:pt-12" : "pt-0"}>
+        {children}
+      </div>
     </>
   );
 }

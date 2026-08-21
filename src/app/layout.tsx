@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthThemeProvider } from "@/components/auth-theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { webApplicationJsonLd } from "@/lib/seo/json-ld";
 import { rootLayoutMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
@@ -29,11 +30,13 @@ export const metadata = rootLayoutMetadata();
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  // Prefer dark chrome/splash; light only when the user explicitly prefers light.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#0f172a" },
   ],
-  colorScheme: "light dark",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({
@@ -43,16 +46,17 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" className="bg-[#0f172a]" suppressHydrationWarning>
         <head>
           <JsonLd data={webApplicationJsonLd()} />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} min-h-dvh overflow-x-hidden antialiased`}
         >
           <AuthThemeProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
             <ServiceWorkerRegister />
+            <PwaInstallPrompt />
             <Toaster />
           </AuthThemeProvider>
         </body>

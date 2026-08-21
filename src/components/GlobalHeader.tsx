@@ -43,7 +43,7 @@ export default function GlobalHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-700 dark:via-purple-700 dark:to-indigo-700 shadow-2xl border-b-4 border-white/20 dark:border-gray-800/20">
-      <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3">
+      <div className="container mx-auto px-2 py-2 sm:px-4 sm:py-3 landscape:py-1.5">
         <div className="flex items-center justify-between gap-2">
           {/* Logo */}
           <Link

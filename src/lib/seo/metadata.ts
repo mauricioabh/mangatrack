@@ -67,7 +67,7 @@ export function rootLayoutMetadata(): Metadata {
     appleWebApp: {
       capable: true,
       title: SITE_NAME,
-      statusBarStyle: "default",
+      statusBarStyle: "black-translucent",
     },
     title: {
       default: DEFAULT_TITLE,
