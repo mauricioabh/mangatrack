@@ -67,3 +67,11 @@ archive_documents:
       id: "d766bd0c-1724-4c7b-a090-d04b3edf5ec5"
       url: "https://linear.app/wayool/document/openspec-search-pagination-792cc6b921a4"
       title: "OpenSpec: search-pagination"
+    favorite-chapter-poll:
+      id: "63ed93bb-dbf5-46d6-a207-0fdc3e2db0da"
+      url: "https://linear.app/wayool/document/openspec-favorite-chapter-poll-9050e7ab7f34"
+      title: "OpenSpec: favorite-chapter-poll"
+    notification-bell:
+      id: "a2d122ba-0930-4b2d-a035-7e3ae00142cd"
+      url: "https://linear.app/wayool/document/openspec-notification-bell-52b9d71d8e71"
+      title: "OpenSpec: notification-bell"

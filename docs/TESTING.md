@@ -52,6 +52,7 @@ Función: `poll-favorite-chapters-daily` (cron `0 2 * * *`).
 Notas:
 
 - Primera corrida sobre un favorite sin `lastNotifiedChapterId` → `seeded` (no notifica flood).
+- El “capítulo más nuevo” se resuelve con `getLatestChapterUpdate` (alineado con dashboard), no con el primer ítem de la lista.
 - Para forzar notificación: en Neon bajá `lastNotifiedChapterId` a un capítulo viejo y volvé a Invocar.
 - `/api/webhook/mangadex` responde **410** (ya no es el path de notificaciones).
 

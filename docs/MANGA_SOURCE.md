@@ -37,6 +37,7 @@ IDs con `/` (p. ej. MangaPill `3069/naruto`) se codifican con `~` en rutas App R
 ## Notificaciones de capítulo
 
 Cron Inngest diario (`0 2 * * *`, función `poll-favorite-chapters-daily`) consulta Consumet `info` por cada favorite y compara con `lastNotifiedChapterId`.  
+La detección del capítulo más reciente usa `getLatestChapterUpdate` (misma regla que badges de biblioteca: `publishedAt` cuando existe; si no, fallback de orden de lista)—no `chapters[0]` a ciegas. El progreso de lectura del usuario no bloquea el aviso.  
 Cómo probarlo en local: `docs/TESTING.md` (sección Inngest).  
 `/api/webhook/mangadex` responde **410 Gone** (ya no es el path de notificaciones).
 
