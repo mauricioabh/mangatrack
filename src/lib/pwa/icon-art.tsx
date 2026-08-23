@@ -1,3 +1,5 @@
+import React from "react";
+
 /** PWA / splash chrome — match manifest `background_color` / `theme_color`. */
 export const PWA_SPLASH_BACKGROUND = "#0f172a";
 
@@ -10,14 +12,12 @@ type IconArtProps = {
 };
 
 /**
- * - `splash`: opaque dark full-bleed canvas (Android 12+ system splash reads icon edges).
- * - `launcher`: rounded gradient tile (home screen / legacy splash).
+ * - `splash`: solid opaque #0f172a full canvas + white M (Android 12+ splash / maskable).
+ * - `launcher`: rounded gradient tile for legacy home-screen icons.
  */
 export function PwaIconArt({ size, variant }: IconArtProps) {
   if (variant === "splash") {
-    const badgeSize = Math.round(size * 0.52);
-    const glyphSize = Math.round(size * 0.34);
-    const badgeRadius = Math.round(badgeSize * 0.22);
+    const glyphSize = Math.round(size * 0.46);
 
     return (
       <div
@@ -32,27 +32,15 @@ export function PwaIconArt({ size, variant }: IconArtProps) {
       >
         <div
           style={{
-            width: badgeSize,
-            height: badgeSize,
+            fontSize: glyphSize,
+            fontWeight: 800,
+            color: "#ffffff",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: badgeRadius,
-            background: PWA_ICON_GRADIENT,
+            lineHeight: 1,
+            letterSpacing: "-0.04em",
           }}
         >
-          <div
-            style={{
-              fontSize: glyphSize,
-              fontWeight: 800,
-              color: "#ffffff",
-              display: "flex",
-              lineHeight: 1,
-              letterSpacing: "-0.04em",
-            }}
-          >
-            M
-          </div>
+          M
         </div>
       </div>
     );

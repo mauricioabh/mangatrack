@@ -30,7 +30,8 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:coverage": "node scripts/coverage.js",
     "test:e2e:coverage:headed": "playwright test --project=chromium-coverage --headed",
-    "coverage:report": "playwright show-report"
+    "coverage:report": "playwright show-report",
+    "pwa:icons": "npx tsx scripts/generate-pwa-icons.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.18.3",
