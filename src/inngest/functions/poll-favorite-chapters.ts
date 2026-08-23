@@ -1,6 +1,6 @@
 import { inngest } from "@/inngest/client";
 import { db } from "@/lib/db";
-import { getMangaInfo } from "@/lib/consumet";
+import { getLatestChapterUpdate, getMangaInfo } from "@/lib/consumet";
 import { getFirebaseMessaging } from "@/lib/firebase-admin";
 import { buildChapterPushContent } from "@/lib/push/chapter-notification";
 import { chunkTokens } from "@/lib/push/chunk-tokens";
@@ -63,11 +63,22 @@ export const pollFavoriteChapters = inngest.createFunction(
             return { status: "empty" as const, favoriteId: fav.id };
           }
 
-          // Chapters from scrapers are typically newest-first
-          const newest = info.chapters[0];
+          // Same latest resolution as library/dashboard badges (not chapters[0]).
+          const latest = getLatestChapterUpdate(info.chapters);
+          if (!latest.chapterId) {
+            return { status: "empty" as const, favoriteId: fav.id };
+          }
+
+          const newest =
+            info.chapters.find((c) => c.id === latest.chapterId) ?? null;
+          const externalChapterId = latest.chapterId;
+          const chapterTitle = newest?.title;
+          const chapterNumber =
+            newest?.chapterNumber ?? latest.chapterNumber;
+
           if (
             fav.lastNotifiedChapterId &&
-            fav.lastNotifiedChapterId === newest.id
+            fav.lastNotifiedChapterId === externalChapterId
           ) {
             return { status: "unchanged" as const, favoriteId: fav.id };
           }
@@ -76,7 +87,7 @@ export const pollFavoriteChapters = inngest.createFunction(
           if (!fav.lastNotifiedChapterId) {
             await db.userFavorite.update({
               where: { id: fav.id },
-              data: { lastNotifiedChapterId: newest.id },
+              data: { lastNotifiedChapterId: externalChapterId },
             });
             return { status: "seeded" as const, favoriteId: fav.id };
           }
@@ -85,17 +96,17 @@ export const pollFavoriteChapters = inngest.createFunction(
             userIds: [fav.userId],
             provider: fav.provider,
             externalMangaId: fav.externalMangaId,
-            externalChapterId: newest.id,
-            chapterTitle: newest.title,
-            chapterNumber: newest.chapterNumber,
+            externalChapterId,
+            chapterTitle,
+            chapterNumber,
           });
 
           const pushContent = await buildChapterPushContent({
             provider: fav.provider,
             externalMangaId: fav.externalMangaId,
-            externalChapterId: newest.id,
-            chapterTitle: newest.title,
-            chapterNumber: newest.chapterNumber,
+            externalChapterId,
+            chapterTitle,
+            chapterNumber,
           });
 
           if (pushContent) {
@@ -109,7 +120,7 @@ export const pollFavoriteChapters = inngest.createFunction(
                 process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
               const url = `${appUrl}${readerPath(
                 fav.provider,
-                newest.id
+                externalChapterId
               )}`;
               const messaging = getFirebaseMessaging();
               for (const batch of chunkTokens(unique)) {
@@ -122,7 +133,7 @@ export const pollFavoriteChapters = inngest.createFunction(
                   data: {
                     provider: fav.provider,
                     externalMangaId: fav.externalMangaId,
-                    externalChapterId: newest.id,
+                    externalChapterId,
                     url,
                   },
                 });
@@ -132,7 +143,7 @@ export const pollFavoriteChapters = inngest.createFunction(
 
           await db.userFavorite.update({
             where: { id: fav.id },
-            data: { lastNotifiedChapterId: newest.id },
+            data: { lastNotifiedChapterId: externalChapterId },
           });
 
           return { status: "notified" as const, favoriteId: fav.id };
