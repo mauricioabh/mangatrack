@@ -1,14 +1,22 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Viewport } from "next";
+import { cookies } from "next/headers";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthThemeProvider } from "@/components/auth-theme-provider";
+import { ThemeCookieSync } from "@/components/theme-cookie-sync";
+import { ThemeScript } from "@/components/theme-script";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { webApplicationJsonLd } from "@/lib/seo/json-ld";
 import { rootLayoutMetadata } from "@/lib/seo/metadata";
+import {
+  resolveAppTheme,
+  themeClassName,
+  THEME_COOKIE_NAME,
+} from "@/lib/theme-preference";
 import "./globals.css";
 import "./animations.css";
 
@@ -35,21 +43,32 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const savedTheme = resolveAppTheme(
+    cookieStore.get(THEME_COOKIE_NAME)?.value,
+  );
+
   return (
     <ClerkProvider>
-      <html lang="en" className="dark bg-[#0f172a]" suppressHydrationWarning>
+      <html
+        lang="en"
+        className={`${themeClassName(savedTheme)} bg-[#0f172a]`}
+        suppressHydrationWarning
+      >
         <head>
+          <ThemeScript />
           <JsonLd data={webApplicationJsonLd()} />
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} min-h-dvh overflow-x-hidden antialiased`}
         >
           <AuthThemeProvider>
+            <ThemeCookieSync />
             <ConditionalLayout>{children}</ConditionalLayout>
             <ServiceWorkerRegister />
             <PwaInstallPrompt />
