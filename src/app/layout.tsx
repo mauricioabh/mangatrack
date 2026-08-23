@@ -31,12 +31,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  // Prefer dark chrome/splash; light only when the user explicitly prefers light.
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
-    { media: "(prefers-color-scheme: light)", color: "#0f172a" },
-  ],
-  colorScheme: "dark light",
+  themeColor: "#0f172a",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -46,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="bg-[#0f172a]" suppressHydrationWarning>
+      <html lang="en" className="dark bg-[#0f172a]" suppressHydrationWarning>
         <head>
           <JsonLd data={webApplicationJsonLd()} />
         </head>

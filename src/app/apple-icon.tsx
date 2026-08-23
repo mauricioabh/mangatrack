@@ -3,6 +3,9 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
+const ICON_GRADIENT =
+  "linear-gradient(145deg, #2563EB 0%, #0f172a 55%, #0b1220 100%)";
+
 export default function AppleIcon() {
   return new ImageResponse(
     <div
@@ -12,7 +15,7 @@ export default function AppleIcon() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(145deg, #2563EB 0%, #7C3AED 100%)",
+        background: ICON_GRADIENT,
       }}
     >
       <div
