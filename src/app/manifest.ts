@@ -3,6 +3,9 @@ import { DEFAULT_DESCRIPTION, SITE_NAME } from "@/lib/seo/site";
 
 export const dynamic = "force-static";
 
+/** Static PNGs in /public/pwa — generated via `npm run pwa:icons`. */
+const PWA_ICON_BASE = "/pwa";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: `${SITE_NAME} — Discover, Read & Track Manga`,
@@ -21,25 +24,25 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["books", "entertainment", "lifestyle"],
     icons: [
       {
-        src: "/icons/maskable-512",
+        src: `${PWA_ICON_BASE}/icon-maskable-512.png`,
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icons/maskable-192",
+        src: `${PWA_ICON_BASE}/icon-maskable-192.png`,
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icons/512",
+        src: `${PWA_ICON_BASE}/icon-512.png`,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/192",
+        src: `${PWA_ICON_BASE}/icon-192.png`,
         sizes: "192x192",
         type: "image/png",
         purpose: "any",

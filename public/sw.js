@@ -10,7 +10,7 @@
  *  - Firebase Cloud Messaging (background) via compat SDK.
  */
 
-const VERSION = "v4";
+const VERSION = "v5";
 const SHELL_CACHE = `mangatrack-shell-${VERSION}`;
 const STATIC_CACHE = `mangatrack-static-${VERSION}`;
 const IMAGE_CACHE = `mangatrack-images-${VERSION}`;
@@ -19,10 +19,12 @@ const API_CACHE = `mangatrack-api-${VERSION}`;
 const OFFLINE_URL = "/offline";
 const PRECACHE_URLS = [
   OFFLINE_URL,
+  "/pwa/icon-192.png",
+  "/pwa/icon-512.png",
+  "/pwa/icon-maskable-192.png",
+  "/pwa/icon-maskable-512.png",
   "/icons/192",
   "/icons/512",
-  "/icons/maskable-192",
-  "/icons/maskable-512",
 ];
 
 const IMAGE_CACHE_LIMIT = 120;
