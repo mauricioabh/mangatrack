@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { persistThemeCookie } from "@/lib/theme-preference";
 import { useUser } from "@clerk/nextjs";
 import {
   BookOpen,
@@ -458,7 +459,10 @@ export default function SettingsPage() {
                       <Button
                         variant={activeTheme === "light" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme("light")}
+                        onClick={() => {
+                          persistThemeCookie("light");
+                          setTheme("light");
+                        }}
                         className={`flex-1 transition-all duration-300 sm:flex-none ${
                           activeTheme === "light"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -471,7 +475,10 @@ export default function SettingsPage() {
                       <Button
                         variant={activeTheme === "dark" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme("dark")}
+                        onClick={() => {
+                          persistThemeCookie("dark");
+                          setTheme("dark");
+                        }}
                         className={`flex-1 transition-all duration-300 sm:flex-none ${
                           activeTheme === "dark"
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
