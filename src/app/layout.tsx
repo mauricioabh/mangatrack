@@ -61,6 +61,13 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <head>
+          {/*
+           * Next 15 streams `metadata` into <body>, where Chrome ignores the
+           * manifest link (installability error `no-manifest`) and the PWA is
+           * installed as a plain shortcut with the default light splash.
+           * Rendering it here guarantees it lands in <head>.
+           */}
+          <link rel="manifest" href="/manifest.webmanifest" />
           <ThemeScript />
           <JsonLd data={webApplicationJsonLd()} />
         </head>

@@ -63,7 +63,8 @@ export function rootLayoutMetadata(): Metadata {
   return {
     metadataBase: new URL(getSiteUrl()),
     applicationName: SITE_NAME,
-    manifest: "/manifest.webmanifest",
+    // No `manifest` key: Next already injects a link for `app/manifest.ts`, and
+    // the <head> copy that Chrome needs is rendered in layout.tsx.
     appleWebApp: {
       capable: true,
       title: SITE_NAME,
