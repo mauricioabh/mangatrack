@@ -1,4 +1,4 @@
-import { SignIn } from "@clerk/nextjs";
+import { ClerkAuthForm } from "@/components/clerk-ready";
 
 export default function SignInPage() {
   return (
@@ -12,14 +12,7 @@ export default function SignInPage() {
             Sign in to continue reading your favorite manga
           </p>
         </div>
-        <SignIn
-          appearance={{
-            elements: {
-              formButtonPrimary:
-                "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
-            },
-          }}
-        />
+        <ClerkAuthForm mode="signIn" />
       </div>
     </div>
   );

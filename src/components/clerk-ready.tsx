@@ -1,50 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ClerkReadyProps = {
-  children: React.ReactNode;
+  mode: "signIn" | "signUp";
 };
 
-type ClerkWithLoader = {
+type ClerkAuthApi = {
   loaded: boolean;
   load: () => Promise<void>;
+  mountSignIn: (element: HTMLElement) => void;
+  mountSignUp: (element: HTMLElement) => void;
+  unmountSignIn: () => void;
+  unmountSignUp: () => void;
 };
 
-export function ClerkReady({ children }: ClerkReadyProps) {
-  const [isReady, setIsReady] = useState(false);
+export function ClerkAuthForm({ mode }: ClerkReadyProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const clerk = (window as unknown as { Clerk?: ClerkWithLoader }).Clerk;
+    let retryTimer: number | undefined;
 
-    if (!clerk) return () => undefined;
+    const mount = async () => {
+      const clerk = (window as unknown as { Clerk?: ClerkAuthApi }).Clerk;
 
-    if (clerk.loaded) {
-      setIsReady(true);
-    } else {
-      void clerk
-        .load()
-        .then(() => {
-          if (active) setIsReady(true);
-        })
-        .catch(() => {
-          if (active) setIsReady(false);
-        });
-    }
+      if (!clerk || !containerRef.current) {
+        retryTimer = window.setTimeout(() => void mount(), 100);
+        return;
+      }
+
+      try {
+        if (!clerk.loaded) await clerk.load();
+        if (!active || !containerRef.current) return;
+
+        if (mode === "signIn") {
+          clerk.mountSignIn(containerRef.current);
+        } else {
+          clerk.mountSignUp(containerRef.current);
+        }
+      } catch {
+        if (active) setError(true);
+      }
+    };
+
+    void mount();
 
     return () => {
       active = false;
-    };
-  }, []);
+      if (retryTimer) window.clearTimeout(retryTimer);
 
-  if (!isReady) {
+      const clerk = (window as unknown as { Clerk?: ClerkAuthApi }).Clerk;
+      if (clerk) {
+        if (mode === "signIn") {
+          clerk.unmountSignIn();
+        } else {
+          clerk.unmountSignUp();
+        }
+      }
+    };
+  }, [mode]);
+
+  if (error) {
     return (
       <div className="flex min-h-40 items-center justify-center text-sm text-gray-600 dark:text-gray-300">
-        Loading sign-in…
+        Unable to load authentication. Please refresh the page.
       </div>
     );
   }
 
-  return children;
+  return <div ref={containerRef} />;
 }
