@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpDown, BookOpen, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -174,26 +175,34 @@ function sortBookmarks(list: Bookmark[], sort: LibrarySort): Bookmark[] {
 
 export default function DashboardContent() {
   const t = useTranslations("dashboard");
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   const libraryCache = useMemo(() => readFreshLibraryCache(), []);
+  const authReady = clerkLoaded && Boolean(isSignedIn);
 
   const profileQuery = useQuery({
     ...profileQueryOptions(),
+    enabled: authReady,
     initialData: libraryCache?.user,
     initialDataUpdatedAt: libraryCache?.fetchedAt,
   });
 
   const bookmarksQuery = useQuery({
     ...bookmarksQueryOptions(),
+    enabled: authReady,
     initialData: libraryCache?.bookmarks as Bookmark[] | undefined,
     initialDataUpdatedAt: libraryCache?.fetchedAt,
   });
 
-  const preferencesQuery = useQuery(preferencesQueryOptions());
+  const preferencesQuery = useQuery({
+    ...preferencesQueryOptions(),
+    enabled: authReady,
+  });
 
   const user = profileQuery.data ?? null;
   const bookmarks = (bookmarksQuery.data ?? []) as Bookmark[];
   const loading =
+    !clerkLoaded ||
     (profileQuery.isPending && !profileQuery.data) ||
     (bookmarksQuery.isPending && !bookmarksQuery.data);
 
@@ -422,6 +431,30 @@ export default function DashboardContent() {
             ))}
           </div>
         </main>
+      </div>
+    );
+  }
+
+  if (profileQuery.isError || bookmarksQuery.isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/30">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+            {t("loadError")}
+          </h1>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void Promise.all([
+                profileQuery.refetch(),
+                bookmarksQuery.refetch(),
+                preferencesQuery.refetch(),
+              ]);
+            }}
+          >
+            {t("retry")}
+          </Button>
+        </div>
       </div>
     );
   }
