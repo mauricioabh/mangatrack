@@ -47,17 +47,18 @@ const isPublicApiRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const isApi = isApiRoute(req);
 
+  // API handlers own their authentication so unauthenticated requests can
+  // return JSON instead of Clerk's browser redirect/HTML handshake.
+  if (isApi) {
+    return NextResponse.next();
+  }
+
   if (isPublicApiRoute(req)) {
-    return isApi ? NextResponse.next() : intlMiddleware(req);
+    return intlMiddleware(req);
   }
 
   if (isProtectedRoute(req)) {
     await auth.protect();
-  }
-
-  // API routes must not pass through next-intl (would 404 + HTML error pages)
-  if (isApi) {
-    return NextResponse.next();
   }
 
   return intlMiddleware(req);
