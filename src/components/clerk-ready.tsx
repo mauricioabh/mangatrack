@@ -1,74 +1,49 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-
 type ClerkReadyProps = {
   mode: "signIn" | "signUp";
 };
 
-type ClerkAuthApi = {
-  loaded: boolean;
-  load: () => Promise<void>;
-  mountSignIn: (element: HTMLElement) => void;
-  mountSignUp: (element: HTMLElement) => void;
-  unmountSignIn: () => void;
-  unmountSignUp: () => void;
-};
-
 export function ClerkAuthForm({ mode }: ClerkReadyProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState(false);
+  const containerId = `clerk-${mode}-components`;
+  const script = `
+    (() => {
+      const mode = ${JSON.stringify(mode)};
+      const containerId = ${JSON.stringify(containerId)};
+      let attempts = 0;
 
-  useEffect(() => {
-    let active = true;
-    let retryTimer: number | undefined;
+      const mount = () => {
+        const clerk = window.Clerk;
+        const container = document.getElementById(containerId);
 
-    const mount = async () => {
-      const clerk = (window as unknown as { Clerk?: ClerkAuthApi }).Clerk;
-
-      if (!clerk || !containerRef.current) {
-        retryTimer = window.setTimeout(() => void mount(), 100);
-        return;
-      }
-
-      try {
-        if (!clerk.loaded) await clerk.load();
-        if (!active || !containerRef.current) return;
-
-        if (mode === "signIn") {
-          clerk.mountSignIn(containerRef.current);
-        } else {
-          clerk.mountSignUp(containerRef.current);
+        if (!clerk || !container) {
+          if (attempts++ < 200) window.setTimeout(mount, 100);
+          return;
         }
-      } catch {
-        if (active) setError(true);
-      }
-    };
 
-    void mount();
+        const loaded = clerk.loaded ? Promise.resolve() : clerk.load();
+        loaded
+          .then(() => {
+            if (!container.hasChildNodes()) {
+              if (mode === "signIn") {
+                clerk.mountSignIn(container);
+              } else {
+                clerk.mountSignUp(container);
+              }
+            }
+          })
+          .catch(() => {
+            container.textContent =
+              "Unable to load authentication. Please refresh the page.";
+          });
+      };
 
-    return () => {
-      active = false;
-      if (retryTimer) window.clearTimeout(retryTimer);
+      mount();
+    })();
+  `;
 
-      const clerk = (window as unknown as { Clerk?: ClerkAuthApi }).Clerk;
-      if (clerk) {
-        if (mode === "signIn") {
-          clerk.unmountSignIn();
-        } else {
-          clerk.unmountSignUp();
-        }
-      }
-    };
-  }, [mode]);
-
-  if (error) {
-    return (
-      <div className="flex min-h-40 items-center justify-center text-sm text-gray-600 dark:text-gray-300">
-        Unable to load authentication. Please refresh the page.
-      </div>
-    );
-  }
-
-  return <div ref={containerRef} />;
+  return (
+    <>
+      <div id={containerId} />
+      <script dangerouslySetInnerHTML={{ __html: script }} />
+    </>
+  );
 }
