@@ -5,15 +5,15 @@ import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { useAuth } from "@clerk/nextjs";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, Suspense, type ReactNode } from "react";
-import { env } from "@/env";
 
 function initPostHog() {
   if (typeof window === "undefined") return;
-  const key = env.NEXT_PUBLIC_POSTHOG_KEY;
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key || posthog.__loaded) return;
 
   posthog.init(key, {
-    api_host: env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
+    api_host:
+      process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
     person_profiles: "identified_only",
     capture_pageview: false,
   });
@@ -57,7 +57,7 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
     initPostHog();
   }, []);
 
-  if (!env.NEXT_PUBLIC_POSTHOG_KEY) {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     return <>{children}</>;
   }
 
@@ -78,6 +78,8 @@ export function captureEvent(
   name: string,
   properties?: Record<string, string | number | boolean | null>,
 ) {
-  if (!env.NEXT_PUBLIC_POSTHOG_KEY || typeof window === "undefined") return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY || typeof window === "undefined") {
+    return;
+  }
   posthog.capture(name, { ...properties, app: "man" });
 }
