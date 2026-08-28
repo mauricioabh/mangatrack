@@ -47,7 +47,7 @@ export function NotificationSettings() {
         }));
         await notificationService.showSystemNotification(
           "Notifications Enabled!",
-          "You'll now receive browser notifications for new chapters and updates."
+          "You'll now receive browser notifications for new chapters and updates.",
         );
       } else {
         setNotificationStatus((prev) => ({

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     // Omit limit → return the full library (hydration already loads every favorite).
     const limitParam = searchParams.get("limit");
-    const limit =
-      limitParam === null ? null : parseInt(limitParam, 10);
+    const limit = limitParam === null ? null : parseInt(limitParam, 10);
 
     if (
       page < 1 ||
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { success: false, error: "Invalid pagination parameters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
         try {
           const detail = await getMangaInfo(
             bookmark.provider,
-            bookmark.externalMangaId
+            bookmark.externalMangaId,
           );
           if (detail) {
             chapters = detail.chapters;
@@ -116,7 +115,7 @@ export async function GET(request: NextRequest) {
           manga,
           _chapters: chapters,
         };
-      })
+      }),
     );
 
     hydrated.sort((a, b) => {
@@ -125,16 +124,14 @@ export async function GET(request: NextRequest) {
       if (bMs !== aMs) return bMs - aMs;
 
       // No release dates from the source: keep bookmark date as tie-breaker
-      return (
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     const latestChapterIds = [
       ...new Set(
         hydrated
           .map((item) => item.latestChapter?.id)
-          .filter((id): id is string => Boolean(id))
+          .filter((id): id is string => Boolean(id)),
       ),
     ];
 
@@ -173,8 +170,8 @@ export async function GET(request: NextRequest) {
 
     const readLatestKeys = new Set(
       readLatestRows.map(
-        (row) => `${row.provider.toLowerCase()}:${row.externalChapterId}`
-      )
+        (row) => `${row.provider.toLowerCase()}:${row.externalChapterId}`,
+      ),
     );
 
     const historyBySeries = new Map<string, Set<string>>();
@@ -199,13 +196,12 @@ export async function GET(request: NextRequest) {
       const latestId = item.latestChapter?.id;
       const hasUnreadLatest = Boolean(
         !item.finishedAt &&
-          latestId &&
-          !readLatestKeys.has(
-            `${item.provider.toLowerCase()}:${latestId}`
-          )
+        latestId &&
+        !readLatestKeys.has(`${item.provider.toLowerCase()}:${latestId}`),
       );
       const seriesKey = `${item.provider.toLowerCase()}:${item.externalMangaId}`;
-      const readChapterIds = historyBySeries.get(seriesKey) ?? new Set<string>();
+      const readChapterIds =
+        historyBySeries.get(seriesKey) ?? new Set<string>();
       const chapterRefs = chapters.map((c) => ({
         id: c.id,
         chapterNumber: c.chapterNumber,
@@ -219,7 +215,7 @@ export async function GET(request: NextRequest) {
       const continueTarget = getChapterToContinue(
         chapterRefs,
         readChapterIds,
-        lastReadBySeries.get(seriesKey) ?? null
+        lastReadBySeries.get(seriesKey) ?? null,
       );
 
       return {
@@ -257,7 +253,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching bookmarks:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch bookmarks" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

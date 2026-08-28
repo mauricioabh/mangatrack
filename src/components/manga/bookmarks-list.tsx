@@ -124,7 +124,7 @@ export function BookmarksList({ initialBookmarks = [] }: BookmarksListProps) {
                     <Link
                       href={mangaPath(
                         bookmark.provider || manga.provider || "",
-                        manga.id
+                        manga.id,
                       )}
                     >
                       <Button size="sm" variant="outline" className="mt-2">

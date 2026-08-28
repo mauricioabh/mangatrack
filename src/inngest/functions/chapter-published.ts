@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { inngest } from "@/inngest/client";
 import { db } from "@/lib/db";
 import { getFirebaseMessaging } from "@/lib/firebase-admin";
@@ -20,26 +21,21 @@ export const chapterPublishedPush = inngest.createFunction(
     triggers: [{ event: "manga/chapter.published" }],
   },
   async ({ event, step }) => {
-    const {
-      provider,
-      manga_id,
-      chapter_id,
-      chapter_title,
-      chapter_number,
-    } = event.data as {
-      provider: string;
-      manga_id: string;
-      chapter_id: string;
-      chapter_title?: string;
-      chapter_number?: number;
-    };
+    const { provider, manga_id, chapter_id, chapter_title, chapter_number } =
+      event.data as {
+        provider: string;
+        manga_id: string;
+        chapter_id: string;
+        chapter_title?: string;
+        chapter_number?: number;
+      };
 
     if (!provider || !manga_id || !chapter_id) {
       return { error: "provider, manga_id, and chapter_id are required" };
     }
 
     const userIds = await step.run("get-favorite-user-ids", async () =>
-      getFavoriteUserIdsForManga(provider, manga_id)
+      getFavoriteUserIdsForManga(provider, manga_id),
     );
 
     if (userIds.length === 0) {
@@ -54,7 +50,7 @@ export const chapterPublishedPush = inngest.createFunction(
         externalChapterId: chapter_id,
         chapterTitle: chapter_title,
         chapterNumber: chapter_number,
-      })
+      }),
     );
 
     const tokens = await step.run("get-push-tokens", async () => {
@@ -92,7 +88,7 @@ export const chapterPublishedPush = inngest.createFunction(
       };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = env.NEXT_PUBLIC_APP_URL;
     const readerUrl = `${appUrl}${readerPath(provider, chapter_id)}`;
     const batches = chunkTokens(tokens);
     let successCount = 0;
@@ -129,5 +125,5 @@ export const chapterPublishedPush = inngest.createFunction(
       failureCount,
       inApp: inAppResult.inApp,
     };
-  }
+  },
 );

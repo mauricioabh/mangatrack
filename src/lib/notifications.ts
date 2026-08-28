@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { db } from "@/lib/db";
 import { sendNotificationEmail, NotificationEmailData } from "@/lib/email";
 import { NotificationType } from "@prisma/client";
@@ -16,7 +17,7 @@ export interface CreateNotificationData {
 async function resolveMangaChapterTitles(
   provider?: string,
   externalMangaId?: string,
-  externalChapterId?: string
+  externalChapterId?: string,
 ): Promise<{ mangaTitle?: string; chapterTitle?: string }> {
   if (!provider || !externalMangaId) return {};
 
@@ -37,7 +38,7 @@ async function resolveMangaChapterTitles(
 }
 
 export async function createNotificationWithEmail(
-  data: CreateNotificationData
+  data: CreateNotificationData,
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
   try {
     const user = await db.user.findUnique({
@@ -57,7 +58,7 @@ export async function createNotificationWithEmail(
     const { mangaTitle, chapterTitle } = await resolveMangaChapterTitles(
       data.provider,
       data.mangaId,
-      data.chapterId
+      data.chapterId,
     );
 
     const notification = await db.notification.create({
@@ -79,7 +80,7 @@ export async function createNotificationWithEmail(
         notificationMessage: data.message,
         mangaTitle,
         chapterTitle,
-        appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        appUrl: env.NEXT_PUBLIC_APP_URL,
       };
 
       const emailResult = await sendNotificationEmail(user.email, emailData);
@@ -103,7 +104,7 @@ export async function createNewChapterNotification(
   userId: string,
   provider: string,
   externalMangaId: string,
-  externalChapterId: string
+  externalChapterId: string,
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
   const detail = await getMangaInfo(provider, externalMangaId);
   if (!detail) {
@@ -140,7 +141,7 @@ export async function createMangaUpdateNotification(
   userId: string,
   provider: string,
   externalMangaId: string,
-  updateMessage: string
+  updateMessage: string,
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
   const detail = await getMangaInfo(provider, externalMangaId);
   if (!detail) {
@@ -160,7 +161,7 @@ export async function createMangaUpdateNotification(
 export async function createSystemNotification(
   userId: string,
   title: string,
-  message: string
+  message: string,
 ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
   return createNotificationWithEmail({
     userId,
@@ -181,7 +182,7 @@ export async function getUserNotificationPreferences(userId: string) {
 
 export async function updateEmailNotificationPreference(
   userId: string,
-  emailNotifications: boolean
+  emailNotifications: boolean,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await db.user.update({

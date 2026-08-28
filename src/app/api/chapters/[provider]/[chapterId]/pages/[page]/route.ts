@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     if (!Number.isFinite(pageIndex) || pageIndex < 0) {
       return NextResponse.json(
         { success: false, error: "Invalid page index" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,14 +43,12 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     if (!pageEntry?.url) {
       return NextResponse.json(
         { success: false, error: "Page not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const referer =
-      pageEntry.referer ||
-      getProviderReferer(providerKey) ||
-      undefined;
+      pageEntry.referer || getProviderReferer(providerKey) || undefined;
 
     const refererTries: Array<string | undefined> = [referer, undefined];
 
@@ -89,7 +87,7 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     ) {
       return NextResponse.json(
         { success: false, error: "Failed to load page image" },
-        { status: imageRes?.status === 404 ? 404 : 502 }
+        { status: imageRes?.status === 404 ? 404 : 502 },
       );
     }
 
@@ -107,13 +105,13 @@ export async function GET(request: NextRequest, { params }: PageRouteProps) {
     if (error instanceof ConsumetError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: error.status === 404 ? 404 : 502 }
+        { status: error.status === 404 ? 404 : 502 },
       );
     }
     console.error("Error proxying chapter page:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load page" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

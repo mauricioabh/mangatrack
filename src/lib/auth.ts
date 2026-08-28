@@ -36,8 +36,10 @@ export async function getCurrentUser() {
   if (!email) return null;
 
   const name =
-    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
-    undefined;
+    [clerkUser.firstName, clerkUser.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || undefined;
 
   return getOrCreateUser(userId, email, name, clerkUser.imageUrl);
 }
@@ -69,7 +71,7 @@ export async function getOrCreateUser(
   clerkId: string,
   email: string,
   name?: string,
-  avatar?: string
+  avatar?: string,
 ) {
   console.log("getOrCreateUser called with:", { clerkId, email, name, avatar });
 

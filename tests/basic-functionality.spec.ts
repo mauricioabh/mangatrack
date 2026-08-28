@@ -20,7 +20,7 @@ test.describe("Basic Functionality Tests", () => {
     await page.goto("/dashboard", { timeout: 30000 });
     await page.waitForURL(/sign-in/, { timeout: 10000 });
     await expect(
-      page.locator("[data-localization-key='signIn.start.title']")
+      page.locator("[data-localization-key='signIn.start.title']"),
     ).toBeVisible();
   });
 
@@ -33,7 +33,7 @@ test.describe("Basic Functionality Tests", () => {
       await page.goto(route, { timeout: 30000 });
       await page.waitForURL(/sign-in/, { timeout: 10000 });
       await expect(
-        page.locator("[data-localization-key='signIn.start.title']")
+        page.locator("[data-localization-key='signIn.start.title']"),
       ).toBeVisible();
     }
   });

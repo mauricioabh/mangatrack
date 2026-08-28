@@ -53,13 +53,13 @@ import {
  *         description: Internal server error
  */
 export async function POST(request: NextRequest) {
-try {
+  try {
     const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -74,7 +74,7 @@ try {
     if (!type) {
       return NextResponse.json(
         { success: false, error: "Notification type is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -89,14 +89,14 @@ try {
               error:
                 "provider, mangaId and chapterId are required for NEW_CHAPTER",
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
         result = await createNewChapterNotification(
           user.id,
           provider,
           mangaId,
-          chapterId
+          chapterId,
         );
         break;
 
@@ -107,14 +107,14 @@ try {
               success: false,
               error: "provider and mangaId are required for MANGA_UPDATE",
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
         result = await createMangaUpdateNotification(
           user.id,
           provider,
           mangaId,
-          "This is a simulated manga update notification for testing purposes."
+          "This is a simulated manga update notification for testing purposes.",
         );
         break;
 
@@ -122,14 +122,14 @@ try {
         result = await createSystemNotification(
           user.id,
           "Test System Notification",
-          "This is a simulated system notification to test email functionality."
+          "This is a simulated system notification to test email functionality.",
         );
         break;
 
       default:
         return NextResponse.json(
           { success: false, error: "Invalid notification type" },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -145,20 +145,14 @@ try {
           success: false,
           error: result.error || "Failed to send notification",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error("Error simulating email notification:", error);
     return NextResponse.json(
       { success: false, error: "Failed to simulate email notification" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-
-
-

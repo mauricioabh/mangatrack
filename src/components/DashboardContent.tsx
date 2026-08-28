@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpDown, BookOpen, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { CatalogCover } from "@/components/manga/catalog-cover";
 import { mangaPath, readerPath } from "@/lib/consumet/ids";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
@@ -24,6 +26,12 @@ import {
   shouldRefreshLibraryOnFocus,
   writeLibraryCache,
 } from "@/lib/library-cache";
+import {
+  bookmarksQueryKey,
+  bookmarksQueryOptions,
+  preferencesQueryOptions,
+  profileQueryOptions,
+} from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { LibrarySort } from "@/lib/validations";
 
@@ -67,21 +75,24 @@ interface Bookmark {
   continueChapterId?: string | null;
 }
 
-interface User {
-  id: string;
-  clerkId: string;
-  email: string;
-  name: string;
-  avatar: string;
-  tier: string;
-}
-
-const LIBRARY_SORT_OPTIONS: { value: LibrarySort; label: string }[] = [
-  { value: "updated_desc", label: "Updated ↓" },
-  { value: "updated_asc", label: "Updated ↑" },
-  { value: "title_asc", label: "Title A–Z" },
-  { value: "title_desc", label: "Title Z–A" },
+const LIBRARY_SORT_KEYS: {
+  value: LibrarySort;
+  labelKey:
+    "sortUpdatedDesc" | "sortUpdatedAsc" | "sortTitleAsc" | "sortTitleDesc";
+}[] = [
+  { value: "updated_desc", labelKey: "sortUpdatedDesc" },
+  { value: "updated_asc", labelKey: "sortUpdatedAsc" },
+  { value: "title_asc", labelKey: "sortTitleAsc" },
+  { value: "title_desc", labelKey: "sortTitleDesc" },
 ];
+
+function readFreshLibraryCache() {
+  const userId = getLastLibraryCacheUserId();
+  if (!userId) return null;
+  const cached = readLibraryCache<Bookmark>(userId);
+  if (!cached || !isLibraryCacheFresh(cached.fetchedAt)) return null;
+  return cached;
+}
 
 function formatLatestUpdate(publishedAt?: string): string | null {
   if (!publishedAt?.trim()) return null;
@@ -162,9 +173,30 @@ function sortBookmarks(list: Bookmark[], sort: LibrarySort): Bookmark[] {
 }
 
 export default function DashboardContent() {
-  const [user, setUser] = useState<User | null>(null);
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [loading, setLoading] = useState(true);
+  const t = useTranslations("dashboard");
+  const queryClient = useQueryClient();
+  const libraryCache = useMemo(() => readFreshLibraryCache(), []);
+
+  const profileQuery = useQuery({
+    ...profileQueryOptions(),
+    initialData: libraryCache?.user,
+    initialDataUpdatedAt: libraryCache?.fetchedAt,
+  });
+
+  const bookmarksQuery = useQuery({
+    ...bookmarksQueryOptions(),
+    initialData: libraryCache?.bookmarks as Bookmark[] | undefined,
+    initialDataUpdatedAt: libraryCache?.fetchedAt,
+  });
+
+  const preferencesQuery = useQuery(preferencesQueryOptions());
+
+  const user = profileQuery.data ?? null;
+  const bookmarks = (bookmarksQuery.data ?? []) as Bookmark[];
+  const loading =
+    (profileQuery.isPending && !profileQuery.data) ||
+    (bookmarksQuery.isPending && !bookmarksQuery.data);
+
   const [filterNew, setFilterNew] = useState(false);
   const [filterReading, setFilterReading] = useState(false);
   const [filterFinished, setFilterFinished] = useState(false);
@@ -172,90 +204,44 @@ export default function DashboardContent() {
   const [quickSearch, setQuickSearch] = useState("");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const skipNextFilterPersist = useRef(true);
-  const lastBookmarksFetchAt = useRef<number | null>(null);
-  const fetchInFlight = useRef(false);
-
-  const applyCachedLibrary = useCallback(() => {
-    const userId = getLastLibraryCacheUserId();
-    if (!userId) return false;
-    const cached = readLibraryCache<Bookmark>(userId);
-    if (!cached || !isLibraryCacheFresh(cached.fetchedAt)) return false;
-    setUser(cached.user);
-    setBookmarks(cached.bookmarks);
-    lastBookmarksFetchAt.current = cached.fetchedAt;
-    setLoading(false);
-    return true;
-  }, []);
-
-  const fetchData = useCallback(async (options?: { background?: boolean }) => {
-    if (fetchInFlight.current) return;
-    fetchInFlight.current = true;
-    const background = Boolean(options?.background);
-    try {
-      const [userResponse, bookmarksResponse, preferencesResponse] =
-        await Promise.all([
-          fetch("/api/user/profile"),
-          fetch("/api/manga/bookmarks"),
-          fetch("/api/user/preferences"),
-        ]);
-
-      const [userData, bookmarksData, preferencesData] = await Promise.all([
-        userResponse.json(),
-        bookmarksResponse.json(),
-        preferencesResponse.json(),
-      ]);
-
-      if (userData?.success) {
-        setUser(userData.user || null);
-      }
-
-      if (bookmarksData?.success) {
-        setBookmarks(bookmarksData.data);
-        lastBookmarksFetchAt.current = Date.now();
-        if (userData?.success && userData.user) {
-          writeLibraryCache(userData.user, bookmarksData.data);
-        }
-      }
-
-      if (preferencesData?.success && preferencesData.preferences) {
-        setFilterNew(Boolean(preferencesData.preferences.libraryFilterNew));
-        setFilterReading(
-          Boolean(preferencesData.preferences.libraryFilterReading)
-        );
-        setFilterFinished(
-          Boolean(preferencesData.preferences.libraryFilterFinished)
-        );
-        setLibrarySort(parseLibrarySort(preferencesData.preferences.librarySort));
-      }
-      setFiltersHydrated(true);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      setFiltersHydrated(true);
-    } finally {
-      if (!background) {
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-      fetchInFlight.current = false;
-    }
-  }, []);
 
   useEffect(() => {
-    const hadCache = applyCachedLibrary();
-    void fetchData({ background: hadCache });
-  }, [applyCachedLibrary, fetchData]);
+    if (bookmarksQuery.isSuccess && user && bookmarksQuery.data) {
+      writeLibraryCache(user, bookmarksQuery.data as Bookmark[]);
+    }
+  }, [bookmarksQuery.isSuccess, bookmarksQuery.data, user]);
+
+  useEffect(() => {
+    if (preferencesQuery.isSuccess && preferencesQuery.data) {
+      const prefs = preferencesQuery.data;
+      setFilterNew(Boolean(prefs.libraryFilterNew));
+      setFilterReading(Boolean(prefs.libraryFilterReading));
+      setFilterFinished(Boolean(prefs.libraryFilterFinished));
+      setLibrarySort(parseLibrarySort(prefs.librarySort));
+      setFiltersHydrated(true);
+      return;
+    }
+    if (preferencesQuery.isError) {
+      setFiltersHydrated(true);
+    }
+  }, [
+    preferencesQuery.isSuccess,
+    preferencesQuery.isError,
+    preferencesQuery.data,
+  ]);
 
   useEffect(() => {
     const handleFocus = () => {
-      if (loading || fetchInFlight.current) return;
-      if (!shouldRefreshLibraryOnFocus(lastBookmarksFetchAt.current)) return;
-      void fetchData({ background: true });
+      if (loading) return;
+      if (!shouldRefreshLibraryOnFocus(bookmarksQuery.dataUpdatedAt || null)) {
+        return;
+      }
+      void queryClient.invalidateQueries({ queryKey: bookmarksQueryKey });
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [loading, fetchData]);
+  }, [loading, queryClient, bookmarksQuery.dataUpdatedAt]);
 
   useEffect(() => {
     if (!filtersHydrated || loading) return;
@@ -304,7 +290,7 @@ export default function DashboardContent() {
           return matchNew || matchReading || matchFinished;
         });
     const searched = chipFiltered.filter((b) =>
-      matchesQuickSearch(b, quickSearch)
+      matchesQuickSearch(b, quickSearch),
     );
     return sortBookmarks(searched, librarySort);
   }, [
@@ -342,12 +328,12 @@ export default function DashboardContent() {
         className={cn(
           "rounded-full",
           !filtersActive &&
-            "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0"
+            "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0",
         )}
         onClick={setAllFilters}
         aria-pressed={!filtersActive}
       >
-        All
+        {t("filterAll")}
       </Button>
       <Button
         type="button"
@@ -355,12 +341,12 @@ export default function DashboardContent() {
         variant={filterNew ? "default" : "outline"}
         className={cn(
           "rounded-full",
-          filterNew && "bg-red-600 text-white hover:bg-red-700 border-0"
+          filterNew && "bg-red-600 text-white hover:bg-red-700 border-0",
         )}
         onClick={() => setFilterNew((prev) => !prev)}
         aria-pressed={filterNew}
       >
-        New
+        {t("filterNew")}
       </Button>
       <Button
         type="button"
@@ -369,12 +355,12 @@ export default function DashboardContent() {
         className={cn(
           "rounded-full",
           filterReading &&
-            "bg-emerald-600 text-white hover:bg-emerald-700 border-0"
+            "bg-emerald-600 text-white hover:bg-emerald-700 border-0",
         )}
         onClick={() => setFilterReading((prev) => !prev)}
         aria-pressed={filterReading}
       >
-        Reading
+        {t("filterReading")}
       </Button>
       <Button
         type="button"
@@ -383,12 +369,12 @@ export default function DashboardContent() {
         className={cn(
           "rounded-full",
           filterFinished &&
-            "bg-amber-600 text-white hover:bg-amber-700 border-0"
+            "bg-amber-600 text-white hover:bg-amber-700 border-0",
         )}
         onClick={() => setFilterFinished((prev) => !prev)}
         aria-pressed={filterFinished}
       >
-        Finished
+        {t("filterFinished")}
       </Button>
     </div>
   );
@@ -400,16 +386,16 @@ export default function DashboardContent() {
     >
       <SelectTrigger
         size="sm"
-        aria-label="Sort library"
+        aria-label={t("sortLabel")}
         className="min-w-[8.5rem] rounded-full bg-white/80 dark:bg-slate-900/50"
       >
         <ArrowUpDown className="size-3.5 opacity-70" aria-hidden />
-        <SelectValue placeholder="Sort" />
+        <SelectValue placeholder={t("sortLabel")} />
       </SelectTrigger>
       <SelectContent align="end">
-        {LIBRARY_SORT_OPTIONS.map((option) => (
+        {LIBRARY_SORT_KEYS.map((option) => (
           <SelectItem key={option.value} value={option.value}>
-            {option.label}
+            {t(option.labelKey)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -461,7 +447,7 @@ export default function DashboardContent() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-              My Library
+              {t("title")}
             </h1>
             <Badge
               variant="secondary"
@@ -475,8 +461,8 @@ export default function DashboardContent() {
             type="search"
             value={quickSearch}
             onChange={(e) => setQuickSearch(e.target.value)}
-            placeholder="Find in library…"
-            aria-label="Find manga in your library"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchPlaceholder")}
             autoComplete="off"
             className="w-full max-w-xs bg-white/80 dark:bg-slate-900/50 sm:max-w-sm"
           />
@@ -497,15 +483,15 @@ export default function DashboardContent() {
             <CardContent className="p-8 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-                No favorites yet
+                {t("emptyTitle")}
               </h3>
               <p className="mb-4 text-gray-500 dark:text-gray-400">
-                Start exploring and add manga to your Library!
+                {t("emptyDescription")}
               </p>
               <Link href="/search">
                 <Button className="border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
                   <Search className="mr-2 h-4 w-4" />
-                  Discover Manga
+                  {t("emptyCta")}
                 </Button>
               </Link>
             </CardContent>
@@ -515,14 +501,14 @@ export default function DashboardContent() {
             <CardContent className="p-8 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-                No manga match these filters
+                {t("noResults")}
               </h3>
               <p className="mb-4 text-gray-500 dark:text-gray-400">
-                Try All, clear your search, or switch New / Reading / Finished to
-                see more of your library.
+                Try All, clear your search, or switch New / Reading / Finished
+                to see more of your library.
               </p>
               <Button variant="outline" onClick={clearSearchAndFilters}>
-                Show all
+                {t("filterAll")}
               </Button>
             </CardContent>
           </Card>
@@ -532,7 +518,7 @@ export default function DashboardContent() {
               if (!bookmark.manga) return null;
               const manga = bookmark.manga;
               const latestUpdate = formatLatestUpdate(
-                bookmark.latestChapter?.publishedAt
+                bookmark.latestChapter?.publishedAt,
               );
               const progressPct =
                 bookmark.progressRatio != null
@@ -543,7 +529,7 @@ export default function DashboardContent() {
                 ? readerPath(
                     bookmark.provider,
                     bookmark.continueChapterId,
-                    manga.id
+                    manga.id,
                   )
                 : detailHref;
               return (
@@ -559,7 +545,7 @@ export default function DashboardContent() {
                         warmChapterPages(
                           bookmark.provider,
                           bookmark.continueChapterId,
-                          manga.id
+                          manga.id,
                         );
                       }
                     }}
@@ -584,25 +570,25 @@ export default function DashboardContent() {
                         {bookmark.isReading ? (
                           <Badge
                             className="border-0 bg-emerald-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
-                            aria-label="Reading"
+                            aria-label={t("filterReading")}
                           >
-                            Reading
+                            {t("filterReading")}
                           </Badge>
                         ) : null}
                         {bookmark.isFinished ? (
                           <Badge
                             className="border-0 bg-amber-600/95 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
-                            aria-label="Finished"
+                            aria-label={t("filterFinished")}
                           >
-                            Finished
+                            {t("filterFinished")}
                           </Badge>
                         ) : null}
                       </div>
                       {bookmark.hasUnreadLatest && !bookmark.isFinished ? (
                         <span
                           className="absolute right-2 top-2 z-10 flex h-3 w-3 items-center justify-center"
-                          title="New unread chapter"
-                          aria-label="New unread chapter"
+                          title={t("filterNew")}
+                          aria-label={t("filterNew")}
                         >
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                           <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
@@ -647,7 +633,7 @@ export default function DashboardContent() {
                     href={detailHref}
                     className="flex min-h-10 w-full items-center justify-center border-t border-blue-200/80 bg-white/80 px-2 py-2.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:border-blue-800/60 dark:bg-slate-900/60 dark:text-blue-300 dark:hover:bg-slate-800/80 sm:min-h-9 sm:py-2"
                   >
-                    Details
+                    {t("details")}
                   </Link>
                 </div>
               );

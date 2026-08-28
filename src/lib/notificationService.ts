@@ -79,7 +79,7 @@ class NotificationService {
       tag?: string;
       requireInteraction?: boolean;
       data?: Record<string, unknown>;
-    } = {}
+    } = {},
   ): Notification | null {
     if (!this.browserNotifications?.isGranted) {
       return null;
@@ -114,7 +114,7 @@ class NotificationService {
   private showToastNotification(
     title: string,
     message: string,
-    type: "success" | "info" | "warning" | "error" = "info"
+    type: "success" | "info" | "warning" | "error" = "info",
   ) {
     switch (type) {
       case "success":
@@ -172,7 +172,7 @@ class NotificationService {
   public async showNewChapterNotification(
     mangaTitle: string,
     chapterTitle: string,
-    mangaId: string
+    mangaId: string,
   ) {
     await this.initialize();
 

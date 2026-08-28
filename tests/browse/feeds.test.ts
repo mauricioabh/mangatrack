@@ -1,14 +1,8 @@
-import {
-  browseCardHref,
-  isMangaDexUuid,
-  periodSinceIso,
-} from "@/lib/browse";
+import { browseCardHref, isMangaDexUuid, periodSinceIso } from "@/lib/browse";
 
 describe("browse helpers", () => {
   it("isMangaDexUuid accepts valid UUIDs", () => {
-    expect(
-      isMangaDexUuid("a1b2c3d4-e5f6-4711-8abc-1234567890ab")
-    ).toBe(true);
+    expect(isMangaDexUuid("a1b2c3d4-e5f6-4711-8abc-1234567890ab")).toBe(true);
     expect(isMangaDexUuid("not-a-uuid")).toBe(false);
   });
 
@@ -19,7 +13,7 @@ describe("browse helpers", () => {
 
   it("browseCardHref falls back to search by title", () => {
     expect(browseCardHref("slug-id", "Demon Slayer")).toBe(
-      `/search?q=${encodeURIComponent("Demon Slayer")}`
+      `/search?q=${encodeURIComponent("Demon Slayer")}`,
     );
   });
 

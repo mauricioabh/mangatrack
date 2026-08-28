@@ -42,7 +42,7 @@ export function NotificationPermissionBanner() {
         // Show a success notification
         await notificationService.showSystemNotification(
           "Notifications Enabled!",
-          "You'll now receive browser notifications for new chapters and updates."
+          "You'll now receive browser notifications for new chapters and updates.",
         );
       }
     } catch (error) {

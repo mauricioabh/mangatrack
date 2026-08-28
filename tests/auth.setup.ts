@@ -38,7 +38,7 @@ setup("authenticate", async ({ page }) => {
 
   if (!testUser || !testPassword) {
     throw new Error(
-      "TEST_USER_EMAIL and TEST_USER_PASSWORD environment variables are required for testing"
+      "TEST_USER_EMAIL and TEST_USER_PASSWORD environment variables are required for testing",
     );
   }
 
@@ -48,7 +48,7 @@ setup("authenticate", async ({ page }) => {
   // Look for "Use email instead" or similar option to switch to email/password
   const useEmailOption = page
     .locator(
-      'text="Use email instead", text="Email", text="Sign in with email"'
+      'text="Use email instead", text="Email", text="Sign in with email"',
     )
     .first();
   if (await useEmailOption.isVisible()) {
@@ -73,7 +73,7 @@ setup("authenticate", async ({ page }) => {
   await page.fill('input[name="identifier"], input[type="email"]', testUser);
   await page.fill(
     'input[name="password"], input[type="password"]',
-    testPassword
+    testPassword,
   );
 
   // Submit the form - click the Continue button (the one with arrow, not Google)
@@ -112,10 +112,12 @@ setup("authenticate", async ({ page }) => {
   }
 
   // Wait for loading to complete - look for the actual content, not skeleton
-  await page.waitForSelector('h1:has-text("Welcome Back")', { timeout: 15000 });
+  await page.waitForSelector('h1:has-text("My Library")', { timeout: 15000 });
 
   // Verify we're on the dashboard (with longer timeout)
-  await expect(page.locator('h1:has-text("Welcome Back")')).toBeVisible({
+  await expect(
+    page.getByRole("heading", { name: "My Library", exact: true }),
+  ).toBeVisible({
     timeout: 10000,
   });
 

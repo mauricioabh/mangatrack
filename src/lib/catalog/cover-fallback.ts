@@ -19,7 +19,7 @@ function cacheKey(title: string): string {
 }
 
 export async function fetchAniListCoverByTitle(
-  title: string
+  title: string,
 ): Promise<string | undefined> {
   const key = cacheKey(title);
   if (!key) return undefined;

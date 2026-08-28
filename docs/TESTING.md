@@ -2,7 +2,7 @@
 
 ## Estado actual
 
-**Validación manual** del flujo Consumet (búsqueda multi-provider, detalle, lector, bookmarks, badges de capítulos). Jest unitarios cubren mappers/ids de `src/lib/consumet`.
+**Validación manual** del flujo Consumet (búsqueda multi-provider, detalle, lector, bookmarks, badges de capítulos). Vitest unitarios cubren mappers/ids de `src/lib/consumet`.
 
 Checklist sugerido:
 
@@ -11,8 +11,10 @@ Checklist sugerido:
 3. Abrir capítulo en `/reader/[provider]/[chapterId]`
 4. Dashboard con bookmarks enriquecidos desde Consumet (no MangaDex)
 5. (Opcional) Cron de notificaciones — ver sección Inngest abajo
+6. i18n: `/es/dashboard`, Settings → Preferences → language switcher
+7. URL state: copiar link de search/browse con filtros
 
-## Unit (Jest)
+## Unit (Vitest)
 
 ```powershell
 npm test
@@ -27,16 +29,26 @@ Suites relevantes:
 | `tests/consumet/search-relevance.test.ts` | Ranking, exact phrase, providers intersect |
 | `tests/consumet/ids.test.ts` | encode `~` para chapter ids con `/`, rutas app/API |
 | `tests/reading-progress.test.ts` | orden y “continue reading” |
+| `tests/rate-limit.test.ts` | Upstash search limit (skip si no hay credenciales) |
 
 ## E2E (Playwright)
 
-Ver `tests/README.md`. Opcional mientras la prioridad sea manual.
+Ver `tests/README.md`. Requiere dev server en `:3000`, `.env.test` con `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`, y `npx playwright install` la primera vez.
 
 ```powershell
+npm run dev
 npm run test:e2e
 npm run test:e2e:headed
 npm run test:e2e:ui
 ```
+
+Cobertura relevante post-i18n:
+
+| Spec | Qué valida |
+| ---- | ---------- |
+| `dashboard-loading.spec.ts` | Dashboard carga; APIs protegidas responden `application/json` |
+| `i18n.spec.ts` | Switcher en Settings → Preferences; `/es/dashboard` con textos ES |
+| `basic-functionality.spec.ts` | Homepage y redirects sin sesión |
 
 ## Inngest — poll diario de capítulos
 
@@ -63,10 +75,13 @@ Notas:
 ```powershell
 npm run typecheck
 npm run lint
-npm run build
+npm run format:check
 npm test
+npm run build
 ```
 
 ## CI
 
-GitHub Actions: typecheck, lint, build (`.github/workflows/ci.yml`).
+GitHub Actions: typecheck, lint, unit tests, prettier check, build (`.github/workflows/ci.yml`).
+
+Pre-commit local: Husky ejecuta ESLint + Prettier en archivos staged.

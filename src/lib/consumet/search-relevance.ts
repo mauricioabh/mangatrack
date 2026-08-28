@@ -67,7 +67,7 @@ export function matchesExactPhrase(title: string, query: string): boolean {
 
 export function resolveMatchMode(
   requested: SearchMatchMode | undefined,
-  quotedExact: boolean
+  quotedExact: boolean,
 ): SearchMatchMode {
   if (quotedExact) return "exact";
   return requested === "exact" ? "exact" : "ranked";
@@ -76,7 +76,7 @@ export function resolveMatchMode(
 export function applySearchRelevance<T extends { title: string }>(
   items: T[],
   query: string,
-  mode: SearchMatchMode
+  mode: SearchMatchMode,
 ): T[] {
   const q = query.trim();
   if (!q) return items;
@@ -86,7 +86,7 @@ export function applySearchRelevance<T extends { title: string }>(
       .filter((item) => matchesExactPhrase(item.title, q))
       .sort(
         (a, b) =>
-          scoreTitleRelevance(b.title, q) - scoreTitleRelevance(a.title, q)
+          scoreTitleRelevance(b.title, q) - scoreTitleRelevance(a.title, q),
       );
   }
 
@@ -101,7 +101,7 @@ export function applySearchRelevance<T extends { title: string }>(
 /** Intersect requested providers with allowlist; empty request → full allowlist. */
 export function resolveSearchProviders(
   allowlist: string[],
-  requested?: string[] | null
+  requested?: string[] | null,
 ): string[] {
   if (!requested || requested.length === 0) return allowlist;
   const allowed = new Set(allowlist.map((p) => p.toLowerCase()));

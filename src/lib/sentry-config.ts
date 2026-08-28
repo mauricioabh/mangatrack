@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import type { Breadcrumb, ErrorEvent } from "@sentry/nextjs";
 
 const SENSITIVE_KEYS = /authorization|cookie|token|password|email|phone/i;
@@ -6,7 +7,7 @@ function scrubValue(value: unknown): unknown {
   if (typeof value === "string") {
     return value.replace(
       /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-      "[REDACTED_EMAIL]"
+      "[REDACTED_EMAIL]",
     );
   }
   if (Array.isArray(value)) return value.map(scrubValue);
@@ -40,5 +41,5 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
 }
 
 export function getSentryDsn(): string | undefined {
-  return process.env.SENTRY_DSN?.trim() || undefined;
+  return env.SENTRY_DSN?.trim() || undefined;
 }

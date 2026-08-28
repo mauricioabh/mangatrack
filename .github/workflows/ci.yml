@@ -10,8 +10,8 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      SKIP_ENV_VALIDATION: "1"
       DATABASE_URL: "postgresql://placeholder:placeholder@localhost/placeholder?sslmode=require"
+      CONSUMET_BASE_URL: "https://consumet.wayool.com"
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
       CLERK_SECRET_KEY: sk_test_placeholder_for_ci_build_only_not_real
       NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
@@ -35,6 +35,12 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Prettier check
+        run: npm run format:check
 
       - name: Build
         run: npm run build

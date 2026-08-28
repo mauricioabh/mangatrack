@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     console.error("Error marking chapter as read:", error);
     return NextResponse.json(
       { success: false, error: "Failed to mark chapter as read" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     try {
       const detail = await getMangaInfo(provider, mangaId);
       const chapterNumById = new Map(
-        (detail?.chapters ?? []).map((c) => [c.id, c.chapterNumber])
+        (detail?.chapters ?? []).map((c) => [c.id, c.chapterNumber]),
       );
 
       const data = history.map((h) => ({
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching reading history:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch reading history" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

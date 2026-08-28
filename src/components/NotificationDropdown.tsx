@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Bell, Check, BookOpen, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -14,6 +15,7 @@ export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [markingAsRead, setMarkingAsRead] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("notifications");
 
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
@@ -104,7 +106,7 @@ export function NotificationDropdown() {
         <>
           <button
             type="button"
-            aria-label="Close notifications"
+            aria-label={t("close")}
             className="fixed inset-0 z-40 bg-black/30 sm:hidden"
             onClick={() => setIsOpen(false)}
           />
@@ -112,7 +114,7 @@ export function NotificationDropdown() {
             <div className="shrink-0 border-b border-gray-200 p-4 dark:border-gray-700">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  Notifications
+                  {t("title")}
                 </h3>
                 {unreadCount > 0 && (
                   <Button
@@ -122,7 +124,7 @@ export function NotificationDropdown() {
                     className="shrink-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
                   >
                     <Check className="mr-1 h-4 w-4" />
-                    Mark all read
+                    {t("markAllRead")}
                   </Button>
                 )}
               </div>
@@ -133,17 +135,17 @@ export function NotificationDropdown() {
                 <div className="p-8 text-center">
                   <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Loading notifications...
+                    {t("loading")}
                   </p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No notifications yet
+                    {t("emptyTitle")}
                   </p>
                   <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                    You&apos;ll see updates about your manga here
+                    {t("emptyDescription")}
                   </p>
                 </div>
               ) : (
@@ -203,7 +205,7 @@ export function NotificationDropdown() {
                                   }}
                                   disabled={markingAsRead === notification.id}
                                   className="h-6 w-6 shrink-0 p-0 hover:bg-green-100 dark:hover:bg-green-900/20"
-                                  aria-label="Mark as read"
+                                  aria-label={t("markRead")}
                                 >
                                   {markingAsRead === notification.id ? (
                                     <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-green-600"></div>

@@ -1,13 +1,15 @@
+import { env } from "@/env";
+
 // Stripe Price IDs - These should be set in your environment variables
 export const STRIPE_PRICE_IDS = {
-  MONTHLY: process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || "",
-  YEARLY: process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID || "",
+  MONTHLY: env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || "",
+  YEARLY: env.STRIPE_PREMIUM_YEARLY_PRICE_ID || "",
 } as const;
 
 // App Configuration
 export const APP_CONFIG = {
-  APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  NODE_ENV: process.env.NODE_ENV || "development",
+  APP_URL: env.NEXT_PUBLIC_APP_URL,
+  NODE_ENV: env.NODE_ENV,
 } as const;
 
 // Subscription Plans

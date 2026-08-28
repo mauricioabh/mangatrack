@@ -26,7 +26,7 @@ function proxyCoverUrl(
   provider?: string,
   referer?: string | null,
   title?: string | null,
-  attempt = 0
+  attempt = 0,
 ): string {
   const params = new URLSearchParams({ url: src });
   if (provider) params.set("provider", provider);
@@ -63,7 +63,7 @@ export function CatalogCover({
       <div
         className={cn(
           "flex h-full w-full items-center justify-center bg-muted text-muted-foreground",
-          className
+          className,
         )}
         style={{ minWidth: width, minHeight: height }}
         aria-label={alt}
@@ -90,7 +90,7 @@ export function CatalogCover({
         if (attempt < 1) {
           window.setTimeout(
             () => setAttempt((a) => a + 1),
-            400 + Math.random() * 600
+            400 + Math.random() * 600,
           );
           return;
         }

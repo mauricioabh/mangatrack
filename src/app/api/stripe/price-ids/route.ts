@@ -9,7 +9,7 @@ export async function GET() {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -24,16 +24,7 @@ export async function GET() {
     console.error("Error fetching price IDs:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch price IDs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-
-
-
-
-
-

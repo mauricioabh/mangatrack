@@ -103,7 +103,7 @@ export function useBrowserNotifications() {
         return null;
       }
     },
-    [permission.isGranted]
+    [permission.isGranted],
   );
 
   // Show a manga-related notification
@@ -117,7 +117,7 @@ export function useBrowserNotifications() {
         data: { mangaId },
       });
     },
-    [showNotification]
+    [showNotification],
   );
 
   // Show a new chapter notification
@@ -126,10 +126,10 @@ export function useBrowserNotifications() {
       return showMangaNotification(
         `New Chapter: ${mangaTitle}`,
         `Chapter ${chapterTitle} is now available!`,
-        mangaId
+        mangaId,
       );
     },
-    [showMangaNotification]
+    [showMangaNotification],
   );
 
   // Show a system notification
@@ -142,7 +142,7 @@ export function useBrowserNotifications() {
         icon: "/favicon.svg",
       });
     },
-    [showNotification]
+    [showNotification],
   );
 
   return {

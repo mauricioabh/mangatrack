@@ -33,7 +33,11 @@ describe("consumet mappers", () => {
   describe("resolveLocalizedString", () => {
     it("prefers en then other locales from a map", () => {
       expect(
-        resolveLocalizedString({ ja: "ワンピース", en: "One Piece", "pt-br": "x" })
+        resolveLocalizedString({
+          ja: "ワンピース",
+          en: "One Piece",
+          "pt-br": "x",
+        }),
       ).toBe("One Piece");
       expect(resolveLocalizedString({ ja: "ワンピース" })).toBe("ワンピース");
       expect(resolveLocalizedString("plain")).toBe("plain");
@@ -45,7 +49,7 @@ describe("consumet mappers", () => {
     it("prefers primary title then altTitles then fallback", () => {
       expect(resolveTitle("One Piece")).toBe("One Piece");
       expect(resolveTitle({ en: "One Piece", ja: "ワンピース" })).toBe(
-        "One Piece"
+        "One Piece",
       );
       expect(resolveTitle(null, ["Alt Title"])).toBe("Alt Title");
       expect(resolveTitle(null, [{ en: "EN Alt" }])).toBe("EN Alt");
@@ -65,7 +69,7 @@ describe("consumet mappers", () => {
           status: "Ongoing",
           headerForImage: { Referer: "https://mangahere.cc" },
         },
-        "mangahere"
+        "mangahere",
       );
 
       expect(item).toMatchObject({
@@ -84,7 +88,7 @@ describe("consumet mappers", () => {
     it("uses chapterNumber when present", () => {
       const ch = mapChapter(
         { id: "one_piece/1", title: "Chapter 1", chapterNumber: "1" },
-        "one_piece"
+        "one_piece",
       );
       expect(ch).toMatchObject({
         id: "one_piece/1",
@@ -95,10 +99,7 @@ describe("consumet mappers", () => {
     });
 
     it("parses chapter number from title when missing", () => {
-      const ch = mapChapter(
-        { id: "x", title: "Ch. 42 - Battle" },
-        "manga"
-      );
+      const ch = mapChapter({ id: "x", title: "Ch. 42 - Battle" }, "manga");
       expect(ch.chapterNumber).toBe(42);
       expect(ch.title).toBe("Ch. 42 - Battle");
     });
@@ -122,7 +123,7 @@ describe("consumet mappers", () => {
             { id: "one_piece/1", title: "Ch. 1", chapterNumber: "1" },
           ],
         },
-        "mangahere"
+        "mangahere",
       );
 
       expect(detail.provider).toBe("mangahere");
@@ -144,7 +145,7 @@ describe("consumet mappers", () => {
           altTitles: [{ en: "One Piece" }, { ja: "ワンピース" }],
           chapters: [],
         },
-        "mangadex"
+        "mangadex",
       );
       expect(detail.title).toBe("One Piece");
       expect(detail.description).toBe("Pirate king treasure.");
@@ -156,7 +157,11 @@ describe("consumet mappers", () => {
     it("maps page urls, sorts, and reindexes to 0-based", () => {
       const pages = mapPages([
         { img: "https://cdn/p2.jpg", page: 2 },
-        { img: "https://cdn/p1.jpg", page: 1, headerForImage: { Referer: "https://x" } },
+        {
+          img: "https://cdn/p1.jpg",
+          page: 1,
+          headerForImage: { Referer: "https://x" },
+        },
       ]);
       expect(pages.map((p) => p.index)).toEqual([0, 1]);
       expect(pages[0].url).toBe("https://cdn/p1.jpg");
@@ -177,10 +182,10 @@ describe("consumet mappers", () => {
           image: "",
           chapters: [],
         },
-        "mangapill"
+        "mangapill",
       );
       expect(detail.coverImage).toBe(
-        "https://cdn.readdetectiveconan.com/file/mangapill/i/3069.jpg"
+        "https://cdn.readdetectiveconan.com/file/mangapill/i/3069.jpg",
       );
     });
   });
@@ -230,11 +235,7 @@ describe("consumet mappers", () => {
   });
 
   describe("getChapterNeighbors", () => {
-    const chapters = [
-      { id: "newest" },
-      { id: "mid" },
-      { id: "oldest" },
-    ];
+    const chapters = [{ id: "newest" }, { id: "mid" }, { id: "oldest" }];
 
     it("returns previous (older) and next (newer) in newest-first lists", () => {
       expect(getChapterNeighbors(chapters, "mid")).toEqual({
@@ -269,14 +270,14 @@ describe("inferMangaIdFromChapterId", () => {
     expect(
       inferMangaIdFromChapterId(
         "mangapill",
-        "3069-10700500/naruto-chapter-700.5"
-      )
+        "3069-10700500/naruto-chapter-700.5",
+      ),
     ).toBe("3069/naruto");
   });
 
   it("uses path prefix for mangahere-style chapter ids", () => {
-    expect(
-      inferMangaIdFromChapterId("mangahere", "naruto_dj/c002")
-    ).toBe("naruto_dj");
+    expect(inferMangaIdFromChapterId("mangahere", "naruto_dj/c002")).toBe(
+      "naruto_dj",
+    );
   });
 });

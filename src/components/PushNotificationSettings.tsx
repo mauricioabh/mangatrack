@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { captureEvent } from "@/components/providers/posthog-provider";
 import { toast } from "sonner";
 import {
   getStoredFcmToken,
@@ -52,6 +53,7 @@ export function PushNotificationSettings() {
       const result = await registerFcmPushToken();
       if (result.success) {
         setEnabled(true);
+        captureEvent("push_enabled");
         toast.success("Push notifications enabled for this device.");
       } else {
         toast.error(result.error ?? "Failed to enable push notifications.");
@@ -101,8 +103,8 @@ export function PushNotificationSettings() {
           )}
         </CardTitle>
         <CardDescription>
-          Receive alerts on this device when new chapters are published for manga
-          in your library.
+          Receive alerts on this device when new chapters are published for
+          manga in your library.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -113,8 +115,9 @@ export function PushNotificationSettings() {
             </p>
             {isDev ? (
               <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
-                Developer: set <code className="text-xs">NEXT_PUBLIC_FIREBASE_*</code>{" "}
-                in <code className="text-xs">.env.local</code>. See{" "}
+                Developer: set{" "}
+                <code className="text-xs">NEXT_PUBLIC_FIREBASE_*</code> in{" "}
+                <code className="text-xs">.env.local</code>. See{" "}
                 <code className="text-xs">docs/FIREBASE_SETUP.md</code>.
               </p>
             ) : null}
@@ -122,8 +125,8 @@ export function PushNotificationSettings() {
         ) : enabled ? (
           <>
             <p className="text-sm text-muted-foreground">
-              This browser is registered for push. New chapters (es / es-la / en)
-              will trigger notifications via Inngest + Firebase.
+              This browser is registered for push. New chapters (es / es-la /
+              en) will trigger notifications via Inngest + Firebase.
             </p>
             <Button
               variant="outline"

@@ -8,7 +8,7 @@ export async function POST() {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -16,14 +16,14 @@ export async function POST() {
     // when the user first subscribes. For now, we'll return an error.
     return NextResponse.json(
       { success: false, error: "Customer portal not yet implemented" },
-      { status: 501 }
+      { status: 501 },
     );
 
     // Example implementation (uncomment when you have customer IDs):
     /*
     const session = await createPortalSession(
       user.stripeCustomerId, // You'll need to add this field to your User model
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings`
+      `${env.NEXT_PUBLIC_APP_URL}/settings`
     );
 
     return NextResponse.json({
@@ -35,7 +35,7 @@ export async function POST() {
     console.error("Error creating portal session:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create portal session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { parseJsonResponse } from "@/lib/fetch-json";
 // Cache removed - using regular fetch for fresh data
 
 interface Notification {
@@ -26,10 +27,14 @@ export function useNotifications() {
     setError(null);
     try {
       const response = await fetch("/api/notifications");
-      const data = await response.json();
+      const data = await parseJsonResponse<{
+        success?: boolean;
+        data?: Notification[];
+        error?: string;
+      }>(response);
 
       if (data.success) {
-        setNotifications(data.data);
+        setNotifications(data.data ?? []);
       } else {
         setError(data.error || "Failed to fetch notifications");
       }
@@ -48,17 +53,17 @@ export function useNotifications() {
         `/api/notifications/${notificationId}/read`,
         {
           method: "PATCH",
-        }
+        },
       );
-      const data = await response.json();
+      const data = await parseJsonResponse<{ success?: boolean }>(response);
 
       if (data.success) {
         setNotifications((prev) =>
           prev.map((notification) =>
             notification.id === notificationId
               ? { ...notification, read: true }
-              : notification
-          )
+              : notification,
+          ),
         );
         return true;
       }
@@ -73,7 +78,7 @@ export function useNotifications() {
   const markAllAsRead = useCallback(async () => {
     const unreadNotifications = notifications.filter((n) => !n.read);
     const promises = unreadNotifications.map((notification) =>
-      markAsRead(notification.id)
+      markAsRead(notification.id),
     );
     await Promise.all(promises);
   }, [notifications, markAsRead]);

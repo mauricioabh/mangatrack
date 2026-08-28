@@ -26,7 +26,7 @@ export function DevToolsDropdown() {
   // Sentry functionality removed
 
   const simulateEmailNotification = async (
-    type: "NEW_CHAPTER" | "MANGA_UPDATE" | "SYSTEM"
+    type: "NEW_CHAPTER" | "MANGA_UPDATE" | "SYSTEM",
   ) => {
     setIsLoading(true);
 
@@ -42,7 +42,7 @@ export function DevToolsDropdown() {
         payload.provider = sample.provider;
         payload.mangaId = sample.id;
         const chapterRes = await fetch(
-          mangaApiPath(sample.provider, sample.id)
+          mangaApiPath(sample.provider, sample.id),
         );
         const chapterData = await chapterRes.json();
         const firstChapter = chapterData?.data?.chapters?.[0];

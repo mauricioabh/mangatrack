@@ -44,7 +44,7 @@ export function consumetReadPath(provider: string, chapterId: string): string {
  */
 export function rewriteMangaDexCoverUrl(
   url: string,
-  size: "256" | "512" | null = "256"
+  size: "256" | "512" | null = "256",
 ): string {
   try {
     const parsed = new URL(url);
@@ -67,7 +67,7 @@ export function rewriteMangaDexCoverUrl(
 /** Normalize cover URL for catalog display (provider-aware CDN rewrites). */
 export function normalizeCoverUrl(
   provider: string,
-  url: string | null | undefined
+  url: string | null | undefined,
 ): string | undefined {
   if (typeof url !== "string" || !url.trim()) return undefined;
   const trimmed = url.trim();

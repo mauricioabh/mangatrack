@@ -10,7 +10,7 @@ export async function GET() {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -22,7 +22,7 @@ export async function GET() {
     console.error("Error fetching user profile:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating user profile:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

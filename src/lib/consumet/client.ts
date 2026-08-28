@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import {
   ConsumetConfigError,
   ConsumetError,
@@ -9,25 +10,24 @@ const DEFAULT_ALLOWLIST = ["mangahere", "mangapill", "mangadex"];
 const MAX_RETRIES = 1;
 
 export function getConsumetBaseUrl(): string {
-  const base = process.env.CONSUMET_BASE_URL?.trim();
+  const base = env.CONSUMET_BASE_URL?.trim();
   if (!base) {
     throw new ConsumetConfigError(
-      "CONSUMET_BASE_URL is not set. Configure the self-hosted Consumet origin (no fallback to public APIs)."
+      "CONSUMET_BASE_URL is not set. Configure the self-hosted Consumet origin (no fallback to public APIs).",
     );
   }
   return base.replace(/\/$/, "");
 }
 
 export function getConsumetTimeoutMs(): number {
-  const raw = process.env.CONSUMET_TIMEOUT_MS;
-  if (!raw) return DEFAULT_TIMEOUT_MS;
-  const n = Number.parseInt(raw, 10);
+  const n = env.CONSUMET_TIMEOUT_MS;
+  if (n === undefined) return DEFAULT_TIMEOUT_MS;
   if (!Number.isFinite(n) || n < 5_000) return DEFAULT_TIMEOUT_MS;
   return Math.min(n, 120_000);
 }
 
 export function getProviderAllowlist(): string[] {
-  const raw = process.env.CONSUMET_PROVIDER_ALLOWLIST?.trim();
+  const raw = env.CONSUMET_PROVIDER_ALLOWLIST?.trim();
   const list = (raw ? raw.split(",") : DEFAULT_ALLOWLIST)
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -36,7 +36,7 @@ export function getProviderAllowlist(): string[] {
 
 /** Soft preference for scripts / result ordering — does not filter search. */
 export function getSoftPreferredProvider(): string | undefined {
-  const p = process.env.CONSUMET_MANGA_PROVIDER?.trim().toLowerCase();
+  const p = env.CONSUMET_MANGA_PROVIDER?.trim().toLowerCase();
   return p || undefined;
 }
 
@@ -50,11 +50,13 @@ export async function consumetFetch<T>(
     params?: Record<string, string | number | undefined>;
     cache?: RequestCache;
     revalidate?: number;
-  } = {}
+  } = {},
 ): Promise<T> {
   const base = getConsumetBaseUrl();
   const url = new URL(
-    path.startsWith("http") ? path : `${base}${path.startsWith("/") ? path : `/${path}`}`
+    path.startsWith("http")
+      ? path
+      : `${base}${path.startsWith("/") ? path : `/${path}`}`,
   );
 
   if (options.params) {
@@ -106,7 +108,7 @@ export async function consumetFetch<T>(
         throw new ConsumetError(
           String(body.message ?? body.error ?? "Consumet provider error"),
           502,
-          true
+          true,
         );
       }
 
@@ -132,13 +134,10 @@ export async function consumetFetch<T>(
         throw new ConsumetError(
           `Consumet request timed out after ${timeoutMs}ms`,
           504,
-          true
+          true,
         );
       }
-      if (
-        error instanceof TypeError &&
-        attempt < MAX_RETRIES
-      ) {
+      if (error instanceof TypeError && attempt < MAX_RETRIES) {
         await sleep(400 * (attempt + 1));
         continue;
       }
@@ -148,7 +147,7 @@ export async function consumetFetch<T>(
       throw new ConsumetError(
         error instanceof Error ? error.message : "Consumet network error",
         502,
-        true
+        true,
       );
     }
   }

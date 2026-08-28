@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
 import { isFirebaseWebConfigured } from "@/lib/firebase/config";
 
 export function DeviceNotificationSettings() {
+  const t = useTranslations("notifications");
   const [configured, setConfigured] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,9 +54,9 @@ export function DeviceNotificationSettings() {
       const result = await registerFcmPushToken();
       if (result.success) {
         setEnabled(true);
-        toast.success("Notifications enabled on this device.");
+        toast.success(t("enableDevice"));
       } else {
-        toast.error(result.error ?? "Could not enable notifications.");
+        toast.error(result.error ?? t("unavailable"));
       }
     } finally {
       setBusy(false);
@@ -67,9 +69,9 @@ export function DeviceNotificationSettings() {
       const result = await unregisterFcmPushToken();
       if (result.success) {
         setEnabled(false);
-        toast.success("Notifications disabled on this device.");
+        toast.success(t("disableDevice"));
       } else {
-        toast.error(result.error ?? "Could not disable notifications.");
+        toast.error(result.error ?? t("unavailable"));
       }
     } finally {
       setBusy(false);
@@ -91,26 +93,21 @@ export function DeviceNotificationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
-          <span>Device notifications</span>
+          <span>{t("deviceTitle")}</span>
           {enabled ? (
             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              On
+              {t("deviceOn")}
             </Badge>
           ) : (
-            <Badge variant="outline">Off</Badge>
+            <Badge variant="outline">{t("deviceOff")}</Badge>
           )}
         </CardTitle>
-        <CardDescription>
-          Get alerted when a new chapter is published for manga in your library.
-          Works in the browser and syncs with the Android app on the same account.
-        </CardDescription>
+        <CardDescription>{t("deviceDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!configured ? (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Push notifications aren&apos;t available right now.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("unavailable")}</p>
             {isDev ? (
               <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
                 Developer: Firebase web client env vars are not set. See{" "}
@@ -121,8 +118,7 @@ export function DeviceNotificationSettings() {
         ) : enabled ? (
           <>
             <p className="text-sm text-muted-foreground">
-              This device receives push alerts for new chapters (es / es-la / en).
-              In-app history is also saved under the bell icon in the header.
+              {t("enabledDescription")}
             </p>
             <Button
               variant="outline"
@@ -131,17 +127,17 @@ export function DeviceNotificationSettings() {
               className="w-full"
             >
               <BellOff className="h-4 w-4 mr-2" />
-              {busy ? "Updating..." : "Turn off on this device"}
+              {busy ? t("updating") : t("disableDevice")}
             </Button>
           </>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              Allow notifications in the browser, then register this device for push.
+              {t("enableDescription")}
             </p>
             <Button onClick={handleEnable} disabled={busy} className="w-full">
               <Bell className="h-4 w-4 mr-2" />
-              {busy ? "Enabling..." : "Enable on this device"}
+              {busy ? t("enabling") : t("enableDevice")}
             </Button>
           </>
         )}

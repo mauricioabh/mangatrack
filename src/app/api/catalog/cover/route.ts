@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClerkUserId } from "@/lib/auth-request";
 import {
   fetchAniListCoverByTitle,
   isCloudflareBlockedCoverHost,
 } from "@/lib/catalog/cover-fallback";
 import { getProviderReferer } from "@/lib/consumet/referers";
 import { rewriteMangaDexCoverUrl } from "@/lib/consumet/provider-routes";
+import { rateLimitCover, rateLimitResponse } from "@/lib/rate-limit";
 
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 const UPSTREAM_TIMEOUT_MS = 15_000;
@@ -53,7 +55,7 @@ function resolveTargetUrl(rawUrl: string, provider?: string | null): string {
 
 function refererCandidates(
   provider: string | null | undefined,
-  explicit: string | null
+  explicit: string | null,
 ): Array<string | undefined> {
   const list: Array<string | undefined> = [];
   if (explicit) list.push(explicit);
@@ -65,15 +67,13 @@ function refererCandidates(
 
 async function fetchCover(
   url: string,
-  referer: string | undefined
+  referer: string | undefined,
 ): Promise<Response> {
   return fetch(url, {
     headers: {
       Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
       "User-Agent": BROWSER_UA,
-      ...(referer
-        ? { Referer: referer, Origin: new URL(referer).origin }
-        : {}),
+      ...(referer ? { Referer: referer, Origin: new URL(referer).origin } : {}),
     },
     cache: "no-store",
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
@@ -88,7 +88,10 @@ function isUsableImageResponse(res: Response, contentType: string): boolean {
   );
 }
 
-async function fetchAndRespond(url: string, referer?: string): Promise<NextResponse | null> {
+async function fetchAndRespond(
+  url: string,
+  referer?: string,
+): Promise<NextResponse | null> {
   const upstream = await fetchCover(url, referer);
   const contentType = upstream.headers.get("content-type") ?? "image/jpeg";
   if (!isUsableImageResponse(upstream, contentType)) return null;
@@ -103,13 +106,18 @@ async function fetchAndRespond(url: string, referer?: string): Promise<NextRespo
   });
 }
 
-async function tryAniListFallback(title: string | null): Promise<NextResponse | null> {
+async function tryAniListFallback(
+  title: string | null,
+): Promise<NextResponse | null> {
   if (!title?.trim()) return null;
   const fallbackUrl = await fetchAniListCoverByTitle(title);
   if (!fallbackUrl) return null;
   try {
     const parsed = new URL(fallbackUrl);
-    if (!ALLOWED_PROTOCOLS.has(parsed.protocol) || isPrivateHost(parsed.hostname)) {
+    if (
+      !ALLOWED_PROTOCOLS.has(parsed.protocol) ||
+      isPrivateHost(parsed.hostname)
+    ) {
       return null;
     }
   } catch {
@@ -125,6 +133,12 @@ async function tryAniListFallback(title: string | null): Promise<NextResponse | 
  * For ComicK (Cloudflare-blocked CDN), pass `title` to enable AniList cover fallback.
  */
 export async function GET(request: NextRequest) {
+  const userId = await getClerkUserId();
+  if (userId) {
+    const rateLimit = await rateLimitCover(userId);
+    if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
+  }
+
   const rawUrl = request.nextUrl.searchParams.get("url");
   const provider = request.nextUrl.searchParams.get("provider")?.toLowerCase();
   const explicitReferer = request.nextUrl.searchParams.get("referer");
@@ -133,7 +147,7 @@ export async function GET(request: NextRequest) {
   if (!rawUrl) {
     return NextResponse.json(
       { success: false, error: "url is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -143,25 +157,29 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { success: false, error: "Invalid url" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  if (!ALLOWED_PROTOCOLS.has(target.protocol) || isPrivateHost(target.hostname)) {
+  if (
+    !ALLOWED_PROTOCOLS.has(target.protocol) ||
+    isPrivateHost(target.hostname)
+  ) {
     return NextResponse.json(
       { success: false, error: "URL not allowed" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   // Optional AniList title fallback when CDN is known-blocked (kept for future scrapers)
   const preferFallback =
-    Boolean(title?.trim()) &&
-    isCloudflareBlockedCoverHost(target.hostname);
+    Boolean(title?.trim()) && isCloudflareBlockedCoverHost(target.hostname);
 
   try {
     if (preferFallback) {
-      const fallback = await withConcurrencyLimit(() => tryAniListFallback(title));
+      const fallback = await withConcurrencyLimit(() =>
+        tryAniListFallback(title),
+      );
       if (fallback) return fallback;
     }
 

@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { NextRequest } from "next/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
@@ -7,12 +8,12 @@ import { db } from "@/lib/db";
 export async function POST(request: NextRequest) {
   console.log("🔔 Webhook received!");
   console.log("🔍 Environment check:", {
-    hasWebhookSecret: !!process.env.CLERK_WEBHOOK_SECRET,
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    nodeEnv: process.env.NODE_ENV,
+    hasWebhookSecret: !!env.CLERK_WEBHOOK_SECRET,
+    hasDatabaseUrl: !!env.DATABASE_URL,
+    nodeEnv: env.NODE_ENV,
   });
 
-  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+  const WEBHOOK_SECRET = env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
     console.error("❌ CLERK_WEBHOOK_SECRET not found in environment");

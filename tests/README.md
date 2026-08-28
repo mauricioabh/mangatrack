@@ -42,11 +42,19 @@ Basic functionality tests:
 
 Dashboard functionality tests:
 
-- Dashboard loading with user data
-- Empty state display
-- Navigation functionality
+- Dashboard loading with authenticated user
+- `/api/user/profile` and `/api/manga/bookmarks` return JSON (not HTML 404)
+- Library heading, empty state or search filter
+- Navigation to browse
 
-### Unit (Jest, `*.test.ts`)
+### `i18n.spec.ts`
+
+Internationalization tests (requires auth):
+
+- Language switcher in Settings (EN ↔ ES)
+- `/es/dashboard` shows translated heading
+
+### Unit (Vitest, `*.test.ts`)
 
 - `consumet/mappers.test.ts` — Consumet search/detail/chapter mappers
 - `consumet/ids.test.ts` — `~` encoding for slashy chapter ids
@@ -80,7 +88,7 @@ Simple example tests:
 - **Test Directory**: `./tests`
 - **Base URL**: `http://localhost:3000`
 - **Browsers**: Chromium, Firefox, WebKit
-- **Auto Server**: Starts dev server automatically
+- **Server**: Start `npm run dev` in another terminal before running E2E tests
 
 ### Environment Setup
 

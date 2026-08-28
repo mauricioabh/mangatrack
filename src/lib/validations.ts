@@ -34,7 +34,7 @@ export const userPreferencesSchema = z
       data.libraryFilterReading !== undefined ||
       data.libraryFilterFinished !== undefined ||
       data.librarySort !== undefined,
-    { message: "At least one preference field is required" }
+    { message: "At least one preference field is required" },
   );
 
 const providerSchema = z

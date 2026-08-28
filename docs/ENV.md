@@ -150,6 +150,26 @@ Variables `MANGADEX_*` están **deprecadas** y ya no se usan para catálogo de l
 | `TEST_USER_EMAIL`   | Usuario de prueba Clerk              | Dev/e2e   |
 | `TEST_USER_PASSWORD`| Contraseña de prueba                 | Dev/e2e   |
 
+## Upstash (rate limiting)
+
+Solo límites de abuso en APIs sensibles — **no** cache de catálogo/reader/library.
+
+| Variable | Descripción | Requerida |
+| -------- | ----------- | --------- |
+| `UPSTASH_REDIS_REST_URL` | URL REST de Upstash Redis | Opcional local; recomendado preview/prod |
+| `UPSTASH_REDIS_REST_TOKEN` | Token REST | Opcional local; recomendado preview/prod |
+
+Reutilizar la instancia Wayool compartida con Watchily; los prefixes (`watchily:*` vs `mangatrack:*`) evitan colisiones.
+
+## PostHog (analytics producto)
+
+Mismo project que Watchily/Passward. Filtrar eventos en dashboard con **`app = man`**.
+
+| Variable | Descripción | Requerida |
+| -------- | ----------- | --------- |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Project API key | Opcional dev; prod/preview |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Ingest host (ej. `https://us.i.posthog.com`) | Opcional dev; prod/preview |
+
 ## Notas
 
 - **Nunca** commitear `.env.local` — está en `.gitignore`

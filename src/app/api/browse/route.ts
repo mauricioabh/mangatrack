@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { fetchBrowseFeed } from "@/lib/browse";
+import { rateLimitBrowse, rateLimitResponse } from "@/lib/rate-limit";
 import { browseFeedSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
@@ -9,9 +10,12 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
+
+    const rateLimit = await rateLimitBrowse(user.id);
+    if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
 
     const { searchParams } = new URL(request.url);
     const parsed = browseFeedSchema.safeParse({
@@ -29,7 +33,7 @@ export async function GET(request: NextRequest) {
           error: "Invalid browse parameters",
           details: parsed.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +52,7 @@ export async function GET(request: NextRequest) {
     console.error("Browse feed error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load browse feed" },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

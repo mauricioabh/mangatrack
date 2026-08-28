@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!mangaId || !provider) {
       return NextResponse.json(
         { success: false, error: "provider and mangaId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     console.error("Error checking bookmark status:", error);
     return NextResponse.json(
       { success: false, error: "Failed to check bookmark status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (existingBookmark) {
       return NextResponse.json(
         { success: false, error: "Manga already bookmarked" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
             success: false,
             error: `Basic users can only bookmark up to ${BASIC_BOOKMARK_LIMIT} manga. Upgrade to Premium for unlimited bookmarks.`,
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     console.error("Error bookmarking manga:", error);
     return NextResponse.json(
       { success: false, error: "Failed to bookmark manga" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -129,7 +129,7 @@ export async function DELETE(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -155,7 +155,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error removing bookmark:", error);
     return NextResponse.json(
       { success: false, error: "Failed to remove bookmark" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -167,7 +167,7 @@ export async function PATCH(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -188,7 +188,7 @@ export async function PATCH(request: NextRequest) {
     if (!bookmark) {
       return NextResponse.json(
         { success: false, error: "Manga is not in your library" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating finished status:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update finished status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

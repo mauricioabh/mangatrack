@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mangaSearchSchema } from "@/lib/validations";
+import { getClerkUserId } from "@/lib/auth-request";
 import {
   ConsumetConfigError,
   ConsumetError,
   getProviderAllowlist,
   searchMangaMultiProvider,
 } from "@/lib/consumet";
+import { rateLimitResponse, rateLimitSearch } from "@/lib/rate-limit";
+import { mangaSearchSchema } from "@/lib/validations";
 
 function parseProvidersParam(raw: string | null): string[] | undefined {
   if (!raw?.trim()) return undefined;
@@ -17,6 +19,12 @@ function parseProvidersParam(raw: string | null): string[] | undefined {
 }
 
 export async function GET(request: NextRequest) {
+  const userId = await getClerkUserId();
+  if (userId) {
+    const rateLimit = await rateLimitSearch(userId);
+    if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query") || "";
@@ -68,9 +76,7 @@ export async function GET(request: NextRequest) {
     }
     if (genre) {
       const g = genre.toLowerCase();
-      data = data.filter((m) =>
-        m.genres.some((x) => x.toLowerCase() === g)
-      );
+      data = data.filter((m) => m.genres.some((x) => x.toLowerCase() === g));
     }
 
     // Soft client-side page slice if providers return large pages
@@ -98,19 +104,19 @@ export async function GET(request: NextRequest) {
     if (error instanceof ConsumetConfigError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
     if (error instanceof ConsumetError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: error.status >= 500 ? 502 : error.status }
+        { status: error.status >= 500 ? 502 : error.status },
       );
     }
     console.error("Search error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to search manga" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

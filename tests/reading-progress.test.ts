@@ -46,17 +46,17 @@ describe("reading-progress", () => {
   it("getContinueReadingLabel reflects last session chapter", () => {
     expect(getContinueReadingLabel(chapters, new Set())).toBe("Start Reading");
     expect(getContinueReadingLabel(chapters, new Set(["c3"]), "c3")).toBe(
-      "Continue Reading — Ch. 3"
+      "Continue Reading — Ch. 3",
     );
     expect(
-      getContinueReadingLabel(chapters, new Set(["c1", "c2", "c3"]), "c3")
+      getContinueReadingLabel(chapters, new Set(["c1", "c2", "c3"]), "c3"),
     ).toBe("Re-read from start");
   });
 
   it("areAllChaptersRead", () => {
     expect(areAllChaptersRead(chapters, new Set(["c1"]))).toBe(false);
     expect(areAllChaptersRead(chapters, new Set(["c1", "c2", "c3"]))).toBe(
-      true
+      true,
     );
   });
 });

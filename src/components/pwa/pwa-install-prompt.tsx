@@ -82,7 +82,9 @@ export function PwaInstallPrompt() {
       <div className="flex w-full max-w-md items-center gap-3 rounded-xl border border-border bg-background/95 px-3 py-3 shadow-lg backdrop-blur-md sm:px-4">
         <Download className="h-5 w-5 shrink-0 text-primary" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">Install MangaTrack</p>
+          <p className="text-sm font-medium text-foreground">
+            Install MangaTrack
+          </p>
           <p className="text-xs text-muted-foreground">
             Add to your home screen for a faster app-like experience.
           </p>
