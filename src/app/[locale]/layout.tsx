@@ -57,20 +57,20 @@ export default async function LocaleLayout({ children, params }: Props) {
   const savedTheme = resolveAppTheme(cookieStore.get(THEME_COOKIE_NAME)?.value);
 
   return (
-    <ClerkProvider>
-      <html
-        lang={locale}
-        className={`${themeClassName(savedTheme)} bg-[#0f172a]`}
-        suppressHydrationWarning
+    <html
+      lang={locale}
+      className={`${themeClassName(savedTheme)} bg-[#0f172a]`}
+      suppressHydrationWarning
+    >
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <ThemeScript />
+        <JsonLd data={webApplicationJsonLd()} />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-dvh overflow-x-hidden antialiased`}
       >
-        <head>
-          <link rel="manifest" href="/manifest.webmanifest" />
-          <ThemeScript />
-          <JsonLd data={webApplicationJsonLd()} />
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} min-h-dvh overflow-x-hidden antialiased`}
-        >
+        <ClerkProvider>
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
               <PostHogProvider>
@@ -86,8 +86,8 @@ export default async function LocaleLayout({ children, params }: Props) {
               </PostHogProvider>
             </QueryProvider>
           </NextIntlClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
