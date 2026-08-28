@@ -1,6 +1,5 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
 type ClerkReadyProps = {
@@ -13,29 +12,31 @@ type ClerkWithLoader = {
 };
 
 export function ClerkReady({ children }: ClerkReadyProps) {
-  const clerk = useClerk();
-  const [isReady, setIsReady] = useState(clerk.loaded);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    const clerk = (window as unknown as { Clerk?: ClerkWithLoader }).Clerk;
+
+    if (!clerk) return () => undefined;
+
     if (clerk.loaded) {
       setIsReady(true);
-      return;
+    } else {
+      void clerk
+        .load()
+        .then(() => {
+          if (active) setIsReady(true);
+        })
+        .catch(() => {
+          if (active) setIsReady(false);
+        });
     }
-
-    let active = true;
-    void (clerk as unknown as ClerkWithLoader)
-      .load()
-      .then(() => {
-        if (active) setIsReady(true);
-      })
-      .catch(() => {
-        if (active) setIsReady(false);
-      });
 
     return () => {
       active = false;
     };
-  }, [clerk]);
+  }, []);
 
   if (!isReady) {
     return (
