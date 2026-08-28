@@ -43,7 +43,9 @@
     "sortTitleAsc": "Título A–Z",
     "sortTitleDesc": "Título Z–A",
     "sortAddedDesc": "Añadido ↓",
-    "sortAddedAsc": "Añadido ↑"
+    "sortAddedAsc": "Añadido ↑",
+    "loadError": "No pudimos cargar tu biblioteca.",
+    "retry": "Intentar de nuevo"
   },
   "search": {
     "title": "Buscar manga",

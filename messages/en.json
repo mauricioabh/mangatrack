@@ -43,7 +43,9 @@
     "sortTitleAsc": "Title A–Z",
     "sortTitleDesc": "Title Z–A",
     "sortAddedDesc": "Added ↓",
-    "sortAddedAsc": "Added ↑"
+    "sortAddedAsc": "Added ↑",
+    "loadError": "We couldn't load your library.",
+    "retry": "Try again"
   },
   "search": {
     "title": "Search Manga",
