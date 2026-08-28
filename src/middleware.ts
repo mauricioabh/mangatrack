@@ -1,11 +1,19 @@
 import createMiddleware from "next-intl/middleware";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
-const isApiRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"]);
+function isApiRoute(req: NextRequest): boolean {
+  const pathname = req.nextUrl.pathname;
+  return (
+    pathname === "/api" ||
+    pathname.startsWith("/api/") ||
+    pathname === "/trpc" ||
+    pathname.startsWith("/trpc/")
+  );
+}
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
