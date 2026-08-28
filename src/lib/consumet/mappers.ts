@@ -22,7 +22,7 @@ export function mapStatus(raw?: string | null): AppMangaStatus {
 }
 
 function firstAltTitle(
-  altTitles?: string[] | Array<Record<string, string>>
+  altTitles?: string[] | Array<Record<string, string>>,
 ): string | undefined {
   if (!altTitles || altTitles.length === 0) return undefined;
   for (const entry of altTitles) {
@@ -41,7 +41,7 @@ function firstAltTitle(
  */
 export function resolveLocalizedString(
   value: unknown,
-  preferredLocales: string[] = ["en", "en-us", "ja-ro", "ja"]
+  preferredLocales: string[] = ["en", "en-us", "ja-ro", "ja"],
 ): string | undefined {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -62,7 +62,7 @@ export function resolveLocalizedString(
       ([key, v]) =>
         key.toLowerCase() === locale.toLowerCase() &&
         typeof v === "string" &&
-        v.trim()
+        v.trim(),
     );
     if (found && typeof found[1] === "string") return found[1].trim();
   }
@@ -75,7 +75,7 @@ export function resolveLocalizedString(
 export function resolveTitle(
   title: unknown,
   altTitles?: string[] | Array<Record<string, string>>,
-  fallbackTitle?: string
+  fallbackTitle?: string,
 ): string {
   const fromTitle = resolveLocalizedString(title);
   if (fromTitle) return fromTitle;
@@ -89,7 +89,7 @@ export function resolveTitle(
 export function resolveCoverImage(
   provider: string,
   id: string,
-  image?: string | null
+  image?: string | null,
 ): string | undefined {
   if (typeof image === "string" && image.trim()) {
     return normalizeCoverUrl(provider, image.trim());
@@ -105,7 +105,7 @@ export function resolveCoverImage(
 
 export function mapSearchResult(
   item: ConsumetSearchResult,
-  provider: string
+  provider: string,
 ): MangaSummary {
   return {
     id: item.id,
@@ -131,10 +131,7 @@ function parseChapterNumberFromTitle(title: string): number {
   return 0;
 }
 
-export function mapChapter(
-  raw: ConsumetChapterRaw,
-  mangaId: string
-): Chapter {
+export function mapChapter(raw: ConsumetChapterRaw, mangaId: string): Chapter {
   let chapterNumber = 0;
   if (raw.chapterNumber != null && String(raw.chapterNumber).length > 0) {
     const n = Number.parseFloat(String(raw.chapterNumber));
@@ -193,7 +190,7 @@ export function getLatestChapterUpdate(chapters: Chapter[]): {
 export function mapMangaDetail(
   info: ConsumetInfoResponse,
   provider: string,
-  fallbackTitle?: string
+  fallbackTitle?: string,
 ): MangaDetail {
   const authors = info.authors ?? [];
   const artistRaw = info.artist;
@@ -247,7 +244,7 @@ export function mapPages(raw: ConsumetPageRaw[]): Page[] {
 
 export function getChapterNeighbors<T extends { id: string }>(
   chapters: T[],
-  currentId: string
+  currentId: string,
 ): { previous: T | null; next: T | null } {
   const index = chapters.findIndex((c) => c.id === currentId);
   if (index < 0) return { previous: null, next: null };
@@ -260,12 +257,12 @@ export function getChapterNeighbors<T extends { id: string }>(
 export function buildChapterPageProxyPaths(
   provider: string,
   chapterId: string,
-  pageCount: number
+  pageCount: number,
 ): string[] {
   const enc = chapterId.replaceAll("/", "~");
   return Array.from(
     { length: pageCount },
     (_, index) =>
-      `/api/chapters/${encodeURIComponent(provider)}/${enc}/pages/${index}`
+      `/api/chapters/${encodeURIComponent(provider)}/${enc}/pages/${index}`,
   );
 }

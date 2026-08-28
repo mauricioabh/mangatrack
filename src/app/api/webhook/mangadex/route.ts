@@ -11,7 +11,7 @@ export async function POST() {
       error:
         "MangaDex webhook disabled. Chapter notifications use daily Consumet polling.",
     },
-    { status: 410 }
+    { status: 410 },
   );
 }
 

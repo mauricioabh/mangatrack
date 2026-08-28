@@ -34,14 +34,14 @@ export async function POST() {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (!user.email) {
       return NextResponse.json(
         { success: false, error: "User email not found" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,14 +56,14 @@ export async function POST() {
     } else {
       return NextResponse.json(
         { success: false, error: result.error || "Failed to send email" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error("Error sending test email:", error);
     return NextResponse.json(
       { success: false, error: "Failed to send test email" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

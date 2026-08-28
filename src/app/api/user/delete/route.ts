@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { rateLimitDeleteAccount, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function DELETE() {
   try {
@@ -9,9 +10,12 @@ export async function DELETE() {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
+
+    const rateLimit = await rateLimitDeleteAccount(user.id);
+    if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
 
     // Delete user and all related data (cascade will handle related records)
     await db.user.delete({
@@ -28,7 +32,7 @@ export async function DELETE() {
     console.error("Error deleting user account:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete account" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

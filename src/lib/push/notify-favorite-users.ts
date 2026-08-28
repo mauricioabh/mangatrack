@@ -76,7 +76,7 @@ export async function notifyFavoriteUsersInAppAndEmail(options: {
 
 export async function getFavoriteUserIdsForManga(
   provider: string,
-  externalMangaId: string
+  externalMangaId: string,
 ): Promise<string[]> {
   const favorites = await db.userFavorite.findMany({
     where: { provider, externalMangaId },

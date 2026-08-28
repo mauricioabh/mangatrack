@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { inngest } from "@/inngest/client";
 import { db } from "@/lib/db";
 import { getLatestChapterUpdate, getMangaInfo } from "@/lib/consumet";
@@ -12,7 +13,7 @@ const CONCURRENCY = 3;
 async function mapPool<T, R>(
   items: T[],
   concurrency: number,
-  fn: (item: T) => Promise<R>
+  fn: (item: T) => Promise<R>,
 ): Promise<R[]> {
   const results: R[] = [];
   let index = 0;
@@ -26,7 +27,7 @@ async function mapPool<T, R>(
 
   const workers = Array.from(
     { length: Math.min(concurrency, items.length) },
-    () => worker()
+    () => worker(),
   );
   await Promise.all(workers);
   return results;
@@ -48,7 +49,7 @@ export const pollFavoriteChapters = inngest.createFunction(
           externalMangaId: true,
           lastNotifiedChapterId: true,
         },
-      })
+      }),
     );
 
     if (favorites.length === 0) {
@@ -73,8 +74,7 @@ export const pollFavoriteChapters = inngest.createFunction(
             info.chapters.find((c) => c.id === latest.chapterId) ?? null;
           const externalChapterId = latest.chapterId;
           const chapterTitle = newest?.title;
-          const chapterNumber =
-            newest?.chapterNumber ?? latest.chapterNumber;
+          const chapterNumber = newest?.chapterNumber ?? latest.chapterNumber;
 
           if (
             fav.lastNotifiedChapterId &&
@@ -116,11 +116,10 @@ export const pollFavoriteChapters = inngest.createFunction(
             });
             const unique = [...new Set(tokens.map((t) => t.token))];
             if (unique.length > 0) {
-              const appUrl =
-                process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+              const appUrl = env.NEXT_PUBLIC_APP_URL;
               const url = `${appUrl}${readerPath(
                 fav.provider,
-                externalChapterId
+                externalChapterId,
               )}`;
               const messaging = getFirebaseMessaging();
               for (const batch of chunkTokens(unique)) {
@@ -150,7 +149,7 @@ export const pollFavoriteChapters = inngest.createFunction(
         } catch (error) {
           console.error(
             `Poll failed for favorite ${fav.id} (${fav.provider}/${fav.externalMangaId}):`,
-            error
+            error,
           );
           return {
             status: "error" as const,
@@ -158,7 +157,7 @@ export const pollFavoriteChapters = inngest.createFunction(
             message: error instanceof Error ? error.message : "unknown",
           };
         }
-      })
+      }),
     );
 
     const notified = outcomes.filter((o) => o.status === "notified").length;
@@ -171,5 +170,5 @@ export const pollFavoriteChapters = inngest.createFunction(
       seeded,
       errors,
     };
-  }
+  },
 );

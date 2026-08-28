@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import swaggerJsdoc from "swagger-jsdoc";
 
 /**
@@ -10,7 +11,8 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "MangaTrack API",
       version: "1.0.0",
-      description: "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
+      description:
+        "A clean, minimalist web app for discovering, reading, and tracking manga with automated updates.",
       contact: {
         name: "MangaTrack Team",
         email: "support@mangatrack.com",
@@ -22,7 +24,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        url: env.NEXT_PUBLIC_APP_URL,
         description: "Development server",
       },
     ],
@@ -86,13 +88,24 @@ const options: swaggerJsdoc.Options = {
               description: "User last update timestamp",
             },
           },
-          required: ["id", "clerkId", "email", "tier", "createdAt", "updatedAt"],
+          required: [
+            "id",
+            "clerkId",
+            "email",
+            "tier",
+            "createdAt",
+            "updatedAt",
+          ],
         },
         MangaListItem: {
           type: "object",
           description: "Manga from MangaDex API (not stored in Neon)",
           properties: {
-            id: { type: "string", format: "uuid", description: "MangaDex manga UUID" },
+            id: {
+              type: "string",
+              format: "uuid",
+              description: "MangaDex manga UUID",
+            },
             title: { type: "string" },
             description: { type: "string", nullable: true },
             coverImage: { type: "string", format: "uri", nullable: true },
@@ -109,7 +122,11 @@ const options: swaggerJsdoc.Options = {
           type: "object",
           description: "Chapter from MangaDex feed (not stored in Neon)",
           properties: {
-            id: { type: "string", format: "uuid", description: "MangaDex chapter UUID" },
+            id: {
+              type: "string",
+              format: "uuid",
+              description: "MangaDex chapter UUID",
+            },
             mangaId: { type: "string", format: "uuid" },
             chapterNumber: { type: "number" },
             title: { type: "string" },
@@ -186,7 +203,15 @@ const options: swaggerJsdoc.Options = {
               description: "Notification creation timestamp",
             },
           },
-          required: ["id", "userId", "type", "title", "message", "read", "createdAt"],
+          required: [
+            "id",
+            "userId",
+            "type",
+            "title",
+            "message",
+            "read",
+            "createdAt",
+          ],
         },
         // API Response Schemas
         ApiResponse: {

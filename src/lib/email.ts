@@ -1,9 +1,10 @@
+import { env } from "@/env";
 import { Resend } from "resend";
 
 let resendClient: Resend | undefined;
 
 function getResend(): Resend {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
     throw new Error("RESEND_API_KEY is not set");
   }
@@ -34,10 +35,10 @@ export interface NotificationEmailData {
  */
 export async function sendNotificationEmail(
   email: string,
-  data: NotificationEmailData
+  data: NotificationEmailData,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    if (!env.RESEND_API_KEY) {
       console.error("RESEND_API_KEY is not configured");
       return { success: false, error: "Email service not configured" };
     }
@@ -267,13 +268,13 @@ Manage your preferences: ${data.appUrl}/settings
  * Send a test email to verify the email service is working
  */
 export async function sendTestEmail(
-  email: string
+  email: string,
 ): Promise<{ success: boolean; error?: string }> {
   return sendNotificationEmail(email, {
     userName: "Test User",
     notificationTitle: "Test Email from MangaTrack",
     notificationMessage:
       "This is a test email to verify that the email service is working correctly.",
-    appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    appUrl: env.NEXT_PUBLIC_APP_URL,
   });
 }

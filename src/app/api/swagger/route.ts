@@ -21,7 +21,7 @@ export async function GET() {
     console.error("Error generating Swagger spec:", error);
     return NextResponse.json(
       { error: "Failed to generate Swagger specification" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

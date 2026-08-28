@@ -9,6 +9,7 @@ config({ path: ".env.test" });
  */
 export default defineConfig({
   testDir: "./tests",
+  testMatch: /.*\.spec\.ts/,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Set environment variables for tests */

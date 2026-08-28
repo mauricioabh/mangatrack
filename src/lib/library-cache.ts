@@ -42,7 +42,7 @@ export function getLastLibraryCacheUserId(): string | null {
 }
 
 export function readLibraryCache<TBookmark = unknown>(
-  userId: string
+  userId: string,
 ): LibraryCacheEntry<TBookmark> | null {
   if (!canUseSessionStorage()) return null;
   try {
@@ -65,14 +65,14 @@ export function readLibraryCache<TBookmark = unknown>(
 
 export function isLibraryCacheFresh(
   fetchedAt: number,
-  maxAgeMs: number = LIBRARY_CACHE_MAX_AGE_MS
+  maxAgeMs: number = LIBRARY_CACHE_MAX_AGE_MS,
 ): boolean {
   return Date.now() - fetchedAt < maxAgeMs;
 }
 
 export function writeLibraryCache<TBookmark>(
   user: LibraryCacheUser,
-  bookmarks: TBookmark[]
+  bookmarks: TBookmark[],
 ): void {
   if (!canUseSessionStorage()) return;
   const entry: LibraryCacheEntry<TBookmark> = {

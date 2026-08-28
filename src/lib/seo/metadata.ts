@@ -39,7 +39,11 @@ export function buildPageMetadata({
       : {
           index: true,
           follow: true,
-          googleBot: { index: true, follow: true, "max-image-preview": "large" },
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+          },
         },
     openGraph: {
       type: "website",

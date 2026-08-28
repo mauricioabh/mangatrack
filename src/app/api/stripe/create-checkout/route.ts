@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/constants";
+import { rateLimitCheckout, rateLimitResponse } from "@/lib/rate-limit";
 import { createCheckoutSession } from "@/lib/stripe";
 import { stripeCheckoutSchema } from "@/lib/validations";
 
@@ -11,14 +12,17 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
+
+    const rateLimit = await rateLimitCheckout(user.id);
+    if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
 
     if (user.tier === "PREMIUM") {
       return NextResponse.json(
         { success: false, error: "User already has premium subscription" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest) {
       user.id,
       priceId,
       successUrl ?? `${appUrl}/dashboard?success=true`,
-      cancelUrl ?? `${appUrl}/settings?canceled=true`
+      cancelUrl ?? `${appUrl}/settings?canceled=true`,
     );
 
     return NextResponse.json({
@@ -41,7 +45,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating checkout session:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create checkout session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

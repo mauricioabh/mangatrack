@@ -89,7 +89,8 @@ export async function registerFcmPushToken(): Promise<{
   if (!isFirebaseWebConfigured()) {
     return {
       success: false,
-      error: "Firebase web push is not configured (missing NEXT_PUBLIC_FIREBASE_* env).",
+      error:
+        "Firebase web push is not configured (missing NEXT_PUBLIC_FIREBASE_* env).",
     };
   }
 
@@ -166,7 +167,11 @@ export async function unregisterFcmPushToken(): Promise<{
 }
 
 export function subscribeToForegroundMessages(
-  handler: (payload: { title?: string; body?: string; data?: Record<string, string> }) => void
+  handler: (payload: {
+    title?: string;
+    body?: string;
+    data?: Record<string, string>;
+  }) => void,
 ): () => void {
   let unsubscribe = () => {};
 

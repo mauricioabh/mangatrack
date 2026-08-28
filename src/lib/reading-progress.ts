@@ -25,7 +25,7 @@ export type LibraryProgress = {
 };
 
 export function sortChaptersByNumber<T extends { chapterNumber: number }>(
-  chapters: T[]
+  chapters: T[],
 ): T[] {
   return [...chapters].sort((a, b) => a.chapterNumber - b.chapterNumber);
 }
@@ -37,7 +37,7 @@ export function sortChaptersByNumber<T extends { chapterNumber: number }>(
 export function getChapterToContinue<T extends ChapterRef>(
   chapters: T[],
   readChapterIds: ReadonlySet<string>,
-  lastReadChapterId?: string | null
+  lastReadChapterId?: string | null,
 ): T | undefined {
   const sorted = sortChaptersByNumber(chapters);
   if (sorted.length === 0) return undefined;
@@ -60,24 +60,22 @@ export function getChapterToContinue<T extends ChapterRef>(
 }
 
 export function hasReadingProgress(
-  readChapterIds: ReadonlySet<string>
+  readChapterIds: ReadonlySet<string>,
 ): boolean {
   return readChapterIds.size > 0;
 }
 
 export function areAllChaptersRead(
   chapters: ChapterRef[],
-  readChapterIds: ReadonlySet<string>
+  readChapterIds: ReadonlySet<string>,
 ): boolean {
-  return (
-    chapters.length > 0 && chapters.every((c) => readChapterIds.has(c.id))
-  );
+  return chapters.length > 0 && chapters.every((c) => readChapterIds.has(c.id));
 }
 
 export function getContinueReadingLabel(
   chapters: ChapterRef[],
   readChapterIds: ReadonlySet<string>,
-  lastReadChapterId?: string | null
+  lastReadChapterId?: string | null,
 ): string {
   if (!hasReadingProgress(readChapterIds)) {
     return "Start Reading";
@@ -88,7 +86,7 @@ export function getContinueReadingLabel(
   const target = getChapterToContinue(
     chapters,
     readChapterIds,
-    lastReadChapterId
+    lastReadChapterId,
   );
   if (target) {
     return `Continue Reading — Ch. ${target.chapterNumber}`;
@@ -101,7 +99,7 @@ export function getContinueReadingLabel(
  * No Prisma fields — safe to call from bookmarks API enrichment.
  */
 export function deriveLibraryProgress(
-  input: LibraryProgressInput
+  input: LibraryProgressInput,
 ): LibraryProgress {
   const { hasHistory, readChapterIds, chapters } = input;
   const isReading = hasHistory || readChapterIds.size > 0;

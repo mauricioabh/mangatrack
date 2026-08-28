@@ -18,19 +18,19 @@ describe("provider-routes", () => {
   it("builds mangadex path-style endpoints", () => {
     const id = "a1b2c3d4-e5f6-4711-8abc-1234567890ab";
     expect(consumetInfoPath("mangadex", id)).toBe(
-      `/manga/mangadex/info/${encodeURIComponent(id)}`
+      `/manga/mangadex/info/${encodeURIComponent(id)}`,
     );
     expect(consumetReadPath("mangadex", id)).toBe(
-      `/manga/mangadex/read/${encodeURIComponent(id)}`
+      `/manga/mangadex/read/${encodeURIComponent(id)}`,
     );
   });
 
   it("keeps query-style base paths for scrapers", () => {
     expect(consumetInfoPath("mangahere", "one_piece")).toBe(
-      "/manga/mangahere/info"
+      "/manga/mangahere/info",
     );
     expect(consumetReadPath("mangapill", "3069/ch")).toBe(
-      "/manga/mangapill/read"
+      "/manga/mangapill/read",
     );
   });
 
@@ -38,11 +38,13 @@ describe("provider-routes", () => {
     const src =
       "https://mangadex.org/covers/a1c7c817-4e59-43b7-9365-09675a149a6f/2f4aca53-64c7-46ac-ae85-3bc9b3169890.png";
     expect(rewriteMangaDexCoverUrl(src)).toBe(
-      "https://uploads.mangadex.org/covers/a1c7c817-4e59-43b7-9365-09675a149a6f/2f4aca53-64c7-46ac-ae85-3bc9b3169890.png.256.jpg"
+      "https://uploads.mangadex.org/covers/a1c7c817-4e59-43b7-9365-09675a149a6f/2f4aca53-64c7-46ac-ae85-3bc9b3169890.png.256.jpg",
     );
-    expect(normalizeCoverUrl("mangadex", src)).toContain("uploads.mangadex.org");
+    expect(normalizeCoverUrl("mangadex", src)).toContain(
+      "uploads.mangadex.org",
+    );
     expect(
-      normalizeCoverUrl("mangahere", "http://fmcdn.mangahere.com/cover.jpg")
+      normalizeCoverUrl("mangahere", "http://fmcdn.mangahere.com/cover.jpg"),
     ).toBe("http://fmcdn.mangahere.com/cover.jpg");
   });
 });

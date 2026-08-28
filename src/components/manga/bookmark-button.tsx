@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { captureEvent } from "@/components/providers/posthog-provider";
 import { invalidateLibraryCache } from "@/lib/library-cache";
+import { invalidateLibraryQueries } from "@/lib/queries";
 import { toast } from "sonner";
 
 interface BookmarkButtonProps {
@@ -21,6 +24,7 @@ export function BookmarkButton({
 }: BookmarkButtonProps) {
   const [loading, setLoading] = useState(false);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
+  const queryClient = useQueryClient();
 
   const handleBookmark = async () => {
     setLoading(true);
@@ -47,11 +51,15 @@ export function BookmarkButton({
         setBookmarked(newBookmarkState);
         onBookmarkChange?.(newBookmarkState);
         invalidateLibraryCache();
+        void invalidateLibraryQueries(queryClient);
+        captureEvent(newBookmarkState ? "bookmark_added" : "bookmark_removed", {
+          provider,
+        });
 
         toast.success(
           newBookmarkState
             ? "Manga bookmarked successfully!"
-            : "Bookmark removed successfully!"
+            : "Bookmark removed successfully!",
         );
       } else {
         toast.error(data.error || "Failed to update bookmark");

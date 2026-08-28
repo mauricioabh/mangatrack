@@ -44,7 +44,7 @@ import { db } from "@/lib/db";
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -54,7 +54,7 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -69,7 +69,7 @@ export async function PATCH(
     if (!notification) {
       return NextResponse.json(
         { success: false, error: "Notification not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -91,7 +91,7 @@ export async function PATCH(
     console.error("Error marking notification as read:", error);
     return NextResponse.json(
       { success: false, error: "Failed to mark notification as read" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

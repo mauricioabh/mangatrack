@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { ConsumetError, getMangaInfo } from "@/lib/consumet";
+import { rateLimitChapterCount, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * Chapter count for search completeness comparison.
@@ -12,9 +13,12 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
+
+  const rateLimit = await rateLimitChapterCount(user.id);
+  if (rateLimit.limited) return rateLimitResponse(rateLimit.retryAfterSec);
 
   const provider = request.nextUrl.searchParams.get("provider")?.toLowerCase();
   const mangaId = request.nextUrl.searchParams.get("id");
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
   if (!provider || !mangaId) {
     return NextResponse.json(
       { success: false, error: "provider and id are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -31,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!detail) {
       return NextResponse.json(
         { success: false, error: "Manga not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -46,20 +50,20 @@ export async function GET(request: NextRequest) {
     });
     response.headers.set(
       "Cache-Control",
-      "private, s-maxage=3600, stale-while-revalidate=86400"
+      "private, s-maxage=3600, stale-while-revalidate=86400",
     );
     return response;
   } catch (error) {
     if (error instanceof ConsumetError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: error.status === 404 ? 404 : 502 }
+        { status: error.status === 404 ? 404 : 502 },
       );
     }
     console.error("chapter-count error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to resolve chapter count" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

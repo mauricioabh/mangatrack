@@ -7,7 +7,7 @@ export async function GET() {
   if (!config) {
     return NextResponse.json(
       { success: false, error: "Firebase web config not configured" },
-      { status: 503 }
+      { status: 503 },
     );
   }
 

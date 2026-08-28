@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const t = useTranslations("searchOverlay");
 
   // Focus input when overlay opens
   useEffect(() => {
@@ -81,13 +83,13 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search manga..."
+                    placeholder={t("placeholder")}
                     className="min-w-0 flex-1 bg-transparent text-base text-gray-900 outline-none placeholder-gray-500 dark:text-white dark:placeholder-gray-400 sm:text-xl"
                   />
                   <button
                     onClick={onClose}
                     className="ml-2 rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700 sm:hidden"
-                    aria-label="Close search"
+                    aria-label={t("close")}
                   >
                     <X className="h-5 w-5 text-gray-400" />
                   </button>
@@ -98,12 +100,12 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     disabled={!query.trim()}
                     className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:flex-none sm:px-6"
                   >
-                    Search
+                    {t("submit")}
                   </button>
                   <button
                     onClick={onClose}
                     className="hidden rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700 sm:block"
-                    aria-label="Close search"
+                    aria-label={t("close")}
                   >
                     <X className="h-5 w-5 text-gray-400" />
                   </button>
@@ -113,13 +115,13 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               {/* Search Tips */}
               <div className="border-t border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-900/50 sm:px-6 sm:py-4">
                 <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-                  <p>Type your search query and press Enter or click Search</p>
+                  <p>{t("hintEnter")}</p>
                   <p>
-                    Press{" "}
+                    {t("hintEsc")}{" "}
                     <kbd className="rounded bg-gray-200 px-2 py-1 font-mono text-xs dark:bg-gray-700">
                       Esc
                     </kbd>{" "}
-                    to close
+                    {t("hintClose")}
                   </p>
                 </div>
               </div>

@@ -23,12 +23,22 @@
 ## Testing
 
 - **Playwright** — E2E (`tests/`, `@clerk/testing`)
-- **Jest** — unit (config en package.json)
+- **Vitest** — unit (`vitest.config.ts`, `tests/**/*.test.ts`)
 
 ## Observabilidad / DX
 
 - **Sentry** — MCP de proyecto en `.cursor/mcp.json`
+- **PostHog** — analytics producto (`app: man`), project compartido Wayool
+- **@t3-oss/env-nextjs** — env tipado (`src/env.ts`)
+- **Husky + lint-staged + Prettier** — pre-commit
 - **Swagger** — `/api-docs`, `src/lib/swagger.ts`
+
+## Client data / i18n
+
+- **TanStack Query** — dashboard async data
+- **nuqs** — URL state en search/browse
+- **next-intl** — UI es/en (`messages/`, `[locale]` routes)
+- **@upstash/ratelimit** — rate limits API (no cache Redis)
 
 ## Deploy
 
@@ -48,7 +58,7 @@
 | `npm run build` | Build producción     |
 | `npm run typecheck` | `tsc --noEmit`   |
 | `npm run lint` | ESLint                |
-| `npm test` | Jest unit             |
+| `npm test` | Vitest unit             |
 | `npm run db:push` | Sync schema dev    |
 | `npm run db:migrate` | Migraciones formales |
 | `npm run db:sync` | Alinear schema Neon |

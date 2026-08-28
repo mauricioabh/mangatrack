@@ -34,11 +34,11 @@ describe("scoreTitleRelevance", () => {
   it("ranks exact and phrase matches above token-OR noise", () => {
     const q = "demon slayer";
     expect(scoreTitleRelevance("Demon Slayer", q)).toBeGreaterThan(
-      scoreTitleRelevance("Demon King", q)
+      scoreTitleRelevance("Demon King", q),
     );
-    expect(scoreTitleRelevance("Demon Slayer: Kimetsu no Yaiba", q)).toBeGreaterThan(
-      scoreTitleRelevance("Slayer Academy", q)
-    );
+    expect(
+      scoreTitleRelevance("Demon Slayer: Kimetsu no Yaiba", q),
+    ).toBeGreaterThan(scoreTitleRelevance("Slayer Academy", q));
     expect(scoreTitleRelevance("Demon King", q)).toBeLessThan(60);
   });
 
@@ -54,7 +54,7 @@ describe("matchesExactPhrase", () => {
     expect(matchesExactPhrase("Demon Slayer", "demon slayer")).toBe(true);
     expect(matchesExactPhrase("Demon King", "demon slayer")).toBe(false);
     expect(
-      matchesExactPhrase("The Demon Slayer Chronicles", "demon slayer")
+      matchesExactPhrase("The Demon Slayer Chronicles", "demon slayer"),
     ).toBe(true);
   });
 });
@@ -100,7 +100,7 @@ describe("resolveSearchProviders", () => {
 
   it("intersects with allowlist and dedupes", () => {
     expect(
-      resolveSearchProviders(allowlist, ["MangaPill", "unknown", "mangapill"])
+      resolveSearchProviders(allowlist, ["MangaPill", "unknown", "mangapill"]),
     ).toEqual(["mangapill"]);
   });
 

@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import Stripe from "stripe";
 
 let stripeInstance: Stripe | undefined;
@@ -7,7 +8,7 @@ function getStripeClient(): Stripe {
     return stripeInstance;
   }
 
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const secretKey = env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY is not set");
   }
@@ -32,8 +33,8 @@ export const stripe = new Proxy({} as Stripe, {
 });
 
 export const STRIPE_PRICE_IDS = {
-  PREMIUM_MONTHLY: process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || "",
-  PREMIUM_YEARLY: process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID || "",
+  PREMIUM_MONTHLY: env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || "",
+  PREMIUM_YEARLY: env.STRIPE_PREMIUM_YEARLY_PRICE_ID || "",
 } as const;
 
 /**
@@ -48,7 +49,7 @@ export async function createCheckoutSession(
   userId: string,
   priceId: string,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
 ) {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -77,7 +78,7 @@ export async function createCheckoutSession(
  */
 export async function createPortalSession(
   customerId: string,
-  returnUrl: string
+  returnUrl: string,
 ) {
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,

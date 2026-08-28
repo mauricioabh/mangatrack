@@ -38,7 +38,7 @@ export function browseCardHref(id: string, title: string): string {
 
 export function periodSinceIso(
   period: BrowsePeriod,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): string {
   const d = new Date(now.getTime());
   switch (period) {
@@ -82,7 +82,7 @@ function coverUrl(
   relationships: Array<{
     type?: string;
     attributes?: { fileName?: string };
-  }>
+  }>,
 ): string | null {
   const cover = relationships.find((r) => r.type === "cover_art");
   const fileName = cover?.attributes?.fileName;
@@ -128,7 +128,7 @@ function buildOrderParams(mode: BrowseMode): Record<string, string> {
 
 function buildTimeFilter(
   mode: BrowseMode,
-  period: BrowsePeriod
+  period: BrowsePeriod,
 ): Record<string, string> {
   const since = periodSinceIso(period);
   switch (mode) {
@@ -163,7 +163,7 @@ export async function fetchBrowseFeed(options: {
     params.set(key, value);
   }
   for (const [key, value] of Object.entries(
-    buildTimeFilter(options.mode, options.period)
+    buildTimeFilter(options.mode, options.period),
   )) {
     params.set(key, value);
   }
@@ -199,7 +199,7 @@ export async function fetchBrowseFeed(options: {
         if (!id) return null;
         const title = pickTitle(
           row.attributes?.title,
-          row.attributes?.altTitles
+          row.attributes?.altTitles,
         );
         const card: BrowseCard = {
           id,

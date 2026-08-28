@@ -1,3 +1,5 @@
+import { env } from "@/env";
+
 export type FirebaseWebConfig = {
   apiKey: string;
   authDomain: string;
@@ -8,12 +10,12 @@ export type FirebaseWebConfig = {
 };
 
 export function getFirebaseWebConfig(): FirebaseWebConfig | null {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
-  const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
+  const apiKey = env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const authDomain = env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+  const projectId = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const storageBucket = env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  const messagingSenderId = env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+  const appId = env.NEXT_PUBLIC_FIREBASE_APP_ID;
 
   if (
     !apiKey ||
@@ -37,7 +39,7 @@ export function getFirebaseWebConfig(): FirebaseWebConfig | null {
 }
 
 export function getFirebaseVapidKey(): string | null {
-  return process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ?? null;
+  return env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ?? null;
 }
 
 export function isFirebaseWebConfigured(): boolean {

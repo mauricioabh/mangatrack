@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: MangaRouteProps) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: MangaRouteProps) {
     if (!manga) {
       return NextResponse.json(
         { success: false, error: "Manga not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -43,13 +43,13 @@ export async function GET(request: NextRequest, { params }: MangaRouteProps) {
     if (error instanceof ConsumetError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: error.status === 404 ? 404 : 502 }
+        { status: error.status === 404 ? 404 : 502 },
       );
     }
     console.error("Error fetching manga:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch manga" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

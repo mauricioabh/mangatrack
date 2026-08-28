@@ -35,7 +35,7 @@ import type {
 export async function searchManga(
   provider: string,
   query: string,
-  page = 1
+  page = 1,
 ): Promise<{ data: MangaSummary[]; hasNextPage: boolean; page: number }> {
   const q = query.trim();
   if (!q) {
@@ -48,7 +48,7 @@ export async function searchManga(
     {
       params: page > 1 ? { page } : undefined,
       revalidate: 300,
-    }
+    },
   );
 
   const results = res.results ?? [];
@@ -75,7 +75,7 @@ export interface MultiSearchOptions {
 
 export async function searchMangaMultiProvider(
   query: string,
-  pageOrOptions: number | MultiSearchOptions = 1
+  pageOrOptions: number | MultiSearchOptions = 1,
 ): Promise<{
   data: MangaSummary[];
   providers: MultiSearchProviderResult[];
@@ -87,9 +87,7 @@ export async function searchMangaMultiProvider(
   hasMore: boolean;
 }> {
   const options: MultiSearchOptions =
-    typeof pageOrOptions === "number"
-      ? { page: pageOrOptions }
-      : pageOrOptions;
+    typeof pageOrOptions === "number" ? { page: pageOrOptions } : pageOrOptions;
   const page = options.page ?? 1;
   const allowlist = getProviderAllowlist();
   const availableProviders = allowlist;
@@ -117,7 +115,7 @@ export async function searchMangaMultiProvider(
       return { provider, ...result } as MultiSearchProviderResult & {
         hasNextPage: boolean;
       };
-    })
+    }),
   );
 
   const providerResults: MultiSearchProviderResult[] = [];
@@ -172,7 +170,7 @@ export async function searchMangaMultiProvider(
 export async function getMangaInfo(
   provider: string,
   id: string,
-  fallbackTitle?: string
+  fallbackTitle?: string,
 ): Promise<MangaDetail | null> {
   const providerKey = provider.toLowerCase();
   try {
@@ -195,10 +193,7 @@ export async function getMangaInfo(
 /** Short TTL so chapter JSON + page proxies share one Consumet scrape per instance. */
 const PAGE_LIST_TTL_MS = 5 * 60 * 1000;
 
-const pageListCache = new Map<
-  string,
-  { pages: Page[]; expires: number }
->();
+const pageListCache = new Map<string, { pages: Page[]; expires: number }>();
 const pageListInflight = new Map<string, Promise<Page[]>>();
 
 function pageListCacheKey(provider: string, chapterId: string): string {
@@ -207,7 +202,7 @@ function pageListCacheKey(provider: string, chapterId: string): string {
 
 async function fetchChapterPagesUncached(
   providerKey: string,
-  chapterId: string
+  chapterId: string,
 ): Promise<Page[]> {
   const path = consumetReadPath(providerKey, chapterId);
   const raw = await consumetFetch<ConsumetReadResponse>(path, {
@@ -219,7 +214,7 @@ async function fetchChapterPagesUncached(
     throw new ConsumetError(
       "Invalid chapter pages response (provider may not host this chapter)",
       502,
-      true
+      true,
     );
   }
 
@@ -228,7 +223,7 @@ async function fetchChapterPagesUncached(
 
 export async function getChapterPages(
   provider: string,
-  chapterId: string
+  chapterId: string,
 ): Promise<Page[]> {
   const providerKey = provider.toLowerCase();
   const key = pageListCacheKey(providerKey, chapterId);
@@ -264,7 +259,7 @@ export async function getChapterPages(
  */
 export function inferMangaIdFromChapterId(
   provider: string,
-  chapterId: string
+  chapterId: string,
 ): string | undefined {
   const p = provider.toLowerCase();
   if (p === "mangapill") {
@@ -279,7 +274,7 @@ export function inferMangaIdFromChapterId(
 export async function getChapterReaderPayload(
   provider: string,
   chapterId: string,
-  mangaId?: string
+  mangaId?: string,
 ): Promise<{
   chapter: {
     id: string;
@@ -298,7 +293,7 @@ export async function getChapterReaderPayload(
     throw new ConsumetError(
       "mangaId is required when chapter id has no manga prefix",
       400,
-      false
+      false,
     );
   }
 

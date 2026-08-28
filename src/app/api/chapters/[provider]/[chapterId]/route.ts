@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
       if (pages.length === 0) {
         return NextResponse.json(
           { success: false, error: "Chapter not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       return NextResponse.json({
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
           pages: buildChapterPageProxyPaths(
             providerKey,
             chapterId,
-            pages.length
+            pages.length,
           ),
         },
       });
@@ -62,8 +62,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
     // Meta path: manga + chapter list for chrome / neighbors (no page scrape)
     if (fields === "meta") {
       const resolvedMangaId =
-        mangaId?.trim() ||
-        inferMangaIdFromChapterId(providerKey, chapterId);
+        mangaId?.trim() || inferMangaIdFromChapterId(providerKey, chapterId);
 
       if (!resolvedMangaId) {
         return NextResponse.json(
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
             success: false,
             error: "mangaId is required when chapter id has no manga prefix",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
       if (!detail) {
         return NextResponse.json(
           { success: false, error: "Chapter not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -110,20 +109,20 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
     const payload = await getChapterReaderPayload(
       providerKey,
       chapterId,
-      mangaId ?? undefined
+      mangaId ?? undefined,
     );
 
     if (!payload) {
       return NextResponse.json(
         { success: false, error: "Chapter not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const pages = buildChapterPageProxyPaths(
       providerKey,
       chapterId,
-      payload.chapter.pages.length
+      payload.chapter.pages.length,
     );
 
     return NextResponse.json({
@@ -145,13 +144,15 @@ export async function GET(request: NextRequest, { params }: ChapterRouteProps) {
     if (error instanceof ConsumetError) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: error.status === 404 ? 404 : error.status === 400 ? 400 : 502 }
+        {
+          status: error.status === 404 ? 404 : error.status === 400 ? 400 : 502,
+        },
       );
     }
     console.error("Error fetching chapter:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch chapter" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { BookOpen, Search, Settings, Crown, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import SearchOverlay from "./SearchOverlay";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { parseJsonResponse } from "@/lib/fetch-json";
 // Cache removed - using regular fetch for fresh data
 
 export default function GlobalHeader() {
@@ -16,6 +18,7 @@ export default function GlobalHeader() {
     unknown
   > | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const t = useTranslations("common");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -23,7 +26,10 @@ export default function GlobalHeader() {
 
       try {
         const response = await fetch("/api/user/profile");
-        const data = await response.json();
+        const data = await parseJsonResponse<{
+          success?: boolean;
+          user?: Record<string, unknown>;
+        }>(response);
 
         if (data.success) {
           setUserProfile(data.user || null);
@@ -65,11 +71,11 @@ export default function GlobalHeader() {
               <Button
                 variant="outline"
                 size="sm"
-                aria-label="Browse"
+                aria-label={t("browse")}
                 className="bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:text-white dark:hover:bg-gray-700/40 transition-all duration-300 sm:hover:scale-105 sm:hover:shadow-lg backdrop-blur-sm px-2 sm:px-3"
               >
                 <Compass className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Browse</span>
+                <span className="hidden sm:inline">{t("browse")}</span>
               </Button>
             </Link>
 
@@ -78,11 +84,11 @@ export default function GlobalHeader() {
               onClick={() => setIsSearchOpen(true)}
               variant="outline"
               size="sm"
-              aria-label="Search"
+              aria-label={t("search")}
               className="bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:text-white dark:hover:bg-gray-700/40 transition-all duration-300 sm:hover:scale-105 sm:hover:shadow-lg backdrop-blur-sm px-2 sm:px-3"
             >
               <Search className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Search</span>
+              <span className="hidden sm:inline">{t("search")}</span>
             </Button>
 
             {/* Notifications Button */}
@@ -93,7 +99,7 @@ export default function GlobalHeader() {
               <Button
                 variant="outline"
                 size="sm"
-                aria-label="Settings"
+                aria-label={t("settings")}
                 className="bg-white/20 border-white/30 text-white hover:bg-white/30 dark:bg-gray-800/30 dark:border-gray-700/50 dark:text-white dark:hover:bg-gray-700/40 transition-all duration-300 sm:hover:scale-105 sm:hover:shadow-lg backdrop-blur-sm p-2"
               >
                 <Settings className="h-4 w-4" />

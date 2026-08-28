@@ -23,7 +23,7 @@ export function mangaApiPath(provider: string, mangaId: string): string {
 export function readerPath(
   provider: string,
   chapterId: string,
-  mangaId?: string
+  mangaId?: string,
 ): string {
   const base = `/reader/${encodeURIComponent(provider)}/${encodeExternalId(chapterId)}`;
   if (!mangaId) return base;
@@ -34,7 +34,7 @@ export function chapterApiPath(
   provider: string,
   chapterId: string,
   mangaId?: string,
-  fields?: "pages" | "meta"
+  fields?: "pages" | "meta",
 ): string {
   const base = `/api/chapters/${encodeURIComponent(provider)}/${encodeExternalId(chapterId)}`;
   const params = new URLSearchParams();
@@ -47,7 +47,7 @@ export function chapterApiPath(
 export function chapterPageProxyPath(
   provider: string,
   chapterId: string,
-  pageIndex: number
+  pageIndex: number,
 ): string {
   return `${chapterApiPath(provider, chapterId)}/pages/${pageIndex}`;
 }

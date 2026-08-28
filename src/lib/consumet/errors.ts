@@ -2,7 +2,7 @@ export class ConsumetError extends Error {
   constructor(
     message: string,
     public status: number,
-    public retryable: boolean = false
+    public retryable: boolean = false,
   ) {
     super(message);
     this.name = "ConsumetError";
@@ -17,7 +17,7 @@ export class ConsumetConfigError extends ConsumetError {
 }
 
 export function isConsumetErrorPayload(
-  body: unknown
+  body: unknown,
 ): body is { message?: string; error?: string } {
   if (!body || typeof body !== "object") return false;
   const obj = body as Record<string, unknown>;

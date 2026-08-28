@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Calendar,
@@ -23,11 +24,7 @@ import {
   getChapterToContinue,
   getContinueReadingLabel,
 } from "@/lib/reading-progress";
-import {
-  encodeExternalId,
-  mangaApiPath,
-  readerPath,
-} from "@/lib/consumet/ids";
+import { encodeExternalId, mangaApiPath, readerPath } from "@/lib/consumet/ids";
 import { invalidateLibraryCache } from "@/lib/library-cache";
 import { warmChapterPages } from "@/lib/consumet/reader-warm";
 
@@ -53,14 +50,12 @@ interface Manga {
   updatedAt?: string;
 }
 
-function chapterLabel(chapter: {
-  chapterNumber: number;
-  title: string;
-}): { heading: string; name: string | null } {
+function chapterLabel(chapter: { chapterNumber: number; title: string }): {
+  heading: string;
+  name: string | null;
+} {
   const heading =
-    chapter.chapterNumber > 0
-      ? `Chapter ${chapter.chapterNumber}`
-      : "Chapter";
+    chapter.chapterNumber > 0 ? `Chapter ${chapter.chapterNumber}` : "Chapter";
   const raw = chapter.title?.trim() ?? "";
   const isGeneric =
     !raw ||
@@ -69,6 +64,21 @@ function chapterLabel(chapter: {
     /^Chapter\s+[\d.]+$/i.test(raw);
 
   return { heading, name: isGeneric ? null : raw };
+}
+
+function mangaStatusKey(
+  status: string,
+): "ongoing" | "completed" | "hiatus" | "cancelled" {
+  switch (status.toUpperCase()) {
+    case "COMPLETED":
+      return "completed";
+    case "HIATUS":
+      return "hiatus";
+    case "CANCELLED":
+      return "cancelled";
+    default:
+      return "ongoing";
+  }
 }
 
 interface ApiResponse<T> {
@@ -89,6 +99,7 @@ export default function MangaDetailContent({
   mangaId,
 }: MangaDetailContentProps) {
   const router = useRouter();
+  const t = useTranslations("manga");
   const [manga, setManga] = useState<Manga | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -96,10 +107,10 @@ export default function MangaDetailContent({
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [finishedLoading, setFinishedLoading] = useState(false);
   const [readChapterIds, setReadChapterIds] = useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
   const [lastReadChapterId, setLastReadChapterId] = useState<string | null>(
-    null
+    null,
   );
   const [mangaLoading, setMangaLoading] = useState(true);
   const [metadataLoading, setMetadataLoading] = useState(true);
@@ -122,10 +133,10 @@ export default function MangaDetailContent({
 
         const [bookmarkResponse, historyResponse] = await Promise.all([
           fetch(
-            `/api/manga/bookmark?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`
+            `/api/manga/bookmark?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`,
           ),
           fetch(
-            `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`
+            `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(mangaData.data.id)}`,
           ),
         ]);
 
@@ -141,9 +152,7 @@ export default function MangaDetailContent({
         const bookmarked =
           bookmarkApiResponse.success && !!bookmarkApiResponse.isBookmarked;
         setIsBookmarked(bookmarked);
-        setIsFinished(
-          bookmarked && !!bookmarkApiResponse.isFinished
-        );
+        setIsFinished(bookmarked && !!bookmarkApiResponse.isFinished);
 
         const historyApiResponse = historyData as unknown as ApiResponse<
           Array<{ externalChapterId: string }>
@@ -178,7 +187,7 @@ export default function MangaDetailContent({
     const refreshReadingHistory = async () => {
       try {
         const response = await fetch(
-          `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(manga.id)}`
+          `/api/reading-history?provider=${encodeURIComponent(provider)}&mangaId=${encodeURIComponent(manga.id)}`,
         );
         const historyData = (await response.json()) as ApiResponse<
           Array<{ externalChapterId: string }>
@@ -234,7 +243,7 @@ export default function MangaDetailContent({
         invalidateLibraryCache();
 
         toast.success(
-          isBookmarked ? "Removed from library" : "Added to library"
+          isBookmarked ? "Removed from library" : "Added to library",
         );
       } else {
         toast.error(data.error || "Failed to update library");
@@ -258,7 +267,7 @@ export default function MangaDetailContent({
     const target = getChapterToContinue(
       manga.chapters,
       readChapterIds,
-      lastReadChapterId
+      lastReadChapterId,
     );
     if (target) {
       warmChapterPages(provider, target.id, manga.id);
@@ -383,10 +392,7 @@ export default function MangaDetailContent({
             {error || "The manga you're looking for doesn't exist."}
           </p>
           <div className="flex gap-3 justify-center">
-            <Button
-              variant="outline"
-              onClick={() => void fetchMangaData()}
-            >
+            <Button variant="outline" onClick={() => void fetchMangaData()}>
               Retry
             </Button>
             <Link href="/search">
@@ -413,7 +419,7 @@ export default function MangaDetailContent({
             className="bg-white/80 border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800/80 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/80 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {t("back")}
           </Button>
         </div>
 
@@ -452,19 +458,27 @@ export default function MangaDetailContent({
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center text-gray-600 dark:text-gray-300">
                   <User className="h-4 w-4 mr-2" />
-                  <span className="font-medium">{manga.author || "Unknown"}</span>
+                  <span className="font-medium">
+                    {manga.author || t("unknownAuthor")}
+                  </span>
                 </div>
                 {manga.updatedAt && (
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>{new Date(manga.updatedAt).toLocaleDateString()}</span>
-                </div>
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>
+                      {new Date(manga.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 )}
                 <Badge
-                  variant={manga.status === "ONGOING" || manga.status === "Ongoing" ? "default" : "secondary"}
+                  variant={
+                    manga.status === "ONGOING" || manga.status === "Ongoing"
+                      ? "default"
+                      : "secondary"
+                  }
                   className="text-sm"
                 >
-                  {manga.status}
+                  {t(`status.${mangaStatusKey(manga.status)}`)}
                 </Badge>
               </div>
 
@@ -498,7 +512,7 @@ export default function MangaDetailContent({
                       {getContinueReadingLabel(
                         manga.chapters,
                         readChapterIds,
-                        lastReadChapterId
+                        lastReadChapterId,
                       )}
                     </>
                   )}

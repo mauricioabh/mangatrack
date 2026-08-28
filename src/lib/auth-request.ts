@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { auth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
 import type { JwtPayload } from "@clerk/types";
@@ -19,13 +20,13 @@ export async function getClerkUserId(): Promise<string | null> {
   }
 
   const token = authorization.slice(7).trim();
-  if (!token || !process.env.CLERK_SECRET_KEY) {
+  if (!token || !env.CLERK_SECRET_KEY) {
     return null;
   }
 
   try {
     const result = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
+      secretKey: env.CLERK_SECRET_KEY,
     });
     if (result.errors || !result.data) {
       return null;

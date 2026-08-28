@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     console.error("Error registering push token:", error);
     return NextResponse.json(
       { success: false, error: "Failed to register push token" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -52,7 +52,7 @@ export async function DELETE(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -71,7 +71,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error removing push token:", error);
     return NextResponse.json(
       { success: false, error: "Failed to remove push token" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
