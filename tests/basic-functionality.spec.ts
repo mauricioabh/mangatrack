@@ -14,6 +14,16 @@ test.describe("Basic Functionality Tests", () => {
     await expect(page.locator("text=Sign In")).toBeVisible();
   });
 
+  test("sign-in page mounts the Clerk form", async ({ page }) => {
+    await page.goto("/sign-in", { timeout: 30000 });
+    await expect(
+      page.locator("[data-localization-key='signIn.start.title']"),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.locator("[data-localization-key='signIn.start.subtitle']"),
+    ).toBeVisible();
+  });
+
   test("dashboard redirects to sign in when not authenticated", async ({
     page,
   }) => {
