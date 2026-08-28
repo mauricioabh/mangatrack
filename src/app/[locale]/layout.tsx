@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { cookies } from "next/headers";
-import { Suspense } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -71,25 +70,23 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-dvh overflow-x-hidden antialiased`}
       >
-        <Suspense fallback={null}>
-          <ClerkProvider dynamic>
-            <NextIntlClientProvider messages={messages}>
-              <QueryProvider>
-                <PostHogProvider>
-                  <NuqsAdapter>
-                    <AuthThemeProvider>
-                      <ThemeCookieSync />
-                      <ConditionalLayout>{children}</ConditionalLayout>
-                      <ServiceWorkerRegister />
-                      <PwaInstallPrompt />
-                      <Toaster />
-                    </AuthThemeProvider>
-                  </NuqsAdapter>
-                </PostHogProvider>
-              </QueryProvider>
-            </NextIntlClientProvider>
-          </ClerkProvider>
-        </Suspense>
+        <ClerkProvider>
+          <NextIntlClientProvider messages={messages}>
+            <QueryProvider>
+              <PostHogProvider>
+                <NuqsAdapter>
+                  <AuthThemeProvider>
+                    <ThemeCookieSync />
+                    <ConditionalLayout>{children}</ConditionalLayout>
+                    <ServiceWorkerRegister />
+                    <PwaInstallPrompt />
+                    <Toaster />
+                  </AuthThemeProvider>
+                </NuqsAdapter>
+              </PostHogProvider>
+            </QueryProvider>
+          </NextIntlClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
