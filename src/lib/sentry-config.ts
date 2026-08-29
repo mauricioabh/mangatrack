@@ -1,4 +1,3 @@
-import { env } from "@/env";
 import type { Breadcrumb, ErrorEvent } from "@sentry/nextjs";
 
 const SENSITIVE_KEYS = /authorization|cookie|token|password|email|phone/i;
@@ -41,5 +40,5 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
 }
 
 export function getSentryDsn(): string | undefined {
-  return env.SENTRY_DSN?.trim() || undefined;
+  return process.env.SENTRY_DSN?.trim() || undefined;
 }

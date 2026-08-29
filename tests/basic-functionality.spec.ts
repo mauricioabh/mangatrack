@@ -17,6 +17,9 @@ test.describe("Basic Functionality Tests", () => {
   test("sign-in page mounts the Clerk form", async ({ page }) => {
     await page.goto("/sign-in", { timeout: 30000 });
     await expect(
+      page.getByRole("textbox", { name: "Email address" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
       page.locator("[data-localization-key='signIn.start.title']"),
     ).toBeVisible({ timeout: 15000 });
     await expect(
