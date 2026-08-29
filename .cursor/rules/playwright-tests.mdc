@@ -1,0 +1,24 @@
+---
+description: Lineamientos para pruebas Playwright reproducibles y autenticadas
+globs: tests/**/*.spec.ts, playwright.config.ts
+alwaysApply: false
+---
+
+# Pruebas Playwright
+
+- Registrar listeners de consola y red **antes** de `page.goto()` cuando el fallo dependa de carga inicial.
+- Esperar estados observables (`toBeVisible`, `toHaveURL`, `waitForResponse`); no usar `waitForTimeout` como sincronización.
+- Usar locators accesibles y contratos públicos. No depender de clases internas de Clerk (`cl-*`, `cl-internal-*`) ni de selectores generados.
+- Para Clerk, preferir elementos estables, por ejemplo:
+
+```ts
+await expect(
+  page.getByRole("textbox", { name: "Email address" }),
+).toBeVisible();
+```
+
+- Los tests autenticados deben declarar explícitamente `storageState` o documentar el checkpoint de login manual. Nunca incluir credenciales en el código ni asumir que una cookie existente pertenece al test.
+- Verificar la historia completa: URL final, consola, requests/responses relevantes, status, `Content-Type` y cuerpo JSON antes de afirmar que la vista cargó.
+- Distinguir fallos de infraestructura (servidor no iniciado/`NS_ERROR_CONNECTION_REFUSED`) de fallos de aplicación y reportar ambos con evidencia.
+- No declarar éxito por un `200` de `/sign-in` o por una API `401`; el test debe comprobar el contenido visible esperado.
+- Si se requiere login manual, detenerse en `/sign-in`, informar al usuario y continuar solo después de que confirme que terminó.
